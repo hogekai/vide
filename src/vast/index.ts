@@ -78,15 +78,9 @@ export function vast(options: VastPluginOptions): Plugin {
 					}
 
 					// Play ad using the same video element
-					const originalSrc = player.el.currentTime;
+					const originalTime = player.el.currentTime;
 					const originalPaused = player.el.paused;
-
 					const prevSrc = player.el.src;
-					player.el.src = mediaFile.url;
-					player.el.load();
-
-					setState("ad:playing");
-					track(linear.trackingEvents.start);
 
 					// Set up quartile tracking
 					const tracker = createQuartileTracker(
@@ -114,7 +108,7 @@ export function vast(options: VastPluginOptions): Plugin {
 						// Restore original content
 						player.el.src = prevSrc;
 						player.el.load();
-						player.el.currentTime = originalSrc;
+						player.el.currentTime = originalTime;
 						if (!originalPaused) {
 							player.el.play();
 						}
@@ -126,13 +120,24 @@ export function vast(options: VastPluginOptions): Plugin {
 							onAdTimeUpdate,
 						);
 						player.el.removeEventListener("ended", onAdEnded);
+						player.el.removeEventListener("canplay", onAdCanPlay);
 					}
 
+					function onAdCanPlay(): void {
+						player.el.removeEventListener("canplay", onAdCanPlay);
+						if (!linear) return;
+						setState("ad:playing");
+						track(linear.trackingEvents.start);
+						player.el.play();
+					}
+
+					player.el.addEventListener("canplay", onAdCanPlay);
 					player.el.addEventListener("timeupdate", onAdTimeUpdate);
 					player.el.addEventListener("ended", onAdEnded);
 					quartileCleanup = cleanup;
 
-					await player.el.play();
+					player.el.src = mediaFile.url;
+					player.el.load();
 				} catch (err) {
 					if (aborted) return;
 					player.emit("ad:error", {

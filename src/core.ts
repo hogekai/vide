@@ -27,10 +27,23 @@ function canTransition(from: PlayerState, to: PlayerState): boolean {
 	return transitions[from].includes(to);
 }
 
+/** Infer initial state from current video element readyState. */
+function inferInitialState(el: HTMLVideoElement): PlayerState {
+	// HTMLMediaElement.readyState:
+	// 0 = HAVE_NOTHING, 1 = HAVE_METADATA, 2 = HAVE_CURRENT_DATA,
+	// 3 = HAVE_FUTURE_DATA, 4 = HAVE_ENOUGH_DATA
+	if (el.readyState >= 3) {
+		if (!el.paused) return "playing";
+		return "ready";
+	}
+	if (el.readyState >= 1) return "loading";
+	return "idle";
+}
+
 // === createPlayer ===
 
 export function createPlayer(el: HTMLVideoElement): Player {
-	let state: PlayerState = "idle";
+	let state: PlayerState = inferInitialState(el);
 	const handlers = new Map<string, Set<EventHandler<unknown>>>();
 	const cleanups: (() => void)[] = [];
 	let destroyed = false;
