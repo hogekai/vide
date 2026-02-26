@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>vide — Sample</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
+    video { width: 100%; background: #000; }
+    #log { font-family: monospace; font-size: 13px; background: #1a1a1a; color: #0f0; padding: 1rem; max-height: 300px; overflow-y: auto; border-radius: 4px; }
+    .log-entry { margin: 2px 0; }
+    .controls { margin: 1rem 0; display: flex; gap: 0.5rem; }
+    button { padding: 0.4rem 1rem; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>vide sample</h1>
+
+  <video id="player" controls
+    src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4">
+  </video>
+
+  <div class="controls">
+    <button onclick="player.play()">Play</button>
+    <button onclick="player.pause()">Pause</button>
+    <button onclick="player.currentTime = 0">Restart</button>
+    <button onclick="player.muted = !player.muted">Toggle Mute</button>
+    <button onclick="loadWithAd()">Load with VAST Ad</button>
+  </div>
+
+  <h3>State: <span id="state">-</span></h3>
+  <div id="log"></div>
+
+  <script type="module">
+    import { createPlayer } from "../dist/index.mjs";
+    import { vast, parseVast, fetchVast } from "../dist/vast/index.mjs";
+
+    const el = document.getElementById("player");
+    const stateEl = document.getElementById("state");
+    const logEl = document.getElementById("log");
+
+    function log(msg) {
+      const entry = document.createElement("div");
+      entry.className = "log-entry";
+      entry.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+      logEl.prepend(entry);
+    }
+
+    // --- Basic player (no ads) ---
+    const player = createPlayer(el);
+    window.player = player;
+
+    player.on("statechange", ({ from, to }) => {
+      stateEl.textContent = to;
+      log(`state: ${from} → ${to}`);
+    });
+
+    player.on("play", () => log("event: play"));
+    player.on("pause", () => log("event: pause"));
+    player.on("ended", () => log("event: ended"));
+    player.on("timeupdate", ({ currentTime, duration }) => {
+      // throttle log
+    });
+    player.on("error", ({ code, message }) => log(`error: [${code}] ${message}`));
+    player.on("ad:start", ({ adId }) => log(`ad:start — id=${adId}`));
+    player.on("ad:end", ({ adId }) => log(`ad:end — id=${adId}`));
+    player.on("ad:error", ({ error }) => log(`ad:error — ${error.message}`));
+
+    log("Player created. State: " + player.state);
+
+    // --- VAST ad test ---
+    // Google IMA sample VAST tag (pre-roll, linear, inline)
+    const VAST_TAG = "https://pubads.g.doubleclick.net/gampad/ads?"
+      + "iu=/21775744923/external/single_preroll_skippable"
+      + "&sz=640x480"
+      + "&ciu_szs=300x250,728x90"
+      + "&gdfp_req=1"
+      + "&output=vast"
+      + "&unviewed_position_start=1"
+      + "&env=vp"
+      + "&impl=s"
+      + "&correlator=" + Date.now();
+
+    window.loadWithAd = async function() {
+      log("--- VAST test: fetching tag ---");
+
+      try {
+        // Step 1: Fetch the VAST XML
+        const xml = await fetchVast(VAST_TAG, { timeout: 10000 });
+        log(`Fetched VAST XML (${xml.length} bytes)`);
+
+        // Step 2: Parse it
+        const response = parseVast(xml);
+        log(`Parsed: version=${response.version}, ads=${response.ads.length}, errors=${response.errors.length}`);
+
+        if (response.ads.length > 0) {
+          const ad = response.ads[0];
+          log(`Ad: id=${ad.id}, system=${ad.adSystem}, title=${ad.adTitle}`);
+          log(`Impressions: ${ad.impressions.length}`);
+
+          for (const creative of ad.creatives) {
+            if (creative.linear) {
+              const l = creative.linear;
+              log(`Linear: duration=${l.duration}s, skipOffset=${l.skipOffset ?? "none"}, mediaFiles=${l.mediaFiles.length}`);
+              for (const mf of l.mediaFiles) {
+                log(`  MediaFile: ${mf.mimeType} ${mf.width}x${mf.height} bitrate=${mf.bitrate ?? "?"} delivery=${mf.delivery}`);
+                log(`    URL: ${mf.url.substring(0, 80)}...`);
+              }
+              log(`ClickThrough: ${l.clickThrough ?? "none"}`);
+              log(`Tracking events: start=${l.trackingEvents.start.length}, complete=${l.trackingEvents.complete.length}`);
+            }
+          }
+        }
+
+        if (response.errors.length > 0) {
+          log(`Root errors: ${response.errors.join(", ")}`);
+        }
+
+        // Step 3: Try to use the vast() plugin
+        log("--- Attempting vast() plugin playback ---");
+        player.use(vast({
+          tagUrl: VAST_TAG,
+          timeout: 10000,
+        }));
+
+      } catch (err) {
+        log(`VAST error: ${err.message}`);
+        if (err.message.includes("Failed to fetch") || err.message.includes("CORS")) {
+          log("⚠ CORS issue — VAST tag server doesn't allow cross-origin requests from file://");
+          log("  Run with a local server: npx serve . (or use VS Code Live Preview)");
+        }
+      }
+    };
+  </script>
+</body>
+</html>

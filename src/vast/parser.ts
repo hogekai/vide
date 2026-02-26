@@ -27,10 +27,8 @@ export function parseVast(xml: string): VastResponse {
 
 	const version = vastEl.getAttribute("version") ?? "";
 
-	// Root-level errors (no-ad response)
-	const rootErrors = textContents(vastEl, ":scope > Error");
-
-	const adEls = vastEl.querySelectorAll(":scope > Ad");
+	const rootErrors = childrenTextContents(vastEl, "Error");
+	const adEls = directChildren(vastEl, "Ad");
 	const ads: VastAd[] = [];
 
 	for (const adEl of adEls) {
@@ -44,9 +42,8 @@ export function parseVast(xml: string): VastResponse {
 }
 
 function parseAd(adEl: Element): VastAd | null {
-	const inlineEl = adEl.querySelector(":scope > InLine");
+	const inlineEl = directChild(adEl, "InLine");
 	if (!inlineEl) {
-		// Wrapper ads not supported in v0.1
 		return null;
 	}
 
@@ -58,13 +55,13 @@ function parseAd(adEl: Element): VastAd | null {
 	const adSystem = textContent(inlineEl, "AdSystem");
 	const adTitle = textContent(inlineEl, "AdTitle");
 	const impressions = textContents(inlineEl, "Impression");
-	const errors = textContents(inlineEl, ":scope > Error");
+	const errors = childrenTextContents(inlineEl, "Error");
 
 	const creativesEl = inlineEl.querySelector("Creatives");
 	const creatives: VastCreative[] = [];
 
 	if (creativesEl) {
-		const creativeEls = creativesEl.querySelectorAll(":scope > Creative");
+		const creativeEls = directChildren(creativesEl, "Creative");
 		for (const creativeEl of creativeEls) {
 			creatives.push(parseCreative(creativeEl));
 		}
@@ -127,7 +124,7 @@ function parseMediaFiles(linearEl: Element): VastMediaFile[] {
 	if (!mediaFilesEl) return [];
 
 	const files: VastMediaFile[] = [];
-	const mediaFileEls = mediaFilesEl.querySelectorAll(":scope > MediaFile");
+	const mediaFileEls = directChildren(mediaFilesEl, "MediaFile");
 
 	for (const mf of mediaFileEls) {
 		const url = (mf.textContent ?? "").trim();
@@ -205,6 +202,39 @@ function parseOffset(str: string, totalDuration: number): number {
 		return Number.isNaN(pct) ? 0 : (pct / 100) * totalDuration;
 	}
 	return parseDuration(str);
+}
+
+/** Get direct child elements matching a tag name. Avoids :scope selector issues in XML DOM. */
+function directChildren(parent: Element, tagName: string): Element[] {
+	const result: Element[] = [];
+	for (let i = 0; i < parent.children.length; i++) {
+		if (parent.children[i].tagName === tagName) {
+			result.push(parent.children[i]);
+		}
+	}
+	return result;
+}
+
+/** Get first direct child element matching a tag name. */
+function directChild(parent: Element, tagName: string): Element | null {
+	for (let i = 0; i < parent.children.length; i++) {
+		if (parent.children[i].tagName === tagName) {
+			return parent.children[i];
+		}
+	}
+	return null;
+}
+
+/** Get text contents of direct children matching a tag name. */
+function childrenTextContents(parent: Element, tagName: string): string[] {
+	const results: string[] = [];
+	for (const el of directChildren(parent, tagName)) {
+		const text = (el.textContent ?? "").trim();
+		if (text) {
+			results.push(text);
+		}
+	}
+	return results;
 }
 
 function textContent(parent: Element, selector: string): string {
