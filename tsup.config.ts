@@ -10,6 +10,7 @@ export default defineConfig({
     "hls/index": "src/hls/index.ts",
     "dash/index": "src/dash/index.ts",
     "drm/index": "src/drm/index.ts",
+    "ssai/index": "src/ssai/index.ts",
     "ui/index": "src/ui/index.ts",
   },
   onSuccess: "mkdir -p dist/ui && cp src/ui/theme.css dist/ui/theme.css",

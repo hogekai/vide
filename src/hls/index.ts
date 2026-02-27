@@ -92,6 +92,7 @@ export function hls(options: HlsPluginOptions = {}): Plugin {
 						};
 						const instance = new Hls(mergedConfig);
 						hlsInstance = instance as HlsLike;
+						player.setPluginData("hls", instance);
 
 						instance.on(
 							Hls.Events.ERROR,

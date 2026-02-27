@@ -20,6 +20,7 @@ player.use(vast({ tagUrl: "https://example.com/vast.xml" }));
 | `videts/hls` | HLS streaming | 0.6 KB |
 | `videts/dash` | DASH streaming | 0.6 KB |
 | `videts/drm` | DRM (Widevine + FairPlay) | 0.8 KB |
+| `videts/ssai` | SSAI (server-side ads) | 1.4 KB |
 | `videts/omid` | Open Measurement | 1.7 KB |
 | `videts/simid` | Interactive ads | 2.4 KB |
 | `videts/ui` | Headless UI | 4.7 KB |
@@ -141,6 +142,42 @@ player.use(drm({
   widevine: {
     licenseUrl: "https://license.example.com/widevine",
     headers: { Authorization: "Bearer <token>" },
+  },
+}));
+```
+
+### SSAI (Server-Side Ad Insertion)
+
+Detects ad breaks from HLS/DASH in-band metadata and fires standard ad events. No vendor SDK required.
+
+```ts
+import { createPlayer } from "videts";
+import { hls } from "videts/hls";
+import { ssai } from "videts/ssai";
+
+const player = createPlayer(document.querySelector("video")!);
+player.use(hls());
+player.use(ssai());
+
+player.on("ad:start", ({ adId }) => console.log("ad started", adId));
+player.on("ad:end", ({ adId }) => console.log("ad ended", adId));
+
+player.src = "https://example.com/ssai-stream.m3u8";
+```
+
+```ts
+// Custom parser for vendor-specific metadata formats
+player.use(ssai({
+  parser(raw) {
+    if (raw.source === "daterange" && raw.attributes["X-MY-AD"] === "true") {
+      return [{
+        id: raw.attributes.ID,
+        startTime: new Date(raw.attributes["START-DATE"]).getTime() / 1000,
+        duration: Number(raw.attributes.DURATION || 0),
+        trackingUrls: [raw.attributes["X-TRACKING-URL"]].filter(Boolean),
+      }];
+    }
+    return [];
   },
 }));
 ```

@@ -1,5 +1,5 @@
 {
-  "name": "videts",
+  "name": "@videts/vide",
   "version": "0.6.1",
   "description": "Modular video player — use only what you need. VAST/VMAP, HLS, DASH as plugins.",
   "type": "module",
@@ -35,6 +35,10 @@
     "./drm": {
       "types": "./dist/drm/index.d.ts",
       "import": "./dist/drm/index.mjs"
+    },
+    "./ssai": {
+      "types": "./dist/ssai/index.d.ts",
+      "import": "./dist/ssai/index.mjs"
     },
     "./ui": {
       "types": "./dist/ui/index.d.ts",

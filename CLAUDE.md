@@ -39,5 +39,6 @@ Single package, multiple entry points via `exports` field:
 - `vide/hls` — HLS streaming plugin (wraps hls.js, optional peer dep)
 - `vide/dash` — DASH streaming plugin (wraps dashjs, optional peer dep)
 - `vide/drm` — DRM plugin (Widevine + FairPlay, configures hls.js/dashjs via pluginData)
+- `vide/ssai` — SSAI plugin (server-side ad insertion, reads HLS/DASH metadata)
 - `vide/omid` — OM SDK (Open Measurement) viewability plugin
 - `vide/simid` — SIMID (Secure Interactive Media Interface) plugin

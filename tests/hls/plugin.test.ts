@@ -287,6 +287,17 @@ describe("hls plugin — DRM integration", () => {
 	});
 });
 
+describe("hls plugin — pluginData", () => {
+	it("exposes hls.js instance via setPluginData('hls')", async () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		player.use(hls());
+		player.src = "https://example.com/stream.m3u8";
+		await flushImport();
+		expect(player.getPluginData("hls")).toBeDefined();
+	});
+});
+
 describe("hls plugin — lifecycle", () => {
 	it("destroys hls.js instance when source changes", async () => {
 		const el = makeVideo();

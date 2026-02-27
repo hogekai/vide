@@ -260,6 +260,17 @@ describe("dash plugin — DRM integration", () => {
 	});
 });
 
+describe("dash plugin — pluginData", () => {
+	it("exposes dashjs instance via setPluginData('dash')", async () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		player.use(dash());
+		player.src = "https://example.com/stream.mpd";
+		await flushImport();
+		expect(player.getPluginData("dash")).toBeDefined();
+	});
+});
+
 describe("dash plugin — autoplay", () => {
 	it("passes autoplay=true when video element has autoplay attribute", async () => {
 		const el = makeVideo();
