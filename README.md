@@ -121,6 +121,9 @@ player.use(ui({ container: document.getElementById("player-container")! }));
 ```
 
 ```ts
+// exclude: play, progress, time, volume, fullscreen, loader, error,
+//          bigplay, poster, keyboard, clickplay, autohide,
+//          ad-countdown, ad-skip, ad-overlay, ad-label
 player.use(ui({
   container: el,
   exclude: ["volume", "fullscreen"],
