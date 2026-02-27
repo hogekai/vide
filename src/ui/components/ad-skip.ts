@@ -1,10 +1,12 @@
 import type { Player, PlayerState } from "../../types.js";
+import { iconSkipForward } from "../icons.js";
 import { isAdState } from "../state.js";
 import type { AdUIStateRef, UIComponent } from "../types.js";
 import { el } from "../utils.js";
 
 export function createAdSkip(adState: AdUIStateRef): UIComponent {
 	let button: HTMLButtonElement | null = null;
+	let label: HTMLSpanElement | null = null;
 	let player: Player | null = null;
 
 	function onClick(): void {
@@ -14,7 +16,7 @@ export function createAdSkip(adState: AdUIStateRef): UIComponent {
 	}
 
 	function onTimeUpdate(): void {
-		if (!button || !player || !isAdState(player.state)) return;
+		if (!button || !label || !player || !isAdState(player.state)) return;
 
 		// Hide button entirely if no ad data or ad is non-skippable
 		if (!adState.current || adState.current.skipOffset === undefined) {
@@ -27,21 +29,23 @@ export function createAdSkip(adState: AdUIStateRef): UIComponent {
 		const current = player.el.currentTime;
 		if (current >= skipOffset) {
 			button.classList.remove("vide-skip--disabled");
-			button.textContent = "Skip Ad";
+			label.textContent = "Skip Ad";
 		} else {
 			button.classList.add("vide-skip--disabled");
 			const remaining = Math.max(0, Math.ceil(skipOffset - current));
-			button.textContent = `Skip in ${remaining}s`;
+			label.textContent = `Skip in ${remaining}s`;
 		}
 	}
 
-	function onStateChange({ to }: { from: PlayerState; to: PlayerState }): void {
-		if (!button) return;
+	function onStateChange({
+		to,
+	}: { from: PlayerState; to: PlayerState }): void {
+		if (!button || !label) return;
 		// Reset button when leaving ad state
 		if (!isAdState(to)) {
 			button.style.display = "none";
 			button.classList.add("vide-skip--disabled");
-			button.textContent = "";
+			label.textContent = "";
 		}
 	}
 
@@ -51,6 +55,9 @@ export function createAdSkip(adState: AdUIStateRef): UIComponent {
 			button.type = "button";
 			button.setAttribute("aria-label", "Skip ad");
 			button.style.display = "none";
+			label = el("span", "vide-skip__label");
+			button.appendChild(label);
+			button.appendChild(iconSkipForward());
 			container.appendChild(button);
 		},
 		connect(p: Player): void {
@@ -65,6 +72,7 @@ export function createAdSkip(adState: AdUIStateRef): UIComponent {
 				button.removeEventListener("click", onClick);
 				button.remove();
 				button = null;
+				label = null;
 			}
 			if (player) {
 				player.off("timeupdate", onTimeUpdate);

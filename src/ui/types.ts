@@ -39,7 +39,10 @@ export type UIComponentName =
 	| "ad-countdown"
 	| "ad-skip"
 	| "ad-overlay"
-	| "ad-label";
+	| "ad-label"
+	| "keyboard"
+	| "clickplay"
+	| "autohide";
 
 /** Options for the ui() convenience plugin. */
 export interface UiPluginOptions {

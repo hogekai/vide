@@ -43,6 +43,12 @@ export function createProgress(): UIComponent {
 			updateBar(currentTime / duration);
 		}
 		updateBuffered();
+		if (root) {
+			root.setAttribute("aria-valuenow", String(Math.floor(currentTime)));
+			if (Number.isFinite(duration)) {
+				root.setAttribute("aria-valuemax", String(Math.floor(duration)));
+			}
+		}
 	}
 
 	function onPointerDown(e: PointerEvent): void {
@@ -84,6 +90,11 @@ export function createProgress(): UIComponent {
 	return {
 		mount(container: HTMLElement): void {
 			root = el("div", "vide-progress");
+			root.setAttribute("role", "slider");
+			root.setAttribute("aria-label", "Seek");
+			root.setAttribute("aria-valuemin", "0");
+			root.setAttribute("aria-valuemax", "0");
+			root.setAttribute("aria-valuenow", "0");
 			buffered = el("div", "vide-progress__buffered");
 			bar = el("div", "vide-progress__bar");
 			handle = el("div", "vide-progress__handle");

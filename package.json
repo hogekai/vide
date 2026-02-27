@@ -1,7 +1,7 @@
 {
-  "name": "vide",
+  "name": "videts",
   "version": "0.6.0",
-  "description": "Zero-config, web-standard-first lightweight video player library",
+  "description": "Modular video player — use only what you need. VAST/VMAP, HLS, DASH as plugins.",
   "type": "module",
   "exports": {
     ".": {

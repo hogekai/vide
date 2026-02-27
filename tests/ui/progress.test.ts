@@ -92,6 +92,42 @@ describe("createProgress", () => {
 		comp.destroy();
 	});
 
+	it("has ARIA slider attributes", () => {
+		const container = document.createElement("div");
+		const comp = createProgress();
+		comp.mount(container);
+		const root = container.querySelector<HTMLDivElement>(
+			".vide-progress",
+		) as HTMLDivElement;
+		expect(root.getAttribute("role")).toBe("slider");
+		expect(root.getAttribute("aria-label")).toBe("Seek");
+		expect(root.getAttribute("aria-valuemin")).toBe("0");
+		expect(root.getAttribute("aria-valuenow")).toBe("0");
+		comp.destroy();
+	});
+
+	it("updates aria-valuenow on timeupdate", () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		driveToPlaying(el);
+
+		const container = document.createElement("div");
+		const comp = createProgress();
+		comp.mount(container);
+		comp.connect(player);
+
+		Object.defineProperty(el, "duration", { value: 100, writable: true });
+		Object.defineProperty(el, "currentTime", { value: 42, writable: true });
+		el.dispatchEvent(new Event("timeupdate"));
+
+		const root = container.querySelector<HTMLDivElement>(
+			".vide-progress",
+		) as HTMLDivElement;
+		expect(root.getAttribute("aria-valuenow")).toBe("42");
+		expect(root.getAttribute("aria-valuemax")).toBe("100");
+		comp.destroy();
+	});
+
 	it("destroy removes the element", () => {
 		const container = document.createElement("div");
 		const comp = createProgress();

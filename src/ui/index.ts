@@ -5,9 +5,12 @@ import { createAdCountdown } from "./components/ad-countdown.js";
 import { createAdLabel } from "./components/ad-label.js";
 import { createAdOverlay } from "./components/ad-overlay.js";
 import { createAdSkip } from "./components/ad-skip.js";
+import { createAutohide } from "./components/autohide.js";
 import { createBigPlay } from "./components/bigplay.js";
+import { createClickPlay } from "./components/clickplay.js";
 import { createErrorDisplay } from "./components/error.js";
 import { createFullscreen } from "./components/fullscreen.js";
+import { createKeyboard } from "./components/keyboard.js";
 import { createLoader } from "./components/loader.js";
 import { createPlayButton } from "./components/play.js";
 import { createPoster } from "./components/poster.js";
@@ -40,6 +43,9 @@ export {
 	createAdSkip,
 	createAdOverlay,
 	createAdLabel,
+	createKeyboard,
+	createClickPlay,
+	createAutohide,
 };
 
 export { connectStateClasses, stateToClass, isAdState } from "./state.js";
@@ -71,6 +77,8 @@ export function ui(options: UiPluginOptions): UiPlugin {
 		setup(player: Player): () => void {
 			const root = document.createElement("div");
 			root.className = "vide-ui";
+			root.setAttribute("role", "region");
+			root.setAttribute("aria-label", "Video player");
 			options.container.appendChild(root);
 
 			const all: UIComponent[] = [];
@@ -93,6 +101,9 @@ export function ui(options: UiPluginOptions): UiPlugin {
 				add("poster", createPoster({ src: options.poster }), root);
 			}
 
+			// Click-to-play overlay
+			add("clickplay", createClickPlay(excluded), root);
+
 			// Ad layer
 			const hasAnyAd =
 				!excluded.has("ad-overlay") ||
@@ -114,6 +125,7 @@ export function ui(options: UiPluginOptions): UiPlugin {
 			// Controls bar
 			const controls = document.createElement("div");
 			controls.className = "vide-controls";
+			controls.addEventListener("click", (e) => e.stopPropagation());
 			root.appendChild(controls);
 
 			add("play", createPlayButton(), controls);
@@ -121,6 +133,10 @@ export function ui(options: UiPluginOptions): UiPlugin {
 			add("time", createTimeDisplay(), controls);
 			add("volume", createVolume(), controls);
 			add("fullscreen", createFullscreen(), controls);
+
+			// Behavioral components
+			add("autohide", createAutohide(), root);
+			add("keyboard", createKeyboard({ excluded }), root);
 
 			const stateCleanup = connectStateClasses(root, player);
 

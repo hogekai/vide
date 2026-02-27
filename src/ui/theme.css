@@ -1,13 +1,19 @@
-/* vide UI — Default Theme */
+/* vide UI — YouTube-like Theme */
 
 :root {
-	--vide-accent: #fff;
+	--vide-accent: #f00;
+	--vide-accent-ad: #fbbc04;
 	--vide-bg: rgba(0, 0, 0, 0.7);
 	--vide-text: #fff;
-	--vide-font-size: 13px;
-	--vide-controls-height: 40px;
-	--vide-progress-height: 4px;
+	--vide-controls-height: 48px;
+	--vide-progress-height: 3px;
+	--vide-progress-height-hover: 5px;
+	--vide-font-size: 14px;
+	--vide-font-family: "YouTube Noto", Roboto, Arial, sans-serif;
+	--vide-icon-size: 24px;
 	--vide-transition: 0.2s ease;
+	--vide-skip-bg: rgba(0, 0, 0, 0.6);
+	--vide-skip-color: #fff;
 }
 
 /* === Root === */
@@ -15,11 +21,22 @@
 	position: relative;
 	width: 100%;
 	height: 100%;
-	font-family: system-ui, -apple-system, sans-serif;
+	font-family: var(--vide-font-family);
 	font-size: var(--vide-font-size);
 	color: var(--vide-text);
 	user-select: none;
 	-webkit-user-select: none;
+	outline: none;
+}
+
+/* === Auto-hide: idle state === */
+.vide-ui--idle {
+	cursor: none;
+}
+
+.vide-ui--idle .vide-controls {
+	opacity: 0;
+	pointer-events: none;
 }
 
 /* === Controls Bar === */
@@ -30,17 +47,32 @@
 	right: 0;
 	display: flex;
 	align-items: center;
-	gap: 8px;
+	flex-wrap: wrap;
 	height: var(--vide-controls-height);
 	padding: 0 12px;
-	background: linear-gradient(transparent, rgba(0, 0, 0, 0.6));
+	background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
 	opacity: 0;
 	transition: opacity var(--vide-transition);
+	z-index: 2;
 }
 
 .vide-ui:hover .vide-controls,
-.vide-ui--paused .vide-controls {
+.vide-ui--paused .vide-controls,
+.vide-ui--ready .vide-controls,
+.vide-ui--ended .vide-controls {
 	opacity: 1;
+	pointer-events: auto;
+}
+
+/* === SVG Icon Base === */
+.vide-controls button svg,
+.vide-bigplay svg,
+.vide-skip svg {
+	display: block;
+	width: var(--vide-icon-size);
+	height: var(--vide-icon-size);
+	fill: var(--vide-text);
+	pointer-events: none;
 }
 
 /* === Play Button === */
@@ -48,37 +80,30 @@
 	appearance: none;
 	border: none;
 	background: none;
-	color: var(--vide-accent);
+	color: var(--vide-text);
 	cursor: pointer;
-	width: 28px;
-	height: 28px;
-	padding: 0;
+	width: 36px;
+	height: 36px;
+	padding: 6px;
 	position: relative;
 	flex-shrink: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 50%;
+	transition: background var(--vide-transition);
 }
 
-.vide-play::before {
-	content: "";
-	display: block;
-	width: 0;
-	height: 0;
-	border-style: solid;
-	border-width: 8px 0 8px 14px;
-	border-color: transparent transparent transparent var(--vide-accent);
-}
-
-.vide-play--playing::before {
-	border-width: 0;
-	width: 12px;
-	height: 16px;
-	border-left: 3px solid var(--vide-accent);
-	border-right: 3px solid var(--vide-accent);
+.vide-play:hover {
+	background: rgba(255, 255, 255, 0.1);
 }
 
 /* === Progress Bar === */
 .vide-progress {
 	flex: 1;
-	height: 20px;
+	order: -1;
+	width: 100%;
+	height: 14px;
 	display: flex;
 	align-items: center;
 	cursor: pointer;
@@ -93,6 +118,14 @@
 	height: var(--vide-progress-height);
 	border-radius: calc(var(--vide-progress-height) / 2);
 	pointer-events: none;
+	transition: height var(--vide-transition);
+}
+
+.vide-progress:hover .vide-progress__buffered,
+.vide-progress:hover .vide-progress__bar,
+.vide-progress--dragging .vide-progress__buffered,
+.vide-progress--dragging .vide-progress__bar {
+	height: var(--vide-progress-height-hover);
 }
 
 .vide-progress__buffered {
@@ -114,8 +147,8 @@
 	height: 12px;
 	border-radius: 50%;
 	background: var(--vide-accent);
-	transform: translateX(calc((var(--vide-progress, 0) * (100% - 12px)) + -50%));
 	left: calc(var(--vide-progress, 0) * 100%);
+	transform: translateX(-50%);
 	opacity: 0;
 	transition: opacity var(--vide-transition);
 }
@@ -135,6 +168,7 @@
 	font-variant-numeric: tabular-nums;
 	white-space: nowrap;
 	flex-shrink: 0;
+	font-size: var(--vide-font-size);
 }
 
 .vide-time__separator {
@@ -146,7 +180,6 @@
 .vide-volume {
 	display: flex;
 	align-items: center;
-	gap: 4px;
 	flex-shrink: 0;
 }
 
@@ -154,30 +187,36 @@
 	appearance: none;
 	border: none;
 	background: none;
-	color: var(--vide-accent);
+	color: var(--vide-text);
 	cursor: pointer;
-	width: 24px;
-	height: 24px;
-	padding: 0;
+	width: 36px;
+	height: 36px;
+	padding: 6px;
 	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 50%;
+	transition: background var(--vide-transition);
 }
 
-.vide-volume__button::before {
-	content: "\1F50A";
-	font-size: 16px;
-}
-
-.vide-volume--muted .vide-volume__button::before {
-	content: "\1F507";
+.vide-volume__button:hover {
+	background: rgba(255, 255, 255, 0.1);
 }
 
 .vide-volume__slider {
-	width: 60px;
+	width: 0;
 	height: 20px;
 	display: flex;
 	align-items: center;
 	cursor: pointer;
 	position: relative;
+	overflow: hidden;
+	transition: width var(--vide-transition);
+}
+
+.vide-volume:hover .vide-volume__slider {
+	width: 60px;
 }
 
 .vide-volume__track {
@@ -195,7 +234,7 @@
 	right: 0;
 	height: 3px;
 	border-radius: 1.5px;
-	background: var(--vide-accent);
+	background: var(--vide-text);
 	transform: scaleX(var(--vide-volume, 1));
 	transform-origin: left;
 }
@@ -205,21 +244,22 @@
 	appearance: none;
 	border: none;
 	background: none;
-	color: var(--vide-accent);
+	color: var(--vide-text);
 	cursor: pointer;
-	width: 24px;
-	height: 24px;
-	padding: 0;
+	width: 36px;
+	height: 36px;
+	padding: 6px;
 	flex-shrink: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 50%;
+	margin-left: auto;
+	transition: background var(--vide-transition);
 }
 
-.vide-fullscreen::before {
-	content: "\26F6";
-	font-size: 18px;
-}
-
-.vide-fullscreen--active::before {
-	content: "\2716";
+.vide-fullscreen:hover {
+	background: rgba(255, 255, 255, 0.1);
 }
 
 /* === Big Play Button === */
@@ -231,25 +271,25 @@
 	transform: translate(-50%, -50%);
 	appearance: none;
 	border: none;
-	width: 64px;
-	height: 64px;
-	border-radius: 50%;
-	background: var(--vide-bg);
-	color: var(--vide-accent);
+	width: 68px;
+	height: 48px;
+	border-radius: 12px;
+	background: rgba(0, 0, 0, 0.6);
+	color: var(--vide-text);
 	cursor: pointer;
 	align-items: center;
 	justify-content: center;
+	z-index: 1;
+	transition: background var(--vide-transition);
 }
 
-.vide-bigplay::before {
-	content: "";
-	display: block;
-	width: 0;
-	height: 0;
-	border-style: solid;
-	border-width: 12px 0 12px 22px;
-	border-color: transparent transparent transparent var(--vide-accent);
-	margin-left: 4px;
+.vide-bigplay:hover {
+	background: rgba(0, 0, 0, 0.4);
+}
+
+.vide-bigplay svg {
+	width: 32px;
+	height: 32px;
 }
 
 .vide-ui--idle .vide-bigplay,
@@ -259,6 +299,23 @@
 	display: flex;
 }
 
+/* === Click-to-play Overlay === */
+.vide-clickplay {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	z-index: 1;
+	cursor: pointer;
+}
+
+.vide-ui--ad-loading .vide-clickplay,
+.vide-ui--ad-playing .vide-clickplay,
+.vide-ui--ad-paused .vide-clickplay {
+	display: none;
+}
+
 /* === Loader === */
 .vide-loader {
 	display: none;
@@ -266,13 +323,14 @@
 	top: 50%;
 	left: 50%;
 	transform: translate(-50%, -50%);
+	z-index: 1;
 }
 
 .vide-loader__spinner {
 	width: 40px;
 	height: 40px;
-	border: 3px solid rgba(255, 255, 255, 0.3);
-	border-top-color: var(--vide-accent);
+	border: 3px solid transparent;
+	border-top-color: var(--vide-text);
 	border-radius: 50%;
 	animation: vide-spin 0.8s linear infinite;
 }
@@ -298,9 +356,10 @@
 	transform: translate(-50%, -50%);
 	background: var(--vide-bg);
 	padding: 16px 24px;
-	border-radius: 8px;
+	border-radius: 4px;
 	text-align: center;
 	max-width: 80%;
+	z-index: 3;
 }
 
 .vide-ui--error .vide-error {
@@ -347,47 +406,88 @@
 	right: 0;
 	bottom: var(--vide-controls-height);
 	cursor: pointer;
+	z-index: 3;
 }
 
 /* === Ad Label === */
 .vide-ad-label {
 	position: absolute;
-	top: 8px;
-	left: 8px;
-	background: var(--vide-bg);
-	padding: 2px 8px;
+	top: 12px;
+	left: 12px;
+	background: rgba(0, 0, 0, 0.8);
+	padding: 6px 12px;
 	border-radius: 2px;
-	font-size: 12px;
+	font-size: 14px;
+	font-weight: 500;
+	z-index: 3;
 }
 
 /* === Ad Countdown === */
 .vide-ad-countdown {
 	position: absolute;
-	bottom: calc(var(--vide-controls-height) + 8px);
-	left: 8px;
-	font-size: 12px;
-	opacity: 0.8;
+	bottom: calc(var(--vide-controls-height) + 14px);
+	left: 12px;
+	background: rgba(0, 0, 0, 0.8);
+	padding: 6px 12px;
+	border-radius: 2px;
+	font-size: 14px;
+	font-weight: 500;
+	z-index: 3;
 }
 
 /* === Skip Button === */
 .vide-skip {
 	position: absolute;
-	bottom: calc(var(--vide-controls-height) + 8px);
-	right: 8px;
+	bottom: calc(var(--vide-controls-height) + 14px);
+	right: 12px;
 	appearance: none;
-	border: 1px solid rgba(255, 255, 255, 0.6);
-	background: var(--vide-bg);
-	color: var(--vide-text);
-	padding: 6px 16px;
-	font-size: 14px;
-	border-radius: 3px;
+	border: 1px solid rgba(255, 255, 255, 0.35);
+	background: rgba(0, 0, 0, 0.8);
+	color: var(--vide-skip-color);
+	padding: 10px 16px 10px 18px;
+	font-size: 15px;
+	font-weight: 500;
+	border-radius: 4px;
 	cursor: pointer;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	z-index: 3;
+	transition:
+		background var(--vide-transition),
+		border-color var(--vide-transition);
+	font-family: var(--vide-font-family);
+}
+
+.vide-skip:hover {
+	background: rgba(255, 255, 255, 0.2);
+	border-color: rgba(255, 255, 255, 0.6);
+}
+
+.vide-skip svg {
+	width: 20px;
+	height: 20px;
+	fill: var(--vide-skip-color);
+	flex-shrink: 0;
 }
 
 .vide-skip--disabled {
-	opacity: 0.5;
 	cursor: default;
 	pointer-events: none;
+	border-color: rgba(255, 255, 255, 0.15);
+	color: rgba(255, 255, 255, 0.4);
+	background: rgba(0, 0, 0, 0.6);
+}
+
+.vide-skip--disabled svg {
+	fill: rgba(255, 255, 255, 0.4);
+}
+
+/* === Ad progress bar color === */
+.vide-ui--ad-loading .vide-progress__bar,
+.vide-ui--ad-playing .vide-progress__bar,
+.vide-ui--ad-paused .vide-progress__bar {
+	background: var(--vide-accent-ad);
 }
 
 /* === Hide progress during ads === */

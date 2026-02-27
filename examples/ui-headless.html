@@ -23,6 +23,7 @@
       color: #0ff; width: 36px; height: 36px; border-radius: 50%;
       cursor: pointer; font-size: 14px;
     }
+    .vide-play svg { display: none; }
     .vide-play::after { content: "▶"; }
     .vide-play--playing::after { content: "⏸"; }
     .vide-progress {
@@ -48,12 +49,14 @@
       color: #0ff; width: 80px; height: 80px; border-radius: 50%;
       cursor: pointer; font-size: 24px;
     }
+    .vide-bigplay svg { display: none; }
     .vide-bigplay::after { content: "▶"; }
     .vide-ui--idle .vide-bigplay,
     .vide-ui--ready .vide-bigplay,
     .vide-ui--paused .vide-bigplay,
     .vide-ui--ended .vide-bigplay { display: flex; align-items: center; justify-content: center; }
 
+    .vide-clickplay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; cursor: pointer; }
     .vide-loader, .vide-error, .vide-poster, .vide-ad { display: none; }
     .vide-ui--loading .vide-loader,
     .vide-ui--buffering .vide-loader { display: flex; }

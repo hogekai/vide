@@ -1,4 +1,5 @@
 import type { Player } from "../../types.js";
+import { iconVolumeHigh, iconVolumeLow, iconVolumeMute } from "../icons.js";
 import type { UIComponent } from "../types.js";
 import { el } from "../utils.js";
 
@@ -8,6 +9,21 @@ export function createVolume(): UIComponent {
 	let slider: HTMLDivElement | null = null;
 	let player: Player | null = null;
 	let dragging = false;
+	let iconEl: SVGSVGElement | null = null;
+
+	function setIcon(): void {
+		if (!muteBtn || !player) return;
+		if (iconEl) iconEl.remove();
+		const muted = player.muted || player.volume === 0;
+		if (muted) {
+			iconEl = iconVolumeMute();
+		} else if (player.volume < 0.5) {
+			iconEl = iconVolumeLow();
+		} else {
+			iconEl = iconVolumeHigh();
+		}
+		muteBtn.appendChild(iconEl);
+	}
 
 	function syncUI(): void {
 		if (!player || !root || !muteBtn) return;
@@ -20,9 +36,11 @@ export function createVolume(): UIComponent {
 			muteBtn.setAttribute("aria-label", "Mute");
 		}
 		const vol = player.muted ? 0 : player.volume;
-		if (root) {
-			root.style.setProperty("--vide-volume", String(vol));
+		root.style.setProperty("--vide-volume", String(vol));
+		if (slider) {
+			slider.setAttribute("aria-valuenow", String(Math.round(vol * 100)));
 		}
+		setIcon();
 	}
 
 	function getRatio(e: PointerEvent): number {
@@ -73,6 +91,11 @@ export function createVolume(): UIComponent {
 			muteBtn.type = "button";
 			muteBtn.setAttribute("aria-label", "Mute");
 			slider = el("div", "vide-volume__slider");
+			slider.setAttribute("role", "slider");
+			slider.setAttribute("aria-label", "Volume");
+			slider.setAttribute("aria-valuemin", "0");
+			slider.setAttribute("aria-valuemax", "100");
+			slider.setAttribute("aria-valuenow", "100");
 			const track = el("div", "vide-volume__track");
 			const filled = el("div", "vide-volume__filled");
 			slider.appendChild(track);
@@ -107,6 +130,7 @@ export function createVolume(): UIComponent {
 				root = null;
 				muteBtn = null;
 				slider = null;
+				iconEl = null;
 			}
 		},
 	};

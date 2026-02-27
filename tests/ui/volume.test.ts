@@ -73,6 +73,38 @@ describe("createVolume", () => {
 		comp.destroy();
 	});
 
+	it("has ARIA slider attributes on volume slider", () => {
+		const container = document.createElement("div");
+		const comp = createVolume();
+		comp.mount(container);
+		const slider = container.querySelector<HTMLDivElement>(
+			".vide-volume__slider",
+		) as HTMLDivElement;
+		expect(slider.getAttribute("role")).toBe("slider");
+		expect(slider.getAttribute("aria-label")).toBe("Volume");
+		expect(slider.getAttribute("aria-valuemin")).toBe("0");
+		expect(slider.getAttribute("aria-valuemax")).toBe("100");
+		comp.destroy();
+	});
+
+	it("updates aria-valuenow on volume change", () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		const container = document.createElement("div");
+		const comp = createVolume();
+		comp.mount(container);
+		comp.connect(player);
+
+		player.volume = 0.7;
+		el.dispatchEvent(new Event("volumechange"));
+
+		const slider = container.querySelector<HTMLDivElement>(
+			".vide-volume__slider",
+		) as HTMLDivElement;
+		expect(slider.getAttribute("aria-valuenow")).toBe("70");
+		comp.destroy();
+	});
+
 	it("destroy removes the element", () => {
 		const container = document.createElement("div");
 		const comp = createVolume();

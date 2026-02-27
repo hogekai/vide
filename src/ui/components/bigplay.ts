@@ -1,4 +1,5 @@
 import type { Player } from "../../types.js";
+import { iconPlay } from "../icons.js";
 import type { UIComponent } from "../types.js";
 import { el } from "../utils.js";
 
@@ -30,6 +31,7 @@ export function createBigPlay(): UIComponent {
 			button = el("button", "vide-bigplay");
 			button.type = "button";
 			button.setAttribute("aria-label", "Play video");
+			button.appendChild(iconPlay());
 			container.appendChild(button);
 		},
 		connect(p: Player): void {
