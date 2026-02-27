@@ -5,6 +5,7 @@ export default defineConfig({
     index: "src/index.ts",
     "vast/index": "src/vast/index.ts",
     "vmap/index": "src/vmap/index.ts",
+    "omid/index": "src/omid/index.ts",
   },
   format: ["esm"],
   dts: true,

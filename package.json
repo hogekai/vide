@@ -15,6 +15,10 @@
     "./vmap": {
       "types": "./dist/vmap/index.d.ts",
       "import": "./dist/vmap/index.mjs"
+    },
+    "./omid": {
+      "types": "./dist/omid/index.d.ts",
+      "import": "./dist/omid/index.mjs"
     }
   },
   "files": [
