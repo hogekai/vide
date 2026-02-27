@@ -200,6 +200,40 @@ describe("hls plugin — hls.js integration", () => {
 	});
 });
 
+describe("hls plugin — <source> tag handling", () => {
+	it("source elements are removed after HLS handler claims via <source>", () => {
+		const el = makeVideo();
+		const source = document.createElement("source");
+		source.setAttribute("src", "https://example.com/stream.m3u8");
+		source.setAttribute("type", "application/vnd.apple.mpegurl");
+		el.appendChild(source);
+
+		const player = createPlayer(el);
+		player.use(hls());
+
+		expect(el.querySelectorAll("source").length).toBe(0);
+		expect(player.state).toBe("loading");
+	});
+
+	it("no spurious error from native load attempt with <source> tags", async () => {
+		const el = makeVideo();
+		const source = document.createElement("source");
+		source.setAttribute("src", "https://example.com/stream.m3u8");
+		source.setAttribute("type", "application/vnd.apple.mpegurl");
+		el.appendChild(source);
+
+		const player = createPlayer(el);
+		const errorHandler = vi.fn();
+		player.on("error", errorHandler);
+		player.use(hls());
+
+		await flushImport();
+
+		expect(errorHandler).not.toHaveBeenCalled();
+		expect(player.state).toBe("loading");
+	});
+});
+
 describe("hls plugin — lifecycle", () => {
 	it("destroys hls.js instance when source changes", async () => {
 		const el = makeVideo();

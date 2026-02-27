@@ -219,6 +219,11 @@ export function createPlayer(el: HTMLVideoElement): Player {
 					currentSrc = sourceUrl;
 					setState("loading");
 					handler.load(sourceUrl, el);
+					// Prevent the browser from attempting native loading
+					// of <source> elements the handler has claimed.
+					for (const s of sources) {
+						s.remove();
+					}
 					return;
 				}
 			}

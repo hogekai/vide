@@ -19,6 +19,64 @@ describe("createPlayer", () => {
 	});
 });
 
+describe("inferInitialState", () => {
+	it("starts in 'playing' when video is already playing", () => {
+		const el = makeVideo();
+		Object.defineProperty(el, "readyState", { value: 3, configurable: true });
+		Object.defineProperty(el, "paused", { value: false, configurable: true });
+		const player = createPlayer(el);
+		expect(player.state).toBe("playing");
+	});
+
+	it("starts in 'ready' when video has data but is paused", () => {
+		const el = makeVideo();
+		Object.defineProperty(el, "readyState", { value: 4, configurable: true });
+		Object.defineProperty(el, "paused", { value: true, configurable: true });
+		const player = createPlayer(el);
+		expect(player.state).toBe("ready");
+	});
+
+	it("starts in 'loading' when video has metadata", () => {
+		const el = makeVideo();
+		Object.defineProperty(el, "readyState", { value: 1, configurable: true });
+		const player = createPlayer(el);
+		expect(player.state).toBe("loading");
+	});
+});
+
+describe("autoplay scenarios", () => {
+	it("autoplay muted: loadstart→canplay→play transitions to playing", () => {
+		const el = makeVideo();
+		el.setAttribute("autoplay", "");
+		el.muted = true;
+		const player = createPlayer(el);
+		const states: string[] = [];
+		player.on("statechange", ({ to }: { to: string }) => states.push(to));
+
+		el.dispatchEvent(new Event("loadstart"));
+		el.dispatchEvent(new Event("canplay"));
+		el.dispatchEvent(new Event("play"));
+
+		expect(states).toEqual(["loading", "ready", "playing"]);
+		expect(player.state).toBe("playing");
+	});
+
+	it("autoplay blocked: play then immediate pause transitions to paused", () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		const states: string[] = [];
+		player.on("statechange", ({ to }: { to: string }) => states.push(to));
+
+		el.dispatchEvent(new Event("loadstart"));
+		el.dispatchEvent(new Event("canplay"));
+		el.dispatchEvent(new Event("play"));
+		el.dispatchEvent(new Event("pause"));
+
+		expect(states).toEqual(["loading", "ready", "playing", "paused"]);
+		expect(player.state).toBe("paused");
+	});
+});
+
 describe("state transitions", () => {
 	it("idle → loading on loadstart", () => {
 		const el = makeVideo();
@@ -577,6 +635,27 @@ describe("<source> element auto-processing", () => {
 			unload: vi.fn(),
 		});
 		expect(load).not.toHaveBeenCalled();
+	});
+
+	it("removes <source> elements after a handler claims one", () => {
+		const el = document.createElement("video");
+		const source1 = document.createElement("source");
+		source1.setAttribute("src", "https://example.com/stream.m3u8");
+		source1.setAttribute("type", "application/vnd.apple.mpegurl");
+		el.appendChild(source1);
+		const source2 = document.createElement("source");
+		source2.setAttribute("src", "https://example.com/fallback.mp4");
+		source2.setAttribute("type", "video/mp4");
+		el.appendChild(source2);
+
+		const player = createPlayer(el);
+		player.registerSourceHandler({
+			canHandle: (_url, type) => type === "application/vnd.apple.mpegurl",
+			load: vi.fn(),
+			unload: vi.fn(),
+		});
+
+		expect(el.querySelectorAll("source").length).toBe(0);
 	});
 
 	it("does not re-process sources if a handler already claimed one", () => {

@@ -92,7 +92,7 @@ export function dash(options: DashPluginOptions = {}): Plugin {
 							},
 						);
 
-						instance.initialize(videoElement, url, false);
+						instance.initialize(videoElement, url, videoElement.autoplay);
 					})
 					.catch((err: unknown) => {
 						if (destroyed) return;

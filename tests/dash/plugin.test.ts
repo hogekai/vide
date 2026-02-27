@@ -177,6 +177,51 @@ describe("dash plugin — dashjs integration", () => {
 	});
 });
 
+describe("dash plugin — autoplay", () => {
+	it("passes autoplay=true when video element has autoplay attribute", async () => {
+		const el = makeVideo();
+		el.autoplay = true;
+		const player = createPlayer(el);
+		player.use(dash());
+		player.src = "https://example.com/stream.mpd";
+		await flushImport();
+		expect(mockInstance.initialize).toHaveBeenCalledWith(
+			el,
+			"https://example.com/stream.mpd",
+			true,
+		);
+	});
+
+	it("passes autoplay=false when video element does not have autoplay", async () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		player.use(dash());
+		player.src = "https://example.com/stream.mpd";
+		await flushImport();
+		expect(mockInstance.initialize).toHaveBeenCalledWith(
+			el,
+			"https://example.com/stream.mpd",
+			false,
+		);
+	});
+});
+
+describe("dash plugin — <source> tag handling", () => {
+	it("source elements are removed after DASH handler claims via <source>", () => {
+		const el = makeVideo();
+		const source = document.createElement("source");
+		source.setAttribute("src", "https://example.com/stream.mpd");
+		source.setAttribute("type", "application/dash+xml");
+		el.appendChild(source);
+
+		const player = createPlayer(el);
+		player.use(dash());
+
+		expect(el.querySelectorAll("source").length).toBe(0);
+		expect(player.state).toBe("loading");
+	});
+});
+
 describe("dash plugin — lifecycle", () => {
 	it("destroys dashjs instance when source changes", async () => {
 		const el = makeVideo();
