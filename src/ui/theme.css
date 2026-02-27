@@ -1,35 +1,110 @@
-/* vide UI — YouTube-like Theme */
+/* ═══════════════════════════════════════════════════════════
+   vide UI — Theme
+   ═══════════════════════════════════════════════════════════
+   Every box-model property is explicit. Nothing relies on
+   browser defaults for sizing, spacing, or line-height.
+   ═══════════════════════════════════════════════════════════ */
 
 :root {
-	--vide-accent: #f00;
-	--vide-accent-ad: #fbbc04;
-	--vide-bg: rgba(0, 0, 0, 0.7);
+	/* ── Palette ── */
+	--vide-accent: #e03e52;
+	--vide-accent-hover: #ee4f62;
 	--vide-text: #fff;
+	--vide-text-mid: rgba(255, 255, 255, 0.72);
+	--vide-text-dim: rgba(255, 255, 255, 0.44);
+
+	/* ── Surfaces ── */
+	--vide-bg: rgba(0, 0, 0, 0.75);
+	--vide-chip: rgba(0, 0, 0, 0.88);
+	--vide-chip-light: rgba(0, 0, 0, 0.72);
+	--vide-hover: rgba(255, 255, 255, 0.08);
+
+	/* ── Layout ── */
 	--vide-controls-height: 48px;
+	--vide-controls-padding-x: 12px;
+	--vide-controls-padding-bottom: 6px;
+	--vide-controls-gap: 4px;
+
+	/* ── Typography ── */
+	--vide-font: -apple-system, "Helvetica Neue", "Segoe UI", sans-serif;
+	--vide-font-mono: ui-monospace, "SF Mono", "Cascadia Mono", monospace;
+	--vide-font-size: 13px;
+	--vide-font-size-sm: 11px;
+	--vide-font-size-xs: 10px;
+	--vide-line-height: 1;
+
+	/* ── Icons ── */
+	--vide-icon-size: 22px;
+	--vide-btn-size: 40px;
+	--vide-btn-padding: 8px;
+
+	/* ── Radius ── */
+	--vide-radius: 4px;
+	--vide-radius-sm: 3px;
+	--vide-radius-round: 50%;
+
+	/* ── Progress ── */
 	--vide-progress-height: 3px;
 	--vide-progress-height-hover: 5px;
-	--vide-font-size: 14px;
-	--vide-font-family: "YouTube Noto", Roboto, Arial, sans-serif;
-	--vide-icon-size: 24px;
-	--vide-transition: 0.2s ease;
-	--vide-skip-bg: rgba(0, 0, 0, 0.6);
+	--vide-progress-hit-area: 16px;
+	--vide-handle-size: 13px;
+
+	/* ── Easing ── */
+	--vide-ease: cubic-bezier(0.4, 0, 0.2, 1);
+	--vide-duration: 0.2s;
+	--vide-duration-fast: 0.12s;
+
+	/* ── Ad ── */
+	--vide-accent-ad: #f2c94c;
+	--vide-ad-label-stripe: 3px;
+	--vide-ad-label-pad-y: 6px;
+	--vide-ad-label-pad-x: 10px;
+	--vide-ad-overlay-gap: 12px;
+
+	/* ── Skip ── */
+	--vide-skip-bg: rgba(24, 24, 28, 0.85);
+	--vide-skip-border: rgba(255, 255, 255, 0.22);
 	--vide-skip-color: #fff;
+	--vide-skip-padding-y: 10px;
+	--vide-skip-padding-x: 16px;
+	--vide-skip-font-size: 14px;
+	--vide-skip-gap: 6px;
+	--vide-skip-icon-size: 18px;
 }
 
-/* === Root === */
+
+/* ═══════════════════════════════════════════
+   ROOT
+   ═══════════════════════════════════════════ */
+
 .vide-ui {
 	position: relative;
 	width: 100%;
 	height: 100%;
-	font-family: var(--vide-font-family);
+	margin: 0;
+	padding: 0;
+	font-family: var(--vide-font);
 	font-size: var(--vide-font-size);
+	line-height: var(--vide-line-height);
 	color: var(--vide-text);
 	user-select: none;
 	-webkit-user-select: none;
 	outline: none;
+	overflow: hidden;
+	box-sizing: border-box;
 }
 
-/* === Auto-hide: idle state === */
+.vide-ui *,
+.vide-ui *::before,
+.vide-ui *::after {
+	box-sizing: border-box;
+}
+
+
+/* ═══════════════════════════════════════════
+   IDLE
+   ═══════════════════════════════════════════ */
+
 .vide-ui--idle {
 	cursor: none;
 }
@@ -39,7 +114,11 @@
 	pointer-events: none;
 }
 
-/* === Controls Bar === */
+
+/* ═══════════════════════════════════════════
+   CONTROLS BAR
+   ═══════════════════════════════════════════ */
+
 .vide-controls {
 	position: absolute;
 	bottom: 0;
@@ -48,11 +127,18 @@
 	display: flex;
 	align-items: center;
 	flex-wrap: wrap;
-	height: var(--vide-controls-height);
-	padding: 0 12px;
-	background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+	gap: var(--vide-controls-gap);
+	min-height: var(--vide-controls-height);
+	margin: 0;
+	padding: 0 var(--vide-controls-padding-x) var(--vide-controls-padding-bottom);
+	background: linear-gradient(
+		to top,
+		rgba(0, 0, 0, 0.78) 0%,
+		rgba(0, 0, 0, 0.32) 60%,
+		transparent 100%
+	);
 	opacity: 0;
-	transition: opacity var(--vide-transition);
+	transition: opacity 0.25s var(--vide-ease);
 	z-index: 2;
 }
 
@@ -64,46 +150,69 @@
 	pointer-events: auto;
 }
 
-/* === SVG Icon Base === */
+
+/* ═══════════════════════════════════════════
+   ICON BASE
+   ═══════════════════════════════════════════ */
+
 .vide-controls button svg,
 .vide-bigplay svg,
 .vide-skip svg {
 	display: block;
 	width: var(--vide-icon-size);
 	height: var(--vide-icon-size);
+	margin: 0;
+	padding: 0;
 	fill: var(--vide-text);
 	pointer-events: none;
 }
 
-/* === Play Button === */
+
+/* ═══════════════════════════════════════════
+   PLAY BUTTON
+   ═══════════════════════════════════════════ */
+
 .vide-play {
 	appearance: none;
 	border: none;
 	background: none;
 	color: var(--vide-text);
 	cursor: pointer;
-	width: 36px;
-	height: 36px;
-	padding: 6px;
-	position: relative;
+	width: var(--vide-btn-size);
+	height: var(--vide-btn-size);
+	min-width: var(--vide-btn-size);
+	min-height: var(--vide-btn-size);
+	padding: var(--vide-btn-padding);
+	margin: 0;
 	flex-shrink: 0;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	border-radius: 50%;
-	transition: background var(--vide-transition);
+	border-radius: var(--vide-radius-round);
+	transition: background var(--vide-duration-fast);
 }
 
 .vide-play:hover {
-	background: rgba(255, 255, 255, 0.1);
+	background: var(--vide-hover);
 }
 
-/* === Progress Bar === */
+.vide-play:active {
+	opacity: 0.7;
+}
+
+
+/* ═══════════════════════════════════════════
+   PROGRESS BAR
+   ═══════════════════════════════════════════ */
+
 .vide-progress {
 	flex: 1;
 	order: -1;
 	width: 100%;
-	height: 14px;
+	height: var(--vide-progress-hit-area);
+	min-height: var(--vide-progress-hit-area);
+	margin: 0;
+	padding: 0;
 	display: flex;
 	align-items: center;
 	cursor: pointer;
@@ -111,14 +220,16 @@
 }
 
 .vide-progress__buffered,
-.vide-progress__bar,
-.vide-progress__handle {
+.vide-progress__bar {
 	position: absolute;
 	left: 0;
+	right: 0;
 	height: var(--vide-progress-height);
-	border-radius: calc(var(--vide-progress-height) / 2);
+	border-radius: 2px;
+	margin: 0;
+	padding: 0;
 	pointer-events: none;
-	transition: height var(--vide-transition);
+	transition: height 0.15s var(--vide-ease);
 }
 
 .vide-progress:hover .vide-progress__buffered,
@@ -129,57 +240,84 @@
 }
 
 .vide-progress__buffered {
-	right: 0;
-	background: rgba(255, 255, 255, 0.25);
+	background: rgba(255, 255, 255, 0.18);
 	transform: scaleX(var(--vide-progress-buffered, 0));
 	transform-origin: left;
 }
 
 .vide-progress__bar {
-	right: 0;
 	background: var(--vide-accent);
 	transform: scaleX(var(--vide-progress, 0));
 	transform-origin: left;
 }
 
 .vide-progress__handle {
-	width: 12px;
-	height: 12px;
-	border-radius: 50%;
+	position: absolute;
+	width: var(--vide-handle-size);
+	height: var(--vide-handle-size);
+	min-width: var(--vide-handle-size);
+	min-height: var(--vide-handle-size);
+	margin: 0;
+	padding: 0;
+	border: none;
+	border-radius: var(--vide-radius-round);
 	background: var(--vide-accent);
 	left: calc(var(--vide-progress, 0) * 100%);
-	transform: translateX(-50%);
+	transform: translateX(-50%) scale(0);
 	opacity: 0;
-	transition: opacity var(--vide-transition);
+	transition:
+		opacity var(--vide-duration-fast),
+		transform var(--vide-duration-fast) var(--vide-ease);
+	pointer-events: none;
 }
 
 .vide-progress:hover .vide-progress__handle,
 .vide-progress--dragging .vide-progress__handle {
 	opacity: 1;
+	transform: translateX(-50%) scale(1);
 }
 
 .vide-progress--disabled {
 	pointer-events: none;
-	opacity: 0.4;
+	opacity: 0.35;
 }
 
-/* === Time Display === */
+
+/* ═══════════════════════════════════════════
+   TIME
+   ═══════════════════════════════════════════ */
+
 .vide-time {
+	display: inline-flex;
+	align-items: center;
+	margin: 0;
+	padding: 0 2px;
+	font-family: var(--vide-font-mono);
 	font-variant-numeric: tabular-nums;
+	font-size: 12px;
+	line-height: 1;
 	white-space: nowrap;
 	flex-shrink: 0;
-	font-size: var(--vide-font-size);
+	color: var(--vide-text-mid);
 }
 
 .vide-time__separator {
+	display: inline;
 	margin: 0 2px;
-	opacity: 0.6;
+	opacity: 0.35;
 }
 
-/* === Volume === */
+
+/* ═══════════════════════════════════════════
+   VOLUME
+   ═══════════════════════════════════════════ */
+
 .vide-volume {
 	display: flex;
 	align-items: center;
+	gap: 0;
+	margin: 0;
+	padding: 0;
 	flex-shrink: 0;
 }
 
@@ -189,30 +327,34 @@
 	background: none;
 	color: var(--vide-text);
 	cursor: pointer;
-	width: 36px;
-	height: 36px;
-	padding: 6px;
-	position: relative;
+	width: var(--vide-btn-size);
+	height: var(--vide-btn-size);
+	min-width: var(--vide-btn-size);
+	min-height: var(--vide-btn-size);
+	padding: var(--vide-btn-padding);
+	margin: 0;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	border-radius: 50%;
-	transition: background var(--vide-transition);
+	border-radius: var(--vide-radius-round);
+	transition: background var(--vide-duration-fast);
 }
 
 .vide-volume__button:hover {
-	background: rgba(255, 255, 255, 0.1);
+	background: var(--vide-hover);
 }
 
 .vide-volume__slider {
 	width: 0;
 	height: 20px;
+	margin: 0;
+	padding: 0;
 	display: flex;
 	align-items: center;
 	cursor: pointer;
 	position: relative;
 	overflow: hidden;
-	transition: width var(--vide-transition);
+	transition: width var(--vide-duration) var(--vide-ease);
 }
 
 .vide-volume:hover .vide-volume__slider {
@@ -224,8 +366,10 @@
 	left: 0;
 	right: 0;
 	height: 3px;
-	border-radius: 1.5px;
-	background: rgba(255, 255, 255, 0.25);
+	margin: 0;
+	padding: 0;
+	border-radius: 2px;
+	background: rgba(255, 255, 255, 0.18);
 }
 
 .vide-volume__filled {
@@ -233,36 +377,49 @@
 	left: 0;
 	right: 0;
 	height: 3px;
-	border-radius: 1.5px;
+	margin: 0;
+	padding: 0;
+	border-radius: 2px;
 	background: var(--vide-text);
 	transform: scaleX(var(--vide-volume, 1));
 	transform-origin: left;
 }
 
-/* === Fullscreen === */
+
+/* ═══════════════════════════════════════════
+   FULLSCREEN
+   ═══════════════════════════════════════════ */
+
 .vide-fullscreen {
 	appearance: none;
 	border: none;
 	background: none;
 	color: var(--vide-text);
 	cursor: pointer;
-	width: 36px;
-	height: 36px;
-	padding: 6px;
+	width: var(--vide-btn-size);
+	height: var(--vide-btn-size);
+	min-width: var(--vide-btn-size);
+	min-height: var(--vide-btn-size);
+	padding: var(--vide-btn-padding);
+	margin: 0;
 	flex-shrink: 0;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	border-radius: 50%;
+	border-radius: var(--vide-radius-round);
 	margin-left: auto;
-	transition: background var(--vide-transition);
+	transition: background var(--vide-duration-fast);
 }
 
 .vide-fullscreen:hover {
-	background: rgba(255, 255, 255, 0.1);
+	background: var(--vide-hover);
 }
 
-/* === Big Play Button === */
+
+/* ═══════════════════════════════════════════
+   BIG PLAY
+   ═══════════════════════════════════════════ */
+
 .vide-bigplay {
 	display: none;
 	position: absolute;
@@ -271,25 +428,34 @@
 	transform: translate(-50%, -50%);
 	appearance: none;
 	border: none;
-	width: 68px;
-	height: 48px;
-	border-radius: 12px;
-	background: rgba(0, 0, 0, 0.6);
+	width: 64px;
+	height: 64px;
+	min-width: 64px;
+	min-height: 64px;
+	margin: 0;
+	padding: 0;
+	border-radius: var(--vide-radius-round);
+	background: rgba(0, 0, 0, 0.5);
 	color: var(--vide-text);
 	cursor: pointer;
 	align-items: center;
 	justify-content: center;
 	z-index: 1;
-	transition: background var(--vide-transition);
+	transition:
+		background var(--vide-duration-fast),
+		transform var(--vide-duration) var(--vide-ease);
 }
 
 .vide-bigplay:hover {
-	background: rgba(0, 0, 0, 0.4);
+	background: rgba(0, 0, 0, 0.65);
+	transform: translate(-50%, -50%) scale(1.06);
 }
 
 .vide-bigplay svg {
-	width: 32px;
-	height: 32px;
+	width: 28px;
+	height: 28px;
+	margin: 0 0 0 2px;
+	padding: 0;
 }
 
 .vide-ui--idle .vide-bigplay,
@@ -299,13 +465,19 @@
 	display: flex;
 }
 
-/* === Click-to-play Overlay === */
+
+/* ═══════════════════════════════════════════
+   CLICK-TO-PLAY
+   ═══════════════════════════════════════════ */
+
 .vide-clickplay {
 	position: absolute;
 	top: 0;
 	left: 0;
 	right: 0;
 	bottom: 0;
+	margin: 0;
+	padding: 0;
 	z-index: 1;
 	cursor: pointer;
 }
@@ -316,29 +488,35 @@
 	display: none;
 }
 
-/* === Loader === */
+
+/* ═══════════════════════════════════════════
+   LOADER
+   ═══════════════════════════════════════════ */
+
 .vide-loader {
 	display: none;
 	position: absolute;
 	top: 50%;
 	left: 50%;
 	transform: translate(-50%, -50%);
+	margin: 0;
+	padding: 0;
 	z-index: 1;
 }
 
 .vide-loader__spinner {
-	width: 40px;
-	height: 40px;
-	border: 3px solid transparent;
+	width: 36px;
+	height: 36px;
+	margin: 0;
+	padding: 0;
+	border: 2px solid transparent;
 	border-top-color: var(--vide-text);
-	border-radius: 50%;
-	animation: vide-spin 0.8s linear infinite;
+	border-radius: var(--vide-radius-round);
+	animation: vide-spin 0.7s linear infinite;
 }
 
 @keyframes vide-spin {
-	to {
-		transform: rotate(360deg);
-	}
+	to { transform: rotate(360deg); }
 }
 
 .vide-ui--loading .vide-loader,
@@ -347,18 +525,25 @@
 	display: flex;
 }
 
-/* === Error Display === */
+
+/* ═══════════════════════════════════════════
+   ERROR
+   ═══════════════════════════════════════════ */
+
 .vide-error {
 	display: none;
 	position: absolute;
 	top: 50%;
 	left: 50%;
 	transform: translate(-50%, -50%);
-	background: var(--vide-bg);
+	margin: 0;
 	padding: 16px 24px;
-	border-radius: 4px;
+	background: rgba(0, 0, 0, 0.85);
+	border-radius: var(--vide-radius);
 	text-align: center;
 	max-width: 80%;
+	font-size: 13px;
+	line-height: 1.5;
 	z-index: 3;
 }
 
@@ -366,7 +551,11 @@
 	display: flex;
 }
 
-/* === Poster === */
+
+/* ═══════════════════════════════════════════
+   POSTER
+   ═══════════════════════════════════════════ */
+
 .vide-poster {
 	display: none;
 	position: absolute;
@@ -374,11 +563,16 @@
 	left: 0;
 	right: 0;
 	bottom: 0;
+	margin: 0;
+	padding: 0;
 }
 
 .vide-poster__image {
+	display: block;
 	width: 100%;
 	height: 100%;
+	margin: 0;
+	padding: 0;
 	object-fit: cover;
 }
 
@@ -387,7 +581,17 @@
 	display: block;
 }
 
-/* === Ad Layer === */
+
+/* ═══════════════════════════════════════════════════════════
+
+   A D    S T A T E
+
+   Design: opaque chips, yellow left-stripe on label,
+   semi-transparent dark skip with clear border.
+   All sizes explicit.
+
+   ═══════════════════════════════════════════════════════════ */
+
 .vide-ad {
 	display: none;
 }
@@ -398,102 +602,281 @@
 	display: block;
 }
 
-/* === Ad Overlay === */
+
+/* ── Ad overlay (click-through) ── */
+
 .vide-ad-overlay {
 	position: absolute;
 	top: 0;
 	left: 0;
 	right: 0;
 	bottom: var(--vide-controls-height);
+	margin: 0;
+	padding: 0;
 	cursor: pointer;
 	z-index: 3;
 }
 
-/* === Ad Label === */
+
+/* ─────────────────────────────────────────
+   Ad Label
+   Solid black chip + yellow left stripe.
+   ───────────────────────────────────────── */
+
 .vide-ad-label {
 	position: absolute;
-	top: 12px;
-	left: 12px;
-	background: rgba(0, 0, 0, 0.8);
-	padding: 6px 12px;
-	border-radius: 2px;
-	font-size: 14px;
-	font-weight: 500;
-	z-index: 3;
+	top: var(--vide-ad-overlay-gap);
+	left: var(--vide-ad-overlay-gap);
+	z-index: 4;
+
+	display: inline-flex;
+	align-items: stretch;
+	overflow: hidden;
+	margin: 0;
+
+	background: var(--vide-chip);
+	border-radius: var(--vide-radius-sm);
+	padding: var(--vide-ad-label-pad-y) var(--vide-ad-label-pad-x) var(--vide-ad-label-pad-y) 0;
+
+	font-family: var(--vide-font);
+	font-size: var(--vide-font-size-sm);
+	font-weight: 600;
+	letter-spacing: 0.03em;
+	line-height: var(--vide-line-height);
+	color: var(--vide-text);
+	gap: 7px;
 }
 
-/* === Ad Countdown === */
+/* Yellow left stripe */
+.vide-ad-label::before {
+	content: "";
+	display: block;
+	width: var(--vide-ad-label-stripe);
+	min-height: 100%;
+	margin: 0;
+	padding: 0;
+	background: var(--vide-accent-ad);
+	flex-shrink: 0;
+}
+
+
+
+/* ─────────────────────────────────────────
+   Ad Countdown
+   Stacked below label. Same chip language.
+   ───────────────────────────────────────── */
+
 .vide-ad-countdown {
 	position: absolute;
-	bottom: calc(var(--vide-controls-height) + 14px);
-	left: 12px;
-	background: rgba(0, 0, 0, 0.8);
-	padding: 6px 12px;
-	border-radius: 2px;
-	font-size: 14px;
-	font-weight: 500;
-	z-index: 3;
+	top: calc(var(--vide-ad-overlay-gap) + 30px);
+	left: var(--vide-ad-overlay-gap);
+	z-index: 4;
+
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	margin: 0;
+
+	background: var(--vide-chip-light);
+	border-radius: var(--vide-radius-sm);
+	padding: 5px 9px;
+
+	font-family: var(--vide-font-mono);
+	font-size: var(--vide-font-size-sm);
+	font-weight: 400;
+	line-height: var(--vide-line-height);
+	color: var(--vide-text-dim);
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
 }
 
-/* === Skip Button === */
+.vide-ad-countdown strong {
+	color: var(--vide-text);
+	font-weight: 600;
+}
+
+
+/* ─────────────────────────────────────────
+   Skip Button
+   Dark semi-transparent + visible border.
+   NOT white. Clearly tappable via border
+   contrast and text weight.
+   ───────────────────────────────────────── */
+
 .vide-skip {
 	position: absolute;
-	bottom: calc(var(--vide-controls-height) + 14px);
-	right: 12px;
-	appearance: none;
-	border: 1px solid rgba(255, 255, 255, 0.35);
-	background: rgba(0, 0, 0, 0.8);
-	color: var(--vide-skip-color);
-	padding: 10px 16px 10px 18px;
-	font-size: 15px;
-	font-weight: 500;
-	border-radius: 4px;
-	cursor: pointer;
-	display: flex;
-	align-items: center;
-	gap: 6px;
-	z-index: 3;
-	transition:
-		background var(--vide-transition),
-		border-color var(--vide-transition);
-	font-family: var(--vide-font-family);
-}
+	bottom: calc(var(--vide-controls-height) + var(--vide-ad-overlay-gap));
+	right: var(--vide-ad-overlay-gap);
+	z-index: 4;
 
-.vide-skip:hover {
-	background: rgba(255, 255, 255, 0.2);
-	border-color: rgba(255, 255, 255, 0.6);
+	appearance: none;
+	margin: 0;
+	border: 1px solid var(--vide-skip-border);
+	background: var(--vide-skip-bg);
+	color: var(--vide-skip-color);
+	border-radius: var(--vide-radius-sm);
+
+	padding: var(--vide-skip-padding-y) var(--vide-skip-padding-x);
+	min-height: 40px;
+	min-width: 0;
+
+	font-family: var(--vide-font);
+	font-size: var(--vide-skip-font-size);
+	font-weight: 500;
+	line-height: var(--vide-line-height);
+	letter-spacing: 0;
+	white-space: nowrap;
+
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	gap: var(--vide-skip-gap);
+
+	transition:
+		background var(--vide-duration-fast),
+		border-color var(--vide-duration-fast);
 }
 
 .vide-skip svg {
-	width: 20px;
-	height: 20px;
+	width: var(--vide-skip-icon-size);
+	height: var(--vide-skip-icon-size);
+	min-width: var(--vide-skip-icon-size);
+	min-height: var(--vide-skip-icon-size);
+	margin: 0;
+	padding: 0;
 	fill: var(--vide-skip-color);
 	flex-shrink: 0;
 }
 
+.vide-skip:hover {
+	background: rgba(60, 60, 68, 0.95);
+	border-color: rgba(255, 255, 255, 0.48);
+}
+
+.vide-skip:active {
+	background: rgba(18, 18, 22, 0.85);
+}
+
+/* Disabled (countdown still running) */
 .vide-skip--disabled {
 	cursor: default;
 	pointer-events: none;
-	border-color: rgba(255, 255, 255, 0.15);
-	color: rgba(255, 255, 255, 0.4);
-	background: rgba(0, 0, 0, 0.6);
+	border-color: rgba(255, 255, 255, 0.1);
+	background: rgba(0, 0, 0, 0.5);
+	color: var(--vide-text-dim);
 }
 
 .vide-skip--disabled svg {
-	fill: rgba(255, 255, 255, 0.4);
+	fill: var(--vide-text-dim);
 }
 
-/* === Ad progress bar color === */
+
+/* ─────────────────────────────────────────
+   Ad CTA (companion card)
+   ───────────────────────────────────────── */
+
+.vide-ad-cta {
+	position: absolute;
+	bottom: calc(var(--vide-controls-height) + var(--vide-ad-overlay-gap));
+	left: var(--vide-ad-overlay-gap);
+	z-index: 4;
+
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	margin: 0;
+
+	background: var(--vide-chip);
+	border: 1px solid rgba(255, 255, 255, 0.06);
+	border-radius: var(--vide-radius);
+	padding: 8px 12px;
+	min-height: 44px;
+
+	cursor: pointer;
+	text-decoration: none;
+	color: var(--vide-text);
+
+	transition: border-color var(--vide-duration-fast);
+}
+
+.vide-ad-cta:hover {
+	border-color: rgba(255, 255, 255, 0.14);
+}
+
+.vide-ad-cta__icon {
+	width: 30px;
+	height: 30px;
+	min-width: 30px;
+	min-height: 30px;
+	margin: 0;
+	padding: 0;
+	border-radius: var(--vide-radius-sm);
+	background: var(--vide-accent-ad);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+.vide-ad-cta__icon svg {
+	width: 14px;
+	height: 14px;
+	margin: 0;
+	padding: 0;
+	fill: #000;
+}
+
+.vide-ad-cta__body {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	margin: 0;
+	padding: 0;
+}
+
+.vide-ad-cta__title {
+	display: block;
+	margin: 0;
+	padding: 0;
+	font-size: 12px;
+	font-weight: 500;
+	line-height: 1.3;
+	color: var(--vide-text);
+}
+
+.vide-ad-cta__url {
+	display: block;
+	margin: 0;
+	padding: 0;
+	font-size: var(--vide-font-size-xs);
+	font-weight: 400;
+	line-height: 1.2;
+	color: var(--vide-text-dim);
+}
+
+
+/* ── Ad progress accent ── */
+
 .vide-ui--ad-loading .vide-progress__bar,
 .vide-ui--ad-playing .vide-progress__bar,
 .vide-ui--ad-paused .vide-progress__bar {
 	background: var(--vide-accent-ad);
 }
 
-/* === Hide progress during ads === */
+.vide-ui--ad-loading .vide-progress__handle,
+.vide-ui--ad-playing .vide-progress__handle,
+.vide-ui--ad-paused .vide-progress__handle {
+	display: none;
+}
+
 .vide-ui--ad-loading .vide-progress,
 .vide-ui--ad-playing .vide-progress,
 .vide-ui--ad-paused .vide-progress {
 	pointer-events: none;
-	opacity: 0.3;
+}
+
+.vide-ui--ad-loading .vide-progress__buffered,
+.vide-ui--ad-playing .vide-progress__buffered,
+.vide-ui--ad-paused .vide-progress__buffered {
+	opacity: 0.25;
 }
