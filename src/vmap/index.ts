@@ -11,6 +11,7 @@ export type {
 	VmapResponse,
 	AdBreak,
 	AdBreakTimeOffset,
+	AdBreakTrackingEvents,
 	AdSource,
 } from "./types.js";
 export { parseVmap } from "./parser.js";
@@ -32,6 +33,10 @@ export function vmap(options: VmapPluginOptions): Plugin {
 			async function playAdForBreak(adBreak: AdBreak): Promise<void> {
 				if (aborted || !adBreak.adSource) return;
 				if (schedulerRef) schedulerRef.pause();
+
+				// Fire breakStart tracking
+				track(adBreak.trackingEvents.breakStart);
+				player.emit("ad:breakStart", { breakId: adBreak.breakId });
 
 				try {
 					let response: VastResponse;
@@ -84,6 +89,7 @@ export function vmap(options: VmapPluginOptions): Plugin {
 					for (const ad of response.ads) {
 						track(ad.impressions);
 					}
+					player.emit("ad:impression", { adId });
 
 					const mediaFile = selectMediaFile(linear.mediaFiles);
 					if (!mediaFile) {
@@ -103,17 +109,78 @@ export function vmap(options: VmapPluginOptions): Plugin {
 						if (!linear) return;
 						const urls = linear.trackingEvents[event];
 						if (urls) track(urls);
+						player.emit("ad:quartile", { adId, quartile: event });
 					});
+
+					// Progress tracking (offset-based, each fires once)
+					const firedProgress = new Set<number>();
+					function checkProgress(currentTime: number): void {
+						if (!linear) return;
+						for (const p of linear.trackingEvents.progress) {
+							if (
+								!firedProgress.has(p.offset) &&
+								currentTime >= p.offset
+							) {
+								firedProgress.add(p.offset);
+								track([p.url]);
+							}
+						}
+					}
+
+					// Mute/unmute tracking
+					let wasMuted =
+						player.el.muted || player.el.volume === 0;
+
+					// Fullscreen tracking
+					let wasFullscreen = !!document.fullscreenElement;
 
 					await new Promise<void>((resolve) => {
 						function onAdTimeUpdate(): void {
 							tracker(player.el.currentTime);
+							checkProgress(player.el.currentTime);
+						}
+
+						function onAdVolumeChange(): void {
+							if (!linear) return;
+							const nowMuted =
+								player.el.muted || player.el.volume === 0;
+							if (nowMuted && !wasMuted) {
+								track(linear.trackingEvents.mute);
+								player.emit("ad:mute", { adId });
+							} else if (!nowMuted && wasMuted) {
+								track(linear.trackingEvents.unmute);
+								player.emit("ad:unmute", { adId });
+							}
+							wasMuted = nowMuted;
+							player.emit("ad:volumeChange", {
+								adId,
+								volume: player.el.muted ? 0 : player.el.volume,
+							});
+						}
+
+						function onAdFullscreenChange(): void {
+							if (!linear) return;
+							const isFullscreen = !!document.fullscreenElement;
+							if (isFullscreen && !wasFullscreen) {
+								track(linear.trackingEvents.playerExpand);
+								player.emit("ad:fullscreen", {
+									adId,
+									fullscreen: true,
+								});
+							} else if (!isFullscreen && wasFullscreen) {
+								track(linear.trackingEvents.playerCollapse);
+								player.emit("ad:fullscreen", {
+									adId,
+									fullscreen: false,
+								});
+							}
+							wasFullscreen = isFullscreen;
 						}
 
 						function onAdEnded(): void {
+							if (linear) tracker(linear.duration);
 							cleanup();
 							cleanupAdPlugins();
-							if (linear) track(linear.trackingEvents.complete);
 							player.emit("ad:end", { adId });
 
 							player.el.src = prevSrc;
@@ -129,17 +196,36 @@ export function vmap(options: VmapPluginOptions): Plugin {
 						}
 
 						function cleanup(): void {
-							player.el.removeEventListener("timeupdate", onAdTimeUpdate);
+							player.el.removeEventListener(
+								"timeupdate",
+								onAdTimeUpdate,
+							);
 							player.el.removeEventListener("ended", onAdEnded);
-							player.el.removeEventListener("canplay", onAdCanPlay);
+							player.el.removeEventListener(
+								"canplay",
+								onAdCanPlay,
+							);
+							player.el.removeEventListener(
+								"volumechange",
+								onAdVolumeChange,
+							);
+							document.removeEventListener(
+								"fullscreenchange",
+								onAdFullscreenChange,
+							);
 							adCleanup = null;
 						}
 
 						function onAdCanPlay(): void {
-							player.el.removeEventListener("canplay", onAdCanPlay);
+							player.el.removeEventListener(
+								"canplay",
+								onAdCanPlay,
+							);
 							if (!linear) return;
+							track(linear.trackingEvents.loaded);
+							track(linear.trackingEvents.creativeView);
+							player.emit("ad:loaded", { adId });
 							setState("ad:playing");
-							track(linear.trackingEvents.start);
 							player.el.play().catch(() => {
 								player.el.muted = true;
 								player.el.play().catch(() => {});
@@ -147,14 +233,38 @@ export function vmap(options: VmapPluginOptions): Plugin {
 						}
 
 						player.el.addEventListener("canplay", onAdCanPlay);
-						player.el.addEventListener("timeupdate", onAdTimeUpdate);
+						player.el.addEventListener(
+							"timeupdate",
+							onAdTimeUpdate,
+						);
 						player.el.addEventListener("ended", onAdEnded);
+						player.el.addEventListener(
+							"volumechange",
+							onAdVolumeChange,
+						);
+						document.addEventListener(
+							"fullscreenchange",
+							onAdFullscreenChange,
+						);
 						adCleanup = cleanup;
 
 						player.el.src = mediaFile.url;
 						player.el.load();
 					});
+				} catch (err) {
+					if (!aborted) {
+						track(adBreak.trackingEvents.error);
+						player.emit("ad:error", {
+							error:
+								err instanceof Error
+									? err
+									: new Error(String(err)),
+						});
+					}
 				} finally {
+					// Fire breakEnd tracking
+					track(adBreak.trackingEvents.breakEnd);
+					player.emit("ad:breakEnd", { breakId: adBreak.breakId });
 					if (schedulerRef) schedulerRef.resume();
 				}
 			}

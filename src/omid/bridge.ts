@@ -1,5 +1,4 @@
-import type { Player, PlayerState } from "../types.js";
-import { createQuartileTracker } from "../vast/tracker.js";
+import type { AdQuartile, Player, PlayerState } from "../types.js";
 import type { OmidSession } from "./session.js";
 import type { OmidVideoPlayerState } from "./types.js";
 
@@ -18,25 +17,22 @@ export function createOmidBridge(
 	let active = true;
 
 	// --- Immediate dispatches ---
+	// These fire immediately because the OMID bridge initialises asynchronously
+	// and may miss PlayerEventMap events that fire before subscription.
 	session.adEvents.loaded(session.vastProperties);
 	session.adEvents.impressionOccurred();
 	session.mediaEvents.start(adDuration, player.el.muted ? 0 : player.el.volume);
 
-	// --- Quartile tracking ---
-	const trackQuartile = createQuartileTracker(adDuration, (event) => {
+	// --- Quartile tracking via PlayerEventMap ---
+	function onAdQuartile(data: { adId: string; quartile: AdQuartile }): void {
 		if (!active) return;
-		if (event === "firstQuartile") session.mediaEvents.firstQuartile();
-		else if (event === "midpoint") session.mediaEvents.midpoint();
-		else if (event === "thirdQuartile") session.mediaEvents.thirdQuartile();
+		if (data.quartile === "firstQuartile") session.mediaEvents.firstQuartile();
+		else if (data.quartile === "midpoint") session.mediaEvents.midpoint();
+		else if (data.quartile === "thirdQuartile") session.mediaEvents.thirdQuartile();
 		// 'start' and 'complete' are dispatched separately
-	});
+	}
 
 	// --- Player event handlers ---
-
-	function onTimeUpdate(data: { currentTime: number }): void {
-		if (!active) return;
-		trackQuartile(data.currentTime);
-	}
 
 	function onStateChange(data: {
 		from: PlayerState;
@@ -78,41 +74,41 @@ export function createOmidBridge(
 		session.finish();
 	}
 
-	// --- HTMLVideoElement events (forwarded via player.on fallback) ---
+	// --- Volume & fullscreen via PlayerEventMap ---
 
-	function onVolumeChange(): void {
+	function onAdVolumeChange(data: { volume: number }): void {
 		if (!active) return;
-		session.mediaEvents.volumeChange(player.el.muted ? 0 : player.el.volume);
+		session.mediaEvents.volumeChange(data.volume);
 	}
 
-	function onFullscreenChange(): void {
+	function onAdFullscreen(data: { fullscreen: boolean }): void {
 		if (!active) return;
-		const state: OmidVideoPlayerState = document.fullscreenElement
+		const state: OmidVideoPlayerState = data.fullscreen
 			? "fullscreen"
 			: "normal";
 		session.mediaEvents.playerStateChange(state);
 	}
 
 	// --- Subscribe ---
-	player.on("timeupdate", onTimeUpdate);
+	player.on("ad:quartile", onAdQuartile);
 	player.on("statechange", onStateChange);
 	player.on("ad:end", onAdEnd);
 	player.on("ad:skip", onAdSkip);
 	player.on("ad:error", onAdError);
 	player.on("destroy", onDestroy);
-	player.on("volumechange", onVolumeChange);
-	document.addEventListener("fullscreenchange", onFullscreenChange);
+	player.on("ad:volumeChange", onAdVolumeChange);
+	player.on("ad:fullscreen", onAdFullscreen);
 
 	// --- Cleanup ---
 	return () => {
 		active = false;
-		player.off("timeupdate", onTimeUpdate);
+		player.off("ad:quartile", onAdQuartile);
 		player.off("statechange", onStateChange);
 		player.off("ad:end", onAdEnd);
 		player.off("ad:skip", onAdSkip);
 		player.off("ad:error", onAdError);
 		player.off("destroy", onDestroy);
-		player.off("volumechange", onVolumeChange);
-		document.removeEventListener("fullscreenchange", onFullscreenChange);
+		player.off("ad:volumeChange", onAdVolumeChange);
+		player.off("ad:fullscreen", onAdFullscreen);
 	};
 }

@@ -570,6 +570,112 @@ describe("parseVast — InteractiveCreativeFile", () => {
 	});
 });
 
+describe("parseVast — extended tracking events", () => {
+	it("parses loaded, mute, unmute, rewind, playerExpand, playerCollapse, closeLinear, creativeView", () => {
+		const xml = `<?xml version="1.0"?>
+<VAST version="4.1">
+  <Ad id="ad-events">
+    <InLine>
+      <AdSystem>Test</AdSystem>
+      <AdTitle>Events Ad</AdTitle>
+      <Impression><![CDATA[http://example.com/imp]]></Impression>
+      <Creatives>
+        <Creative>
+          <Linear>
+            <Duration>00:00:30</Duration>
+            <MediaFiles>
+              <MediaFile delivery="progressive" type="video/mp4" width="640" height="360">
+                <![CDATA[http://example.com/ad.mp4]]>
+              </MediaFile>
+            </MediaFiles>
+            <TrackingEvents>
+              <Tracking event="loaded"><![CDATA[http://example.com/loaded]]></Tracking>
+              <Tracking event="mute"><![CDATA[http://example.com/mute]]></Tracking>
+              <Tracking event="unmute"><![CDATA[http://example.com/unmute]]></Tracking>
+              <Tracking event="rewind"><![CDATA[http://example.com/rewind]]></Tracking>
+              <Tracking event="playerExpand"><![CDATA[http://example.com/expand]]></Tracking>
+              <Tracking event="playerCollapse"><![CDATA[http://example.com/collapse]]></Tracking>
+              <Tracking event="closeLinear"><![CDATA[http://example.com/close]]></Tracking>
+              <Tracking event="creativeView"><![CDATA[http://example.com/creativeView]]></Tracking>
+              <Tracking event="notUsed"><![CDATA[http://example.com/notUsed]]></Tracking>
+              <Tracking event="otherAdInteraction"><![CDATA[http://example.com/other]]></Tracking>
+            </TrackingEvents>
+          </Linear>
+        </Creative>
+      </Creatives>
+    </InLine>
+  </Ad>
+</VAST>`;
+		const result = parseVast(xml);
+		const events = result.ads[0].creatives[0].linear!.trackingEvents;
+		expect(events.loaded).toEqual(["http://example.com/loaded"]);
+		expect(events.mute).toEqual(["http://example.com/mute"]);
+		expect(events.unmute).toEqual(["http://example.com/unmute"]);
+		expect(events.rewind).toEqual(["http://example.com/rewind"]);
+		expect(events.playerExpand).toEqual(["http://example.com/expand"]);
+		expect(events.playerCollapse).toEqual(["http://example.com/collapse"]);
+		expect(events.closeLinear).toEqual(["http://example.com/close"]);
+		expect(events.creativeView).toEqual([
+			"http://example.com/creativeView",
+		]);
+		expect(events.notUsed).toEqual(["http://example.com/notUsed"]);
+		expect(events.otherAdInteraction).toEqual([
+			"http://example.com/other",
+		]);
+	});
+
+	it("parses progress events with offsets", () => {
+		const xml = `<?xml version="1.0"?>
+<VAST version="4.1">
+  <Ad id="ad-progress">
+    <InLine>
+      <AdSystem>Test</AdSystem>
+      <AdTitle>Progress Ad</AdTitle>
+      <Impression><![CDATA[http://example.com/imp]]></Impression>
+      <Creatives>
+        <Creative>
+          <Linear>
+            <Duration>00:00:30</Duration>
+            <MediaFiles>
+              <MediaFile delivery="progressive" type="video/mp4" width="640" height="360">
+                <![CDATA[http://example.com/ad.mp4]]>
+              </MediaFile>
+            </MediaFiles>
+            <TrackingEvents>
+              <Tracking event="progress" offset="00:00:05"><![CDATA[http://example.com/progress5]]></Tracking>
+              <Tracking event="progress" offset="00:00:10"><![CDATA[http://example.com/progress10]]></Tracking>
+            </TrackingEvents>
+          </Linear>
+        </Creative>
+      </Creatives>
+    </InLine>
+  </Ad>
+</VAST>`;
+		const result = parseVast(xml);
+		const events = result.ads[0].creatives[0].linear!.trackingEvents;
+		expect(events.progress).toEqual([
+			{ offset: 5, url: "http://example.com/progress5" },
+			{ offset: 10, url: "http://example.com/progress10" },
+		]);
+	});
+
+	it("returns empty arrays for new tracking events when absent", () => {
+		const result = parseVast(SAMPLE_VAST);
+		const events = result.ads[0].creatives[0].linear!.trackingEvents;
+		expect(events.loaded).toEqual([]);
+		expect(events.mute).toEqual([]);
+		expect(events.unmute).toEqual([]);
+		expect(events.rewind).toEqual([]);
+		expect(events.playerExpand).toEqual([]);
+		expect(events.playerCollapse).toEqual([]);
+		expect(events.closeLinear).toEqual([]);
+		expect(events.notUsed).toEqual([]);
+		expect(events.otherAdInteraction).toEqual([]);
+		expect(events.creativeView).toEqual([]);
+		expect(events.progress).toEqual([]);
+	});
+});
+
 describe("parseDuration", () => {
 	it("parses HH:MM:SS", () => {
 		expect(parseDuration("00:00:30")).toBe(30);

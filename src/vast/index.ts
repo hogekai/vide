@@ -5,6 +5,7 @@ import type { VastAd, VastLinear, VastPluginOptions } from "./types.js";
 
 export type {
 	VastPluginOptions,
+	VastProgressEvent,
 	AdPlugin,
 	ResolveOptions,
 	AdVerification,
@@ -79,6 +80,7 @@ export function vast(options: VastPluginOptions): Plugin {
 					for (const ad of response.ads) {
 						track(ad.impressions);
 					}
+					player.emit("ad:impression", { adId });
 
 					// Select best media file (prefer mp4, highest bitrate)
 					const mediaFile = selectMediaFile(linear.mediaFiles);
@@ -100,11 +102,29 @@ export function vast(options: VastPluginOptions): Plugin {
 						(event) => {
 							if (!linear) return;
 							const urls = linear.trackingEvents[event];
-							if (urls) {
-								track(urls);
-							}
+							if (urls) track(urls);
+							player.emit("ad:quartile", { adId, quartile: event });
 						},
 					);
+
+					// Progress tracking (offset-based, each fires once)
+					const firedProgress = new Set<number>();
+					function checkProgress(currentTime: number): void {
+						if (!linear) return;
+						for (const p of linear.trackingEvents.progress) {
+							if (!firedProgress.has(p.offset) && currentTime >= p.offset) {
+								firedProgress.add(p.offset);
+								track([p.url]);
+							}
+						}
+					}
+
+					// Mute/unmute tracking
+					let wasMuted =
+						player.el.muted || player.el.volume === 0;
+
+					// Fullscreen tracking
+					let wasFullscreen = !!document.fullscreenElement;
 
 					// --- Ad ended: restore content ---
 					let adEnding = false;
@@ -173,9 +193,43 @@ export function vast(options: VastPluginOptions): Plugin {
 						}
 					}
 
-					// --- Time update: quartiles ---
+					// --- Time update: quartiles + progress ---
 					function onAdTimeUpdate(): void {
 						quartileTracker(player.el.currentTime);
+						checkProgress(player.el.currentTime);
+					}
+
+					// --- Mute / Unmute tracking ---
+					function onAdVolumeChange(): void {
+						if (!linear || adEnding) return;
+						const nowMuted =
+							player.el.muted || player.el.volume === 0;
+						if (nowMuted && !wasMuted) {
+							track(linear.trackingEvents.mute);
+							player.emit("ad:mute", { adId });
+						} else if (!nowMuted && wasMuted) {
+							track(linear.trackingEvents.unmute);
+							player.emit("ad:unmute", { adId });
+						}
+						wasMuted = nowMuted;
+						player.emit("ad:volumeChange", {
+							adId,
+							volume: player.el.muted ? 0 : player.el.volume,
+						});
+					}
+
+					// --- Fullscreen tracking ---
+					function onAdFullscreenChange(): void {
+						if (!linear || adEnding) return;
+						const isFullscreen = !!document.fullscreenElement;
+						if (isFullscreen && !wasFullscreen) {
+							track(linear.trackingEvents.playerExpand);
+							player.emit("ad:fullscreen", { adId, fullscreen: true });
+						} else if (!isFullscreen && wasFullscreen) {
+							track(linear.trackingEvents.playerCollapse);
+							player.emit("ad:fullscreen", { adId, fullscreen: false });
+						}
+						wasFullscreen = isFullscreen;
 					}
 
 					function onAdError(): void {
@@ -192,18 +246,19 @@ export function vast(options: VastPluginOptions): Plugin {
 					function onAdEnded(): void {
 						if (adEnding) return;
 						adEnding = true;
+						if (linear) quartileTracker(linear.duration);
 						cleanup();
 						cleanupAdPlugins();
-						if (!linear) return;
-						track(linear.trackingEvents.complete);
 						endAd();
 					}
 
 					function onAdCanPlay(): void {
 						player.el.removeEventListener("canplay", onAdCanPlay);
 						if (!linear) return;
+						track(linear.trackingEvents.loaded);
+						track(linear.trackingEvents.creativeView);
+						player.emit("ad:loaded", { adId });
 						setState("ad:playing");
-						track(linear.trackingEvents.start);
 						player.el.play().catch(() => {
 							player.el.muted = true;
 							player.el.play().catch(() => {});
@@ -218,6 +273,14 @@ export function vast(options: VastPluginOptions): Plugin {
 						player.el.removeEventListener("pause", onAdPause);
 						player.el.removeEventListener("play", onAdPlay);
 						player.el.removeEventListener("click", onAdClick);
+						player.el.removeEventListener(
+							"volumechange",
+							onAdVolumeChange,
+						);
+						document.removeEventListener(
+							"fullscreenchange",
+							onAdFullscreenChange,
+						);
 						player.off("ad:skip", onAdSkip);
 					}
 
@@ -228,6 +291,11 @@ export function vast(options: VastPluginOptions): Plugin {
 					player.el.addEventListener("pause", onAdPause);
 					player.el.addEventListener("play", onAdPlay);
 					player.el.addEventListener("click", onAdClick);
+					player.el.addEventListener("volumechange", onAdVolumeChange);
+					document.addEventListener(
+						"fullscreenchange",
+						onAdFullscreenChange,
+					);
 					player.on("ad:skip", onAdSkip);
 					adCleanup = cleanup;
 

@@ -13,6 +13,13 @@ export type PlayerState =
 	| "error";
 
 // === Events ===
+export type AdQuartile =
+	| "start"
+	| "firstQuartile"
+	| "midpoint"
+	| "thirdQuartile"
+	| "complete";
+
 export interface PlayerEventMap {
 	statechange: { from: PlayerState; to: PlayerState };
 	play: void;
@@ -25,6 +32,15 @@ export interface PlayerEventMap {
 	"ad:skip": { adId: string };
 	"ad:click": { clickThrough: string | undefined; clickTracking: string[] };
 	"ad:error": { error: Error };
+	"ad:impression": { adId: string };
+	"ad:loaded": { adId: string };
+	"ad:quartile": { adId: string; quartile: AdQuartile };
+	"ad:mute": { adId: string };
+	"ad:unmute": { adId: string };
+	"ad:volumeChange": { adId: string; volume: number };
+	"ad:fullscreen": { adId: string; fullscreen: boolean };
+	"ad:breakStart": { breakId: string | undefined };
+	"ad:breakEnd": { breakId: string | undefined };
 	destroy: void;
 }
 

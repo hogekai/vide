@@ -151,6 +151,61 @@ describe("parseVmap", () => {
 	});
 });
 
+describe("parseVmap — AdBreak TrackingEvents", () => {
+	it("parses breakStart, breakEnd, and error tracking events", () => {
+		const xml = `<?xml version="1.0"?>
+<VMAP version="1.0">
+  <AdBreak timeOffset="start" breakType="linear" breakId="pre">
+    <AdSource id="src">
+      <AdTagURI><![CDATA[http://example.com/vast]]></AdTagURI>
+    </AdSource>
+    <TrackingEvents>
+      <Tracking event="breakStart"><![CDATA[http://example.com/breakStart]]></Tracking>
+      <Tracking event="breakEnd"><![CDATA[http://example.com/breakEnd]]></Tracking>
+      <Tracking event="error"><![CDATA[http://example.com/error]]></Tracking>
+    </TrackingEvents>
+  </AdBreak>
+</VMAP>`;
+		const result = parseVmap(xml);
+		const adBreak = result.adBreaks[0];
+		expect(adBreak.trackingEvents.breakStart).toEqual([
+			"http://example.com/breakStart",
+		]);
+		expect(adBreak.trackingEvents.breakEnd).toEqual([
+			"http://example.com/breakEnd",
+		]);
+		expect(adBreak.trackingEvents.error).toEqual([
+			"http://example.com/error",
+		]);
+	});
+
+	it("returns empty arrays when no TrackingEvents element", () => {
+		const result = parseVmap(SAMPLE_VMAP);
+		for (const adBreak of result.adBreaks) {
+			expect(adBreak.trackingEvents.breakStart).toEqual([]);
+			expect(adBreak.trackingEvents.breakEnd).toEqual([]);
+			expect(adBreak.trackingEvents.error).toEqual([]);
+		}
+	});
+
+	it("handles multiple tracking URLs per event type", () => {
+		const xml = `<?xml version="1.0"?>
+<VMAP version="1.0">
+  <AdBreak timeOffset="start" breakType="linear">
+    <TrackingEvents>
+      <Tracking event="breakStart"><![CDATA[http://example.com/bs1]]></Tracking>
+      <Tracking event="breakStart"><![CDATA[http://example.com/bs2]]></Tracking>
+    </TrackingEvents>
+  </AdBreak>
+</VMAP>`;
+		const result = parseVmap(xml);
+		expect(result.adBreaks[0].trackingEvents.breakStart).toEqual([
+			"http://example.com/bs1",
+			"http://example.com/bs2",
+		]);
+	});
+});
+
 describe("parseTimeOffset", () => {
 	it("parses 'start'", () => {
 		expect(parseTimeOffset("start")).toEqual({ type: "start" });

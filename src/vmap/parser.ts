@@ -1,6 +1,7 @@
 import type {
 	AdBreak,
 	AdBreakTimeOffset,
+	AdBreakTrackingEvents,
 	AdSource,
 	VmapResponse,
 } from "./types.js";
@@ -56,16 +57,42 @@ function parseAdBreak(el: Element): AdBreak | null {
 	const breakId = el.getAttribute("breakId") ?? undefined;
 
 	let adSource: AdSource | null = null;
+	const trackingEvents: AdBreakTrackingEvents = {
+		breakStart: [],
+		breakEnd: [],
+		error: [],
+	};
+
 	for (let i = 0; i < el.children.length; i++) {
 		const child = el.children[i];
 		const name = child.localName || child.tagName;
 		if (name === "AdSource") {
 			adSource = parseAdSource(child);
-			break;
+		} else if (name === "TrackingEvents") {
+			parseAdBreakTrackingEvents(child, trackingEvents);
 		}
 	}
 
-	return { timeOffset, breakType, breakId, adSource };
+	return { timeOffset, breakType, breakId, adSource, trackingEvents };
+}
+
+function parseAdBreakTrackingEvents(
+	el: Element,
+	events: AdBreakTrackingEvents,
+): void {
+	for (let i = 0; i < el.children.length; i++) {
+		const child = el.children[i];
+		const name = child.localName || child.tagName;
+		if (name !== "Tracking") continue;
+
+		const eventName = child.getAttribute("event");
+		const url = (child.textContent ?? "").trim();
+		if (!eventName || !url) continue;
+
+		if (eventName === "breakStart") events.breakStart.push(url);
+		else if (eventName === "breakEnd") events.breakEnd.push(url);
+		else if (eventName === "error") events.error.push(url);
+	}
 }
 
 function parseAdSource(el: Element): AdSource {

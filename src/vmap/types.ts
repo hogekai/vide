@@ -3,11 +3,18 @@ export interface VmapResponse {
 	adBreaks: AdBreak[];
 }
 
+export interface AdBreakTrackingEvents {
+	breakStart: string[];
+	breakEnd: string[];
+	error: string[];
+}
+
 export interface AdBreak {
 	timeOffset: AdBreakTimeOffset;
 	breakType: "linear" | "nonlinear" | "display";
 	breakId?: string | undefined;
 	adSource: AdSource | null;
+	trackingEvents: AdBreakTrackingEvents;
 }
 
 export type AdBreakTimeOffset =

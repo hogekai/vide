@@ -238,17 +238,31 @@ function parseInteractiveCreativeFiles(
 	return files;
 }
 
+const SIMPLE_TRACKING_EVENTS = new Set([
+	"start",
+	"firstQuartile",
+	"midpoint",
+	"thirdQuartile",
+	"complete",
+	"pause",
+	"resume",
+	"skip",
+	"loaded",
+	"mute",
+	"unmute",
+	"rewind",
+	"playerExpand",
+	"playerCollapse",
+	"closeLinear",
+	"notUsed",
+	"otherAdInteraction",
+	"creativeView",
+]);
+
+type SimpleTrackingEvent = Exclude<keyof VastTrackingEvents, "progress">;
+
 function parseTrackingEvents(linearEl: Element): VastTrackingEvents {
-	const events: VastTrackingEvents = {
-		start: [],
-		firstQuartile: [],
-		midpoint: [],
-		thirdQuartile: [],
-		complete: [],
-		pause: [],
-		resume: [],
-		skip: [],
-	};
+	const events: VastTrackingEvents = emptyTrackingEvents();
 
 	const trackingEventsEl = linearEl.querySelector("TrackingEvents");
 	if (!trackingEventsEl) return events;
@@ -259,8 +273,12 @@ function parseTrackingEvents(linearEl: Element): VastTrackingEvents {
 		const url = (t.textContent ?? "").trim();
 		if (!eventName || !url) continue;
 
-		if (eventName in events) {
-			events[eventName as keyof VastTrackingEvents].push(url);
+		if (eventName === "progress") {
+			const offsetStr = t.getAttribute("offset");
+			const offset = offsetStr ? parseOffset(offsetStr, 0) : 0;
+			events.progress.push({ offset, url });
+		} else if (SIMPLE_TRACKING_EVENTS.has(eventName)) {
+			events[eventName as SimpleTrackingEvent].push(url);
 		}
 	}
 
@@ -491,6 +509,17 @@ function emptyTrackingEvents(): VastTrackingEvents {
 		pause: [],
 		resume: [],
 		skip: [],
+		loaded: [],
+		mute: [],
+		unmute: [],
+		rewind: [],
+		playerExpand: [],
+		playerCollapse: [],
+		closeLinear: [],
+		notUsed: [],
+		otherAdInteraction: [],
+		creativeView: [],
+		progress: [],
 	};
 }
 
@@ -499,12 +528,21 @@ function mergeTrackingEvents(
 	inline: VastTrackingEvents,
 ): VastTrackingEvents {
 	const result = emptyTrackingEvents();
+
 	for (const key of Object.keys(result) as (keyof VastTrackingEvents)[]) {
+		if (key === "progress") continue;
+		const arr = result[key] as string[];
 		for (const wrapper of wrapperChain) {
-			result[key].push(...wrapper[key]);
+			arr.push(...(wrapper[key] as string[]));
 		}
-		result[key].push(...inline[key]);
+		arr.push(...(inline[key] as string[]));
 	}
+
+	for (const wrapper of wrapperChain) {
+		result.progress.push(...wrapper.progress);
+	}
+	result.progress.push(...inline.progress);
+
 	return result;
 }
 

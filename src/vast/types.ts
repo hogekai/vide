@@ -63,6 +63,11 @@ export interface InteractiveCreativeFile {
 	variableDuration?: boolean | undefined;
 }
 
+export interface VastProgressEvent {
+	offset: number;
+	url: string;
+}
+
 export interface VastTrackingEvents {
 	start: string[];
 	firstQuartile: string[];
@@ -72,6 +77,17 @@ export interface VastTrackingEvents {
 	pause: string[];
 	resume: string[];
 	skip: string[];
+	loaded: string[];
+	mute: string[];
+	unmute: string[];
+	rewind: string[];
+	playerExpand: string[];
+	playerCollapse: string[];
+	closeLinear: string[];
+	notUsed: string[];
+	otherAdInteraction: string[];
+	creativeView: string[];
+	progress: VastProgressEvent[];
 }
 
 // === Ad Plugin (per-ad lifecycle) ===

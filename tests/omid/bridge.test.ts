@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { createPlayer } from "../../src/core.js";
 import { createOmidBridge } from "../../src/omid/bridge.js";
 import type { OmidSession } from "../../src/omid/session.js";
-import type { Player, PlayerState } from "../../src/types.js";
+import type { Player } from "../../src/types.js";
 
 function createMockSession(): OmidSession {
 	return {
@@ -53,12 +53,6 @@ function setupPlayer(): { player: Player; el: HTMLVideoElement } {
 	return { player, el };
 }
 
-function setAdPlayingState(player: Player): void {
-	const setState = (player as unknown as { _setState(s: PlayerState): void })
-		._setState;
-	setState("ad:playing");
-}
-
 afterEach(() => {
 	vi.restoreAllMocks();
 	for (const div of document.body.querySelectorAll("div")) {
@@ -103,47 +97,49 @@ describe("createOmidBridge", () => {
 		});
 	});
 
-	describe("quartile tracking", () => {
-		it("calls firstQuartile at 25%", () => {
+	describe("quartile tracking via ad:quartile events", () => {
+		it("calls firstQuartile on ad:quartile event", () => {
 			const { player } = setupPlayer();
 			const session = createMockSession();
-			setAdPlayingState(player);
 
 			createOmidBridge(player, session, 100);
 
-			player.emit("timeupdate", { currentTime: 25, duration: 100 });
+			player.emit("ad:quartile", {
+				adId: "ad1",
+				quartile: "firstQuartile",
+			});
 
 			expect(session.mediaEvents.firstQuartile).toHaveBeenCalled();
 		});
 
-		it("calls midpoint at 50%", () => {
+		it("calls midpoint on ad:quartile event", () => {
 			const { player } = setupPlayer();
 			const session = createMockSession();
-			setAdPlayingState(player);
 
 			createOmidBridge(player, session, 100);
 
-			player.emit("timeupdate", { currentTime: 50, duration: 100 });
+			player.emit("ad:quartile", { adId: "ad1", quartile: "midpoint" });
 
 			expect(session.mediaEvents.midpoint).toHaveBeenCalled();
 		});
 
-		it("calls thirdQuartile at 75%", () => {
+		it("calls thirdQuartile on ad:quartile event", () => {
 			const { player } = setupPlayer();
 			const session = createMockSession();
-			setAdPlayingState(player);
 
 			createOmidBridge(player, session, 100);
 
-			player.emit("timeupdate", { currentTime: 75, duration: 100 });
+			player.emit("ad:quartile", {
+				adId: "ad1",
+				quartile: "thirdQuartile",
+			});
 
 			expect(session.mediaEvents.thirdQuartile).toHaveBeenCalled();
 		});
 
-		it("does not call mediaEvents.start or complete from quartile tracker", () => {
+		it("does not call mediaEvents.start or complete from ad:quartile", () => {
 			const { player } = setupPlayer();
 			const session = createMockSession();
-			setAdPlayingState(player);
 
 			createOmidBridge(player, session, 100);
 
@@ -151,26 +147,12 @@ describe("createOmidBridge", () => {
 			(session.mediaEvents.start as ReturnType<typeof vi.fn>).mockClear();
 
 			// Trigger start quartile
-			player.emit("timeupdate", { currentTime: 0, duration: 100 });
+			player.emit("ad:quartile", { adId: "ad1", quartile: "start" });
 			expect(session.mediaEvents.start).not.toHaveBeenCalled();
 
 			// Trigger complete quartile
-			player.emit("timeupdate", { currentTime: 100, duration: 100 });
+			player.emit("ad:quartile", { adId: "ad1", quartile: "complete" });
 			expect(session.mediaEvents.complete).not.toHaveBeenCalled();
-		});
-
-		it("catches up missed quartiles on seek", () => {
-			const { player } = setupPlayer();
-			const session = createMockSession();
-			setAdPlayingState(player);
-
-			createOmidBridge(player, session, 100);
-
-			// Jump to 60% - should fire firstQuartile and midpoint
-			player.emit("timeupdate", { currentTime: 60, duration: 100 });
-
-			expect(session.mediaEvents.firstQuartile).toHaveBeenCalled();
-			expect(session.mediaEvents.midpoint).toHaveBeenCalled();
 		});
 	});
 
@@ -267,45 +249,31 @@ describe("createOmidBridge", () => {
 		});
 	});
 
-	describe("HTMLVideoElement direct listeners", () => {
-		it("calls volumeChange on volumechange", () => {
-			const { player, el } = setupPlayer();
-			const session = createMockSession();
-
-			createOmidBridge(player, session, 30);
-
-			Object.defineProperty(el, "volume", {
-				get: () => 0.5,
-				configurable: true,
-			});
-			el.dispatchEvent(new Event("volumechange"));
-
-			expect(session.mediaEvents.volumeChange).toHaveBeenCalledWith(0.5);
-		});
-
-		it("calls playerStateChange on fullscreenchange", () => {
+	describe("volume and fullscreen via PlayerEventMap", () => {
+		it("calls volumeChange on ad:volumeChange", () => {
 			const { player } = setupPlayer();
 			const session = createMockSession();
 
 			createOmidBridge(player, session, 30);
 
-			// Simulate fullscreen (fullscreenElement is read-only, so mock it)
-			Object.defineProperty(document, "fullscreenElement", {
-				get: () => player.el,
-				configurable: true,
-			});
-			document.dispatchEvent(new Event("fullscreenchange"));
+			player.emit("ad:volumeChange", { adId: "ad1", volume: 0.5 });
+
+			expect(session.mediaEvents.volumeChange).toHaveBeenCalledWith(0.5);
+		});
+
+		it("calls playerStateChange on ad:fullscreen", () => {
+			const { player } = setupPlayer();
+			const session = createMockSession();
+
+			createOmidBridge(player, session, 30);
+
+			player.emit("ad:fullscreen", { adId: "ad1", fullscreen: true });
 
 			expect(session.mediaEvents.playerStateChange).toHaveBeenCalledWith(
 				"fullscreen",
 			);
 
-			// Exit fullscreen
-			Object.defineProperty(document, "fullscreenElement", {
-				get: () => null,
-				configurable: true,
-			});
-			document.dispatchEvent(new Event("fullscreenchange"));
+			player.emit("ad:fullscreen", { adId: "ad1", fullscreen: false });
 
 			expect(session.mediaEvents.playerStateChange).toHaveBeenCalledWith(
 				"normal",
@@ -336,7 +304,7 @@ describe("createOmidBridge", () => {
 		});
 
 		it("removes all event listeners", () => {
-			const { player, el } = setupPlayer();
+			const { player } = setupPlayer();
 			const session = createMockSession();
 
 			const cleanup = createOmidBridge(player, session, 30);
@@ -346,7 +314,7 @@ describe("createOmidBridge", () => {
 				session.mediaEvents.volumeChange as ReturnType<typeof vi.fn>
 			).mockClear();
 
-			el.dispatchEvent(new Event("volumechange"));
+			player.emit("ad:volumeChange", { adId: "ad1", volume: 0.5 });
 
 			expect(session.mediaEvents.volumeChange).not.toHaveBeenCalled();
 		});

@@ -177,6 +177,15 @@ export function createPlayer(el: HTMLVideoElement): Player {
 		"ad:skip",
 		"ad:click",
 		"ad:error",
+		"ad:impression",
+		"ad:loaded",
+		"ad:quartile",
+		"ad:mute",
+		"ad:unmute",
+		"ad:volumeChange",
+		"ad:fullscreen",
+		"ad:breakStart",
+		"ad:breakEnd",
 		"destroy",
 	]);
 
