@@ -64,7 +64,11 @@ export function createPlayer(el: HTMLVideoElement): Player {
 		const set = handlers.get(event);
 		if (!set) return;
 		for (const handler of set) {
-			handler(data);
+			try {
+				handler(data);
+			} catch (err) {
+				console.error("[vide] Event handler error:", err);
+			}
 		}
 	}
 
@@ -82,7 +86,9 @@ export function createPlayer(el: HTMLVideoElement): Player {
 	// --- Wire up HTMLVideoElement events ---
 
 	function isAdState(): boolean {
-		return state === "ad:loading" || state === "ad:playing" || state === "ad:paused";
+		return (
+			state === "ad:loading" || state === "ad:playing" || state === "ad:paused"
+		);
 	}
 
 	function onLoadStart(): void {
@@ -255,7 +261,11 @@ export function createPlayer(el: HTMLVideoElement): Player {
 			if (destroyed) return;
 			destroyed = true;
 			for (const cleanup of cleanups) {
-				cleanup();
+				try {
+					cleanup();
+				} catch (err) {
+					console.error("[vide] Plugin cleanup error:", err);
+				}
 			}
 			cleanups.length = 0;
 			emit("destroy", undefined as void);
@@ -265,8 +275,7 @@ export function createPlayer(el: HTMLVideoElement): Player {
 	};
 
 	// Expose setState for plugins (e.g. VAST plugin needs to set ad states)
-	(player as unknown as { _setState: typeof setState })._setState =
-		setState;
+	(player as unknown as { _setState: typeof setState })._setState = setState;
 
 	return player;
 }

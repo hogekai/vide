@@ -22,9 +22,7 @@ describe("track", () => {
 		vi.stubGlobal("navigator", {});
 
 		// We can't easily test Image creation, but we can verify it doesn't throw
-		expect(() =>
-			track(["http://example.com/pixel"]),
-		).not.toThrow();
+		expect(() => track(["http://example.com/pixel"])).not.toThrow();
 
 		vi.unstubAllGlobals();
 	});
@@ -86,13 +84,13 @@ describe("createQuartileTracker", () => {
 		const events: string[] = [];
 		const update = createQuartileTracker(100, (e) => events.push(e));
 
-		update(0);    // start
-		update(10);   // still start range, no new event
-		update(25);   // firstQuartile
-		update(30);   // still firstQuartile range, no new event
-		update(50);   // midpoint
-		update(75);   // thirdQuartile
-		update(100);  // complete
+		update(0); // start
+		update(10); // still start range, no new event
+		update(25); // firstQuartile
+		update(30); // still firstQuartile range, no new event
+		update(50); // midpoint
+		update(75); // thirdQuartile
+		update(100); // complete
 
 		expect(events).toEqual([
 			"start",
@@ -107,11 +105,40 @@ describe("createQuartileTracker", () => {
 		const events: string[] = [];
 		const update = createQuartileTracker(100, (e) => events.push(e));
 
-		// Jump straight to 60% — should fire start, firstQuartile, midpoint
+		// Jump straight to 60% — should fire exactly start, firstQuartile, midpoint in order
 		update(60);
 
-		expect(events).toContain("start");
-		expect(events).toContain("firstQuartile");
-		expect(events).toContain("midpoint");
+		expect(events).toEqual(["start", "firstQuartile", "midpoint"]);
+	});
+
+	it("fires all quartiles when jumping to 100%", () => {
+		const events: string[] = [];
+		const update = createQuartileTracker(100, (e) => events.push(e));
+
+		update(100);
+
+		expect(events).toEqual([
+			"start",
+			"firstQuartile",
+			"midpoint",
+			"thirdQuartile",
+			"complete",
+		]);
+	});
+
+	it("does not double-fire after a jump", () => {
+		const events: string[] = [];
+		const update = createQuartileTracker(100, (e) => events.push(e));
+
+		update(60); // fires start, firstQuartile, midpoint
+		update(60); // no new events
+		update(75); // fires thirdQuartile
+
+		expect(events).toEqual([
+			"start",
+			"firstQuartile",
+			"midpoint",
+			"thirdQuartile",
+		]);
 	});
 });

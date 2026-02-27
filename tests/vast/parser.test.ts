@@ -111,12 +111,8 @@ describe("parseVast", () => {
 	it("parses video clicks", () => {
 		const result = parseVast(SAMPLE_VAST);
 		const linear = result.ads[0].creatives[0].linear!;
-		expect(linear.clickThrough).toBe(
-			"http://advertiser.example.com/landing",
-		);
-		expect(linear.clickTracking).toEqual([
-			"http://tracker.example.com/click",
-		]);
+		expect(linear.clickThrough).toBe("http://advertiser.example.com/landing");
+		expect(linear.clickTracking).toEqual(["http://tracker.example.com/click"]);
 	});
 
 	it("parses tracking events", () => {
@@ -126,15 +122,11 @@ describe("parseVast", () => {
 		expect(events.firstQuartile).toEqual([
 			"http://tracker.example.com/firstQuartile",
 		]);
-		expect(events.midpoint).toEqual([
-			"http://tracker.example.com/midpoint",
-		]);
+		expect(events.midpoint).toEqual(["http://tracker.example.com/midpoint"]);
 		expect(events.thirdQuartile).toEqual([
 			"http://tracker.example.com/thirdQuartile",
 		]);
-		expect(events.complete).toEqual([
-			"http://tracker.example.com/complete",
-		]);
+		expect(events.complete).toEqual(["http://tracker.example.com/complete"]);
 		expect(events.pause).toEqual(["http://tracker.example.com/pause"]);
 		expect(events.resume).toEqual(["http://tracker.example.com/resume"]);
 		expect(events.skip).toEqual(["http://tracker.example.com/skip"]);
@@ -145,18 +137,20 @@ describe("parseVast — edge cases", () => {
 	it("handles empty XML string", () => {
 		const result = parseVast("");
 		expect(result.ads).toEqual([]);
-		expect(result.errors).toEqual([]);
+		expect(result.errors).toEqual(["VAST XML parse error"]);
 	});
 
 	it("handles invalid XML", () => {
 		const result = parseVast("<not valid xml>>>");
 		expect(result.ads).toEqual([]);
+		expect(result.errors).toEqual(["VAST XML parse error"]);
 	});
 
 	it("handles non-VAST root element", () => {
 		const result = parseVast("<html><body>hello</body></html>");
 		expect(result.ads).toEqual([]);
 		expect(result.version).toBe("");
+		expect(result.errors).toEqual(["Document is not a VAST response"]);
 	});
 
 	it("handles VAST with no ads (error response)", () => {
@@ -308,6 +302,196 @@ describe("parseVast — edge cases", () => {
 		const result = parseVast(xml);
 		const linear = result.ads[0].creatives[0].linear!;
 		expect(linear.skipOffset).toBe(5); // 25% of 20s
+	});
+});
+
+describe("parseVast — VAST 4.2 additions", () => {
+	it("parses AdVerifications", () => {
+		const xml = `<?xml version="1.0"?>
+<VAST version="4.2">
+  <Ad id="ad-v42">
+    <InLine>
+      <AdSystem>Test</AdSystem>
+      <AdTitle>Verified Ad</AdTitle>
+      <Impression><![CDATA[http://example.com/imp]]></Impression>
+      <AdVerifications>
+        <Verification vendor="company.com-omid">
+          <JavaScriptResource apiFramework="omid">
+            <![CDATA[http://example.com/verify.js]]>
+          </JavaScriptResource>
+          <VerificationParameters><![CDATA[param=value]]></VerificationParameters>
+        </Verification>
+      </AdVerifications>
+      <Creatives>
+        <Creative>
+          <Linear>
+            <Duration>00:00:15</Duration>
+            <MediaFiles>
+              <MediaFile delivery="progressive" type="video/mp4" width="640" height="360">
+                <![CDATA[http://example.com/ad.mp4]]>
+              </MediaFile>
+            </MediaFiles>
+          </Linear>
+        </Creative>
+      </Creatives>
+    </InLine>
+  </Ad>
+</VAST>`;
+		const result = parseVast(xml);
+		const ad = result.ads[0];
+		expect(ad.adVerifications).toBeDefined();
+		expect(ad.adVerifications).toHaveLength(1);
+		expect(ad.adVerifications![0].vendor).toBe("company.com-omid");
+		expect(ad.adVerifications![0].resourceUrl).toBe(
+			"http://example.com/verify.js",
+		);
+		expect(ad.adVerifications![0].apiFramework).toBe("omid");
+		expect(ad.adVerifications![0].parameters).toBe("param=value");
+	});
+
+	it("returns undefined adVerifications when absent", () => {
+		const result = parseVast(SAMPLE_VAST);
+		expect(result.ads[0].adVerifications).toBeUndefined();
+	});
+
+	it("parses Categories", () => {
+		const xml = `<?xml version="1.0"?>
+<VAST version="4.2">
+  <Ad id="ad-cat">
+    <InLine>
+      <AdSystem>Test</AdSystem>
+      <AdTitle>Categorized Ad</AdTitle>
+      <Impression><![CDATA[http://example.com/imp]]></Impression>
+      <Category authority="iabtechlab.com">232</Category>
+      <Category authority="google.com">auto</Category>
+      <Creatives>
+        <Creative>
+          <Linear>
+            <Duration>00:00:10</Duration>
+            <MediaFiles>
+              <MediaFile delivery="progressive" type="video/mp4" width="640" height="360">
+                <![CDATA[http://example.com/ad.mp4]]>
+              </MediaFile>
+            </MediaFiles>
+          </Linear>
+        </Creative>
+      </Creatives>
+    </InLine>
+  </Ad>
+</VAST>`;
+		const result = parseVast(xml);
+		const ad = result.ads[0];
+		expect(ad.categories).toBeDefined();
+		expect(ad.categories).toHaveLength(2);
+		expect(ad.categories![0]).toEqual({
+			authority: "iabtechlab.com",
+			value: "232",
+		});
+		expect(ad.categories![1]).toEqual({
+			authority: "google.com",
+			value: "auto",
+		});
+	});
+
+	it("returns undefined categories when absent", () => {
+		const result = parseVast(SAMPLE_VAST);
+		expect(result.ads[0].categories).toBeUndefined();
+	});
+});
+
+describe("parseVast — NaN and type safety", () => {
+	it("handles non-numeric sequence attribute", () => {
+		const xml = `<?xml version="1.0"?>
+<VAST version="4.1">
+  <Ad id="ad-nan" sequence="abc">
+    <InLine>
+      <AdSystem>Test</AdSystem>
+      <AdTitle>NaN Seq</AdTitle>
+      <Impression><![CDATA[http://example.com/imp]]></Impression>
+      <Creatives>
+        <Creative sequence="xyz">
+          <Linear>
+            <Duration>00:00:10</Duration>
+            <MediaFiles>
+              <MediaFile delivery="progressive" type="video/mp4" width="640" height="360">
+                <![CDATA[http://example.com/ad.mp4]]>
+              </MediaFile>
+            </MediaFiles>
+          </Linear>
+        </Creative>
+      </Creatives>
+    </InLine>
+  </Ad>
+</VAST>`;
+		const result = parseVast(xml);
+		expect(result.ads[0].sequence).toBeUndefined();
+		expect(result.ads[0].creatives[0].sequence).toBeUndefined();
+	});
+
+	it("handles non-numeric width/height/bitrate attributes", () => {
+		const xml = `<?xml version="1.0"?>
+<VAST version="4.1">
+  <Ad id="ad-dim">
+    <InLine>
+      <AdSystem>Test</AdSystem>
+      <AdTitle>Bad Dims</AdTitle>
+      <Impression><![CDATA[http://example.com/imp]]></Impression>
+      <Creatives>
+        <Creative>
+          <Linear>
+            <Duration>00:00:10</Duration>
+            <MediaFiles>
+              <MediaFile delivery="progressive" type="video/mp4" width="abc" height="def" bitrate="ghi">
+                <![CDATA[http://example.com/ad.mp4]]>
+              </MediaFile>
+            </MediaFiles>
+          </Linear>
+        </Creative>
+      </Creatives>
+    </InLine>
+  </Ad>
+</VAST>`;
+		const result = parseVast(xml);
+		const mf = result.ads[0].creatives[0].linear!.mediaFiles[0];
+		expect(mf.width).toBe(0);
+		expect(mf.height).toBe(0);
+		expect(mf.bitrate).toBeUndefined();
+	});
+
+	it("validates delivery attribute values", () => {
+		const xml = `<?xml version="1.0"?>
+<VAST version="4.1">
+  <Ad id="ad-del">
+    <InLine>
+      <AdSystem>Test</AdSystem>
+      <AdTitle>Delivery</AdTitle>
+      <Impression><![CDATA[http://example.com/imp]]></Impression>
+      <Creatives>
+        <Creative>
+          <Linear>
+            <Duration>00:00:10</Duration>
+            <MediaFiles>
+              <MediaFile type="video/mp4" width="640" height="360" delivery="streaming">
+                <![CDATA[http://example.com/stream.mp4]]>
+              </MediaFile>
+              <MediaFile type="video/mp4" width="640" height="360" delivery="unknown">
+                <![CDATA[http://example.com/unknown.mp4]]>
+              </MediaFile>
+              <MediaFile type="video/mp4" width="640" height="360">
+                <![CDATA[http://example.com/noattr.mp4]]>
+              </MediaFile>
+            </MediaFiles>
+          </Linear>
+        </Creative>
+      </Creatives>
+    </InLine>
+  </Ad>
+</VAST>`;
+		const result = parseVast(xml);
+		const files = result.ads[0].creatives[0].linear!.mediaFiles;
+		expect(files[0].delivery).toBe("streaming");
+		expect(files[1].delivery).toBe("progressive");
+		expect(files[2].delivery).toBe("progressive");
 	});
 });
 

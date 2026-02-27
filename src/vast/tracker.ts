@@ -47,32 +47,28 @@ export function createQuartileTracker(
 ): (currentTime: number) => void {
 	const fired = new Set<QuartileEvent>();
 
+	const order: QuartileEvent[] = [
+		"start",
+		"firstQuartile",
+		"midpoint",
+		"thirdQuartile",
+		"complete",
+	];
+
 	return (currentTime: number) => {
 		const quartile = getQuartile(currentTime, duration);
-		if (quartile && !fired.has(quartile)) {
-			fired.add(quartile);
-			// Also fire any earlier quartiles that haven't been fired
-			// (e.g., if we jump from 0 to 60%, fire start, firstQuartile, midpoint)
-			const order: QuartileEvent[] = [
-				"start",
-				"firstQuartile",
-				"midpoint",
-				"thirdQuartile",
-				"complete",
-			];
-			for (const q of order) {
-				if (fired.has(q)) continue;
-				const idx = order.indexOf(q);
-				const quartileIdx = order.indexOf(quartile);
-				if (idx <= quartileIdx) {
-					fired.add(q);
-					onQuartile(q);
-				}
+		if (!quartile || fired.has(quartile)) return;
+
+		// Fire all quartiles up to and including the current one.
+		// Catches up missed quartiles on seek (e.g., jump from 0 to 60%
+		// fires start, firstQuartile, midpoint).
+		const targetIdx = order.indexOf(quartile);
+		for (let i = 0; i <= targetIdx; i++) {
+			const q = order[i];
+			if (!fired.has(q)) {
+				fired.add(q);
+				onQuartile(q);
 			}
-			if (!fired.has(quartile)) {
-				fired.add(quartile);
-			}
-			onQuartile(quartile);
 		}
 	};
 }

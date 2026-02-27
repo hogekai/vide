@@ -202,6 +202,24 @@ describe("EventBus", () => {
 		el.dispatchEvent(new Event("ended"));
 		expect(handler).toHaveBeenCalled();
 	});
+
+	it("continues calling handlers even if one throws", () => {
+		const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+		const el = makeVideo();
+		const player = createPlayer(el);
+		const handler2 = vi.fn();
+		player.on("statechange", () => {
+			throw new Error("handler boom");
+		});
+		player.on("statechange", handler2);
+		el.dispatchEvent(new Event("loadstart"));
+		expect(handler2).toHaveBeenCalledWith({ from: "idle", to: "loading" });
+		expect(errorSpy).toHaveBeenCalledWith(
+			"[vide] Event handler error:",
+			expect.any(Error),
+		);
+		errorSpy.mockRestore();
+	});
 });
 
 describe("HTMLVideoElement proxy", () => {
@@ -273,7 +291,10 @@ describe("destroy", () => {
 		player.on("statechange", handler);
 		player.destroy();
 		// After destroy, emitting should not fire handlers (handlers were cleared)
-		player.emit("statechange", { from: "idle" as PlayerState, to: "loading" as PlayerState });
+		player.emit("statechange", {
+			from: "idle" as PlayerState,
+			to: "loading" as PlayerState,
+		});
 		expect(handler).not.toHaveBeenCalled();
 	});
 
@@ -284,5 +305,25 @@ describe("destroy", () => {
 		player.destroy();
 		player.destroy();
 		expect(handler).toHaveBeenCalledTimes(1);
+	});
+
+	it("continues cleanup even if one plugin throws", () => {
+		const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+		const player = createPlayer(makeVideo());
+		const cleanup2 = vi.fn();
+		player.use({
+			name: "bad",
+			setup: () => () => {
+				throw new Error("cleanup boom");
+			},
+		});
+		player.use({ name: "good", setup: () => cleanup2 });
+		player.destroy();
+		expect(cleanup2).toHaveBeenCalledTimes(1);
+		expect(errorSpy).toHaveBeenCalledWith(
+			"[vide] Plugin cleanup error:",
+			expect.any(Error),
+		);
+		errorSpy.mockRestore();
 	});
 });

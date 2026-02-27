@@ -3,8 +3,13 @@ import { fetchVast, parseVast } from "./parser.js";
 import { createQuartileTracker, track } from "./tracker.js";
 import type { VastLinear, VastPluginOptions } from "./types.js";
 
-export type { VastPluginOptions } from "./types.js";
-export { parseVast, fetchVast } from "./parser.js";
+export type {
+	VastPluginOptions,
+	ResolveOptions,
+	AdVerification,
+	AdCategory,
+} from "./types.js";
+export { parseVast, fetchVast, resolveVast } from "./parser.js";
 export { track, getQuartile } from "./tracker.js";
 
 /** Create a VAST ad plugin for vide. */
@@ -23,12 +28,12 @@ export function vast(options: VastPluginOptions): Plugin {
 				if (aborted) return;
 
 				setState("ad:loading");
-				player.emit("ad:start", { adId: "" });
 
 				try {
-					const fetchOptions = options.timeout !== undefined
-						? { timeout: options.timeout }
-						: undefined;
+					const fetchOptions =
+						options.timeout !== undefined
+							? { timeout: options.timeout }
+							: undefined;
 					const xml = await fetchVast(options.tagUrl, fetchOptions);
 					if (aborted) return;
 
@@ -43,10 +48,7 @@ export function vast(options: VastPluginOptions): Plugin {
 					let adId = "";
 					for (const ad of response.ads) {
 						for (const creative of ad.creatives) {
-							if (
-								creative.linear &&
-								creative.linear.mediaFiles.length > 0
-							) {
+							if (creative.linear && creative.linear.mediaFiles.length > 0) {
 								linear = creative.linear;
 								adId = ad.id;
 								break;
@@ -83,17 +85,13 @@ export function vast(options: VastPluginOptions): Plugin {
 					const prevSrc = player.el.src;
 
 					// Set up quartile tracking
-					const tracker = createQuartileTracker(
-						linear.duration,
-						(event) => {
-							if (!linear) return;
-							const urls =
-								linear.trackingEvents[event];
-							if (urls) {
-								track(urls);
-							}
-						},
-					);
+					const tracker = createQuartileTracker(linear.duration, (event) => {
+						if (!linear) return;
+						const urls = linear.trackingEvents[event];
+						if (urls) {
+							track(urls);
+						}
+					});
 
 					function onAdTimeUpdate(): void {
 						tracker(player.el.currentTime);
@@ -110,15 +108,15 @@ export function vast(options: VastPluginOptions): Plugin {
 						player.el.load();
 						player.el.currentTime = originalTime;
 						if (!originalPaused) {
-							player.el.play();
+							player.el.play().catch(() => {
+								player.el.muted = true;
+								player.el.play().catch(() => {});
+							});
 						}
 					}
 
 					function cleanup(): void {
-						player.el.removeEventListener(
-							"timeupdate",
-							onAdTimeUpdate,
-						);
+						player.el.removeEventListener("timeupdate", onAdTimeUpdate);
 						player.el.removeEventListener("ended", onAdEnded);
 						player.el.removeEventListener("canplay", onAdCanPlay);
 					}
@@ -128,7 +126,10 @@ export function vast(options: VastPluginOptions): Plugin {
 						if (!linear) return;
 						setState("ad:playing");
 						track(linear.trackingEvents.start);
-						player.el.play();
+						player.el.play().catch(() => {
+							player.el.muted = true;
+							player.el.play().catch(() => {});
+						});
 					}
 
 					player.el.addEventListener("canplay", onAdCanPlay);
@@ -141,10 +142,7 @@ export function vast(options: VastPluginOptions): Plugin {
 				} catch (err) {
 					if (aborted) return;
 					player.emit("ad:error", {
-						error:
-							err instanceof Error
-								? err
-								: new Error(String(err)),
+						error: err instanceof Error ? err : new Error(String(err)),
 					});
 					setState("playing");
 				}
@@ -168,6 +166,8 @@ export function vast(options: VastPluginOptions): Plugin {
 			) {
 				loadAndPlayAd();
 			} else {
+				// TODO: This listener is cleaned up in the returned cleanup function,
+				// but leaks if destroy() is never called by the consumer.
 				player.on("statechange", onStateChange);
 			}
 

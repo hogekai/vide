@@ -1,4 +1,7 @@
 import type {
+	AdCategory,
+	AdVerification,
+	ResolveOptions,
 	VastAd,
 	VastCreative,
 	VastLinear,
@@ -17,12 +20,16 @@ export function parseVast(xml: string): VastResponse {
 
 	const parseError = doc.querySelector("parsererror");
 	if (parseError) {
-		return { version: "", ads: [], errors: [] };
+		return { version: "", ads: [], errors: ["VAST XML parse error"] };
 	}
 
 	const vastEl = doc.documentElement;
 	if (vastEl.tagName !== "VAST") {
-		return { version: "", ads: [], errors: [] };
+		return {
+			version: "",
+			ads: [],
+			errors: ["Document is not a VAST response"],
+		};
 	}
 
 	const version = vastEl.getAttribute("version") ?? "";
@@ -49,8 +56,7 @@ function parseAd(adEl: Element): VastAd | null {
 
 	const id = adEl.getAttribute("id") ?? "";
 	const sequenceAttr = adEl.getAttribute("sequence");
-	const sequence =
-		sequenceAttr !== null ? Number.parseInt(sequenceAttr, 10) : undefined;
+	const sequence = safeInt(sequenceAttr, undefined);
 
 	const adSystem = textContent(inlineEl, "AdSystem");
 	const adTitle = textContent(inlineEl, "AdTitle");
@@ -67,6 +73,9 @@ function parseAd(adEl: Element): VastAd | null {
 		}
 	}
 
+	const adVerifications = parseAdVerifications(inlineEl);
+	const categories = parseCategories(inlineEl);
+
 	return {
 		id,
 		sequence,
@@ -75,14 +84,67 @@ function parseAd(adEl: Element): VastAd | null {
 		impressions,
 		creatives,
 		errors,
+		adVerifications,
+		categories,
 	};
+}
+
+function parseAdVerifications(parent: Element): AdVerification[] | undefined {
+	const adVerificationsEl = parent.querySelector("AdVerifications");
+	if (!adVerificationsEl) return undefined;
+
+	const verifications: AdVerification[] = [];
+	const verificationEls = directChildren(adVerificationsEl, "Verification");
+
+	for (const vEl of verificationEls) {
+		const vendor = vEl.getAttribute("vendor") ?? "";
+
+		let resourceUrl = "";
+		let apiFramework: string | undefined;
+
+		const jsResource = vEl.querySelector("JavaScriptResource");
+		if (jsResource) {
+			resourceUrl = (jsResource.textContent ?? "").trim();
+			apiFramework = jsResource.getAttribute("apiFramework") ?? undefined;
+		} else {
+			const exeResource = vEl.querySelector("ExecutableResource");
+			if (exeResource) {
+				resourceUrl = (exeResource.textContent ?? "").trim();
+				apiFramework = exeResource.getAttribute("apiFramework") ?? undefined;
+			}
+		}
+
+		const parametersEl = vEl.querySelector("VerificationParameters");
+		const parameters = parametersEl
+			? (parametersEl.textContent ?? "").trim() || undefined
+			: undefined;
+
+		verifications.push({ vendor, resourceUrl, apiFramework, parameters });
+	}
+
+	return verifications.length > 0 ? verifications : undefined;
+}
+
+function parseCategories(parent: Element): AdCategory[] | undefined {
+	const categoryEls = directChildren(parent, "Category");
+	if (categoryEls.length === 0) return undefined;
+
+	const categories: AdCategory[] = [];
+	for (const catEl of categoryEls) {
+		const authority = catEl.getAttribute("authority") ?? "";
+		const value = (catEl.textContent ?? "").trim();
+		if (value) {
+			categories.push({ authority, value });
+		}
+	}
+
+	return categories.length > 0 ? categories : undefined;
 }
 
 function parseCreative(creativeEl: Element): VastCreative {
 	const id = creativeEl.getAttribute("id") ?? undefined;
 	const sequenceAttr = creativeEl.getAttribute("sequence");
-	const sequence =
-		sequenceAttr !== null ? Number.parseInt(sequenceAttr, 10) : undefined;
+	const sequence = safeInt(sequenceAttr, undefined);
 
 	const linearEl = creativeEl.querySelector("Linear");
 	const linear = linearEl ? parseLinear(linearEl) : null;
@@ -130,17 +192,15 @@ function parseMediaFiles(linearEl: Element): VastMediaFile[] {
 		const url = (mf.textContent ?? "").trim();
 		if (!url) continue;
 
+		const deliveryAttr = mf.getAttribute("delivery");
 		files.push({
 			url,
 			mimeType: mf.getAttribute("type") ?? "",
-			width: Number.parseInt(mf.getAttribute("width") ?? "0", 10),
-			height: Number.parseInt(mf.getAttribute("height") ?? "0", 10),
-			bitrate: mf.getAttribute("bitrate")
-				? Number.parseInt(mf.getAttribute("bitrate")!, 10)
-				: undefined,
+			width: safeInt(mf.getAttribute("width"), 0),
+			height: safeInt(mf.getAttribute("height"), 0),
+			bitrate: safeInt(mf.getAttribute("bitrate"), undefined),
 			delivery:
-				(mf.getAttribute("delivery") as "progressive" | "streaming") ??
-				"progressive",
+				deliveryAttr === "streaming" ? "streaming" : "progressive",
 		});
 	}
 
@@ -272,4 +332,196 @@ export async function fetchVast(
 	} finally {
 		clearTimeout(timer);
 	}
+}
+
+// === Wrapper Resolution ===
+
+interface WrapperAd {
+	adTagUri: string;
+	errors: string[];
+	impressions: string[];
+	trackingEvents: VastTrackingEvents;
+	clickTracking: string[];
+}
+
+/**
+ * Resolve a VAST tag URL, following Wrapper redirects until an InLine ad is found.
+ * Merges tracking from all Wrappers in the chain into the final InLine ad.
+ */
+export async function resolveVast(
+	tagUrl: string,
+	options?: ResolveOptions | undefined,
+): Promise<VastResponse> {
+	const timeout = options?.timeout ?? 10_000;
+	const maxDepth = options?.maxDepth ?? 5;
+	const deadline = Date.now() + timeout;
+	const visited = new Set<string>();
+	const wrapperChain: WrapperAd[] = [];
+
+	let currentUrl = tagUrl;
+
+	for (let depth = 0; depth <= maxDepth; depth++) {
+		const remaining = deadline - Date.now();
+		if (remaining <= 0) {
+			return { version: "", ads: [], errors: ["VAST resolve timeout"] };
+		}
+
+		if (visited.has(currentUrl)) {
+			return {
+				version: "",
+				ads: [],
+				errors: ["VAST circular reference detected"],
+			};
+		}
+		visited.add(currentUrl);
+
+		let xml: string;
+		try {
+			xml = await fetchVast(currentUrl, { timeout: remaining });
+		} catch (err) {
+			return {
+				version: "",
+				ads: [],
+				errors: [err instanceof Error ? err.message : String(err)],
+			};
+		}
+
+		const response = parseVast(xml);
+
+		if (response.ads.length > 0) {
+			return {
+				version: response.version,
+				ads: response.ads.map((ad) => mergeWrapperIntoAd(ad, wrapperChain)),
+				errors: response.errors,
+			};
+		}
+
+		const wrapper = extractWrapperFromXml(xml);
+		if (!wrapper) {
+			return response;
+		}
+
+		wrapperChain.push(wrapper);
+		currentUrl = wrapper.adTagUri;
+	}
+
+	return {
+		version: "",
+		ads: [],
+		errors: ["VAST wrapper depth limit exceeded"],
+	};
+}
+
+function extractWrapperFromXml(xml: string): WrapperAd | null {
+	const parser = new DOMParser();
+	const doc = parser.parseFromString(xml, "text/xml");
+	const vastEl = doc.documentElement;
+	if (vastEl.tagName !== "VAST") return null;
+
+	for (const adEl of directChildren(vastEl, "Ad")) {
+		const wrapperEl = directChild(adEl, "Wrapper");
+		if (!wrapperEl) continue;
+
+		const adTagUri = textContent(wrapperEl, "VASTAdTagURI").trim();
+		if (!adTagUri) continue;
+
+		const errors = childrenTextContents(wrapperEl, "Error");
+		const impressions = textContents(wrapperEl, "Impression");
+
+		let trackingEvents = emptyTrackingEvents();
+		let clickTracking: string[] = [];
+		const creativesEl = wrapperEl.querySelector("Creatives");
+		if (creativesEl) {
+			for (const creativeEl of directChildren(creativesEl, "Creative")) {
+				const linearEl = creativeEl.querySelector("Linear");
+				if (linearEl) {
+					trackingEvents = parseTrackingEvents(linearEl);
+					const videoClicksEl = linearEl.querySelector("VideoClicks");
+					if (videoClicksEl) {
+						clickTracking = textContents(videoClicksEl, "ClickTracking");
+					}
+					break;
+				}
+			}
+		}
+
+		return { adTagUri, errors, impressions, trackingEvents, clickTracking };
+	}
+	return null;
+}
+
+function emptyTrackingEvents(): VastTrackingEvents {
+	return {
+		start: [],
+		firstQuartile: [],
+		midpoint: [],
+		thirdQuartile: [],
+		complete: [],
+		pause: [],
+		resume: [],
+		skip: [],
+	};
+}
+
+function mergeTrackingEvents(
+	wrapperChain: VastTrackingEvents[],
+	inline: VastTrackingEvents,
+): VastTrackingEvents {
+	const result = emptyTrackingEvents();
+	for (const key of Object.keys(result) as (keyof VastTrackingEvents)[]) {
+		for (const wrapper of wrapperChain) {
+			result[key].push(...wrapper[key]);
+		}
+		result[key].push(...inline[key]);
+	}
+	return result;
+}
+
+function mergeWrapperIntoAd(ad: VastAd, wrapperChain: WrapperAd[]): VastAd {
+	if (wrapperChain.length === 0) return ad;
+
+	const mergedErrors = [...wrapperChain.flatMap((w) => w.errors), ...ad.errors];
+	const mergedImpressions = [
+		...wrapperChain.flatMap((w) => w.impressions),
+		...ad.impressions,
+	];
+
+	const mergedCreatives = ad.creatives.map((creative) => {
+		if (!creative.linear) return creative;
+		return {
+			...creative,
+			linear: {
+				...creative.linear,
+				trackingEvents: mergeTrackingEvents(
+					wrapperChain.map((w) => w.trackingEvents),
+					creative.linear.trackingEvents,
+				),
+				clickTracking: [
+					...wrapperChain.flatMap((w) => w.clickTracking),
+					...creative.linear.clickTracking,
+				],
+			},
+		};
+	});
+
+	return {
+		...ad,
+		errors: mergedErrors,
+		impressions: mergedImpressions,
+		creatives: mergedCreatives,
+	};
+}
+
+function safeInt(value: string | null, fallback: number): number;
+function safeInt(
+	value: string | null,
+	fallback: undefined,
+): number | undefined;
+function safeInt(
+	value: string | null,
+	fallback: number | undefined,
+): number | undefined {
+	if (value == null) return fallback;
+	const n = Number.parseInt(value, 10);
+	return Number.isNaN(n) ? fallback : n;
 }
