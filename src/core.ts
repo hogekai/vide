@@ -52,6 +52,7 @@ export function createPlayer(el: HTMLVideoElement): Player {
 	let activeHandler: SourceHandler | null = null;
 	let currentSrc = el.getAttribute("src") ?? "";
 	let srcExplicitlySet = false;
+	const pluginData = new Map<string, unknown>();
 
 	function getHandlers(event: string): Set<EventHandler<unknown>> {
 		let set = handlers.get(event);
@@ -367,6 +368,13 @@ export function createPlayer(el: HTMLVideoElement): Player {
 			}
 		},
 
+		setPluginData(key: string, data: unknown): void {
+			pluginData.set(key, data);
+		},
+		getPluginData(key: string): unknown {
+			return pluginData.get(key);
+		},
+
 		destroy(): void {
 			if (destroyed) return;
 			destroyed = true;
@@ -385,6 +393,7 @@ export function createPlayer(el: HTMLVideoElement): Player {
 			emit("destroy", undefined as void);
 			removeVideoListeners();
 			handlers.clear();
+			pluginData.clear();
 		},
 	};
 

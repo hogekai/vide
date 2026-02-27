@@ -19,6 +19,7 @@ player.use(vast({ tagUrl: "https://example.com/vast.xml" }));
 | `videts/vmap` | VMAP scheduling | 2.6 KB |
 | `videts/hls` | HLS (+ hls.js) | 0.6 KB |
 | `videts/dash` | DASH (+ dashjs) | 0.5 KB |
+| `videts/drm` | DRM (Widevine + FairPlay) | 0.8 KB |
 | `videts/omid` | Open Measurement | 1.7 KB |
 | `videts/simid` | Interactive ads | 2.3 KB |
 | `videts/ui` | Headless UI | 4.6 KB |
@@ -104,6 +105,42 @@ player.src = "https://example.com/stream.mpd";
 ```ts
 // Pass settings directly to dashjs.updateSettings()
 player.use(dash({ dashConfig: { streaming: { buffer: { bufferTimeDefault: 20 } } } }));
+```
+
+### DRM
+
+Widevine (Chrome/Firefox/Edge) and FairPlay (Safari/iOS). The plugin detects the browser's key system automatically — just pass the license server URL.
+
+```ts
+import { createPlayer } from "videts";
+import { hls } from "videts/hls";
+import { drm } from "videts/drm";
+
+const player = createPlayer(document.querySelector("video")!);
+player.use(hls());
+player.use(drm({
+  widevine: {
+    licenseUrl: "https://license.example.com/widevine",
+  },
+  fairplay: {
+    licenseUrl: "https://license.example.com/fairplay",
+    certificateUrl: "https://certificate.example.com/fairplay.cer",
+  },
+}));
+
+player.src = "https://example.com/encrypted-stream.m3u8";
+```
+
+Works with both HLS and DASH — plugin order doesn't matter.
+
+```ts
+// Custom headers for license requests (e.g. auth tokens)
+player.use(drm({
+  widevine: {
+    licenseUrl: "https://license.example.com/widevine",
+    headers: { Authorization: "Bearer <token>" },
+  },
+}));
 ```
 
 ### UI

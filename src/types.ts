@@ -152,4 +152,9 @@ export interface Player extends EventBus {
 
 	use(plugin: Plugin): void;
 	destroy(): void;
+
+	/** Store data for cross-plugin communication. */
+	setPluginData(key: string, data: unknown): void;
+	/** Retrieve data stored by another plugin. Returns undefined if not set. */
+	getPluginData(key: string): unknown;
 }

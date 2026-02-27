@@ -32,6 +32,10 @@
       "types": "./dist/dash/index.d.ts",
       "import": "./dist/dash/index.mjs"
     },
+    "./drm": {
+      "types": "./dist/drm/index.d.ts",
+      "import": "./dist/drm/index.mjs"
+    },
     "./ui": {
       "types": "./dist/ui/index.d.ts",
       "import": "./dist/ui/index.mjs"

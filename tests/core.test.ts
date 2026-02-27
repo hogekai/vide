@@ -601,6 +601,35 @@ describe("player.src", () => {
 	});
 });
 
+describe("setPluginData / getPluginData", () => {
+	it("stores and retrieves plugin data", () => {
+		const player = createPlayer(makeVideo());
+		player.setPluginData("drm", { keySystem: "com.widevine.alpha" });
+		expect(player.getPluginData("drm")).toEqual({
+			keySystem: "com.widevine.alpha",
+		});
+	});
+
+	it("returns undefined for unset keys", () => {
+		const player = createPlayer(makeVideo());
+		expect(player.getPluginData("nonexistent")).toBeUndefined();
+	});
+
+	it("overwrites existing data", () => {
+		const player = createPlayer(makeVideo());
+		player.setPluginData("drm", { v: 1 });
+		player.setPluginData("drm", { v: 2 });
+		expect(player.getPluginData("drm")).toEqual({ v: 2 });
+	});
+
+	it("clears plugin data on destroy", () => {
+		const player = createPlayer(makeVideo());
+		player.setPluginData("drm", { test: true });
+		player.destroy();
+		expect(player.getPluginData("drm")).toBeUndefined();
+	});
+});
+
 describe("<source> element auto-processing", () => {
 	it("processes <source> element when handler is registered", () => {
 		const el = document.createElement("video");

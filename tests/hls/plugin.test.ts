@@ -234,6 +234,59 @@ describe("hls plugin — <source> tag handling", () => {
 	});
 });
 
+describe("hls plugin — DRM integration", () => {
+	it("merges DRM config from pluginData into hls.js constructor", async () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		player.setPluginData("drm", {
+			keySystem: "com.widevine.alpha",
+			hlsConfig: {
+				emeEnabled: true,
+				drmSystems: {
+					"com.widevine.alpha": {
+						licenseUrl: "https://lic.example.com",
+					},
+				},
+			},
+			dashConfig: {},
+		});
+		player.use(hls());
+		player.src = "https://example.com/stream.m3u8";
+		await flushImport();
+		expect(MockHls).toHaveBeenCalledWith(
+			expect.objectContaining({ emeEnabled: true }),
+		);
+	});
+
+	it("user hlsConfig is merged with DRM config", async () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		player.setPluginData("drm", {
+			keySystem: "com.widevine.alpha",
+			hlsConfig: { emeEnabled: true },
+			dashConfig: {},
+		});
+		player.use(hls({ hlsConfig: { maxBufferLength: 60 } }));
+		player.src = "https://example.com/stream.m3u8";
+		await flushImport();
+		expect(MockHls).toHaveBeenCalledWith(
+			expect.objectContaining({
+				emeEnabled: true,
+				maxBufferLength: 60,
+			}),
+		);
+	});
+
+	it("works without DRM plugin (no pluginData)", async () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		player.use(hls({ hlsConfig: { maxBufferLength: 60 } }));
+		player.src = "https://example.com/stream.m3u8";
+		await flushImport();
+		expect(MockHls).toHaveBeenCalledWith({ maxBufferLength: 60 });
+	});
+});
+
 describe("hls plugin — lifecycle", () => {
 	it("destroys hls.js instance when source changes", async () => {
 		const el = makeVideo();

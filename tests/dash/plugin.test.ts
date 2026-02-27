@@ -177,6 +177,89 @@ describe("dash plugin — dashjs integration", () => {
 	});
 });
 
+describe("dash plugin — DRM integration", () => {
+	it("applies DRM config via updateSettings before user config", async () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		player.setPluginData("drm", {
+			keySystem: "com.widevine.alpha",
+			hlsConfig: {},
+			dashConfig: {
+				streaming: {
+					protection: {
+						data: {
+							"com.widevine.alpha": {
+								serverURL: "https://lic.example.com",
+							},
+						},
+					},
+				},
+			},
+		});
+		player.use(dash());
+		player.src = "https://example.com/stream.mpd";
+		await flushImport();
+		expect(mockInstance.updateSettings).toHaveBeenCalledWith(
+			expect.objectContaining({
+				streaming: expect.objectContaining({
+					protection: expect.any(Object),
+				}),
+			}),
+		);
+	});
+
+	it("applies both DRM and user config (two updateSettings calls)", async () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		player.setPluginData("drm", {
+			keySystem: "com.widevine.alpha",
+			hlsConfig: {},
+			dashConfig: {
+				streaming: {
+					protection: {
+						data: {
+							"com.widevine.alpha": {
+								serverURL: "https://lic.example.com",
+							},
+						},
+					},
+				},
+			},
+		});
+		const userConfig = {
+			streaming: { buffer: { bufferTimeDefault: 20 } },
+		};
+		player.use(dash({ dashConfig: userConfig }));
+		player.src = "https://example.com/stream.mpd";
+		await flushImport();
+		expect(mockInstance.updateSettings).toHaveBeenCalledTimes(2);
+	});
+
+	it("works without DRM plugin (no pluginData)", async () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		player.use(
+			dash({
+				dashConfig: {
+					streaming: { buffer: { bufferTimeDefault: 20 } },
+				},
+			}),
+		);
+		player.src = "https://example.com/stream.mpd";
+		await flushImport();
+		expect(mockInstance.updateSettings).toHaveBeenCalledTimes(1);
+	});
+
+	it("does not call updateSettings when neither DRM nor user config", async () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		player.use(dash());
+		player.src = "https://example.com/stream.mpd";
+		await flushImport();
+		expect(mockInstance.updateSettings).not.toHaveBeenCalled();
+	});
+});
+
 describe("dash plugin — autoplay", () => {
 	it("passes autoplay=true when video element has autoplay attribute", async () => {
 		const el = makeVideo();

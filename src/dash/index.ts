@@ -71,6 +71,12 @@ export function dash(options: DashPluginOptions = {}): Plugin {
 							.create() as DashMediaPlayerLike;
 						dashInstance = instance;
 
+						const drmData = player.getPluginData("drm") as
+							| { dashConfig?: Record<string, unknown> }
+							| undefined;
+						if (drmData?.dashConfig) {
+							instance.updateSettings(drmData.dashConfig);
+						}
 						if (options.dashConfig) {
 							instance.updateSettings(options.dashConfig);
 						}

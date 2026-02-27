@@ -83,7 +83,14 @@ export function hls(options: HlsPluginOptions = {}): Plugin {
 							return;
 						}
 
-						const instance = new Hls((options.hlsConfig as object) ?? {});
+						const drmData = player.getPluginData("drm") as
+							| { hlsConfig?: Record<string, unknown> }
+							| undefined;
+						const mergedConfig = {
+							...((options.hlsConfig as object) ?? {}),
+							...(drmData?.hlsConfig ?? {}),
+						};
+						const instance = new Hls(mergedConfig);
 						hlsInstance = instance as HlsLike;
 
 						instance.on(
