@@ -1,6 +1,6 @@
 {
   "name": "vide",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Zero-config, web-standard-first lightweight video player library",
   "type": "module",
   "exports": {
