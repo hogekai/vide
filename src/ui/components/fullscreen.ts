@@ -3,18 +3,18 @@ import { el } from "../utils.js";
 
 export function createFullscreen(): UIComponent {
 	let button: HTMLButtonElement | null = null;
-	let container: HTMLElement | null = null;
+	let fsTarget: HTMLElement | null = null;
 
 	function isFullscreen(): boolean {
 		return document.fullscreenElement != null;
 	}
 
 	function onClick(): void {
-		if (!container) return;
+		if (!fsTarget) return;
 		if (isFullscreen()) {
 			document.exitFullscreen().catch(() => {});
 		} else {
-			container.requestFullscreen().catch(() => {});
+			fsTarget.requestFullscreen().catch(() => {});
 		}
 	}
 
@@ -30,12 +30,14 @@ export function createFullscreen(): UIComponent {
 	}
 
 	return {
-		mount(c: HTMLElement): void {
-			container = c;
+		mount(container: HTMLElement): void {
+			// Walk up to find the .vide-ui root (or the container that holds it)
+			// for fullscreen target — the mount container is the controls bar
+			fsTarget = container.closest(".vide-ui")?.parentElement ?? container;
 			button = el("button", "vide-fullscreen");
 			button.type = "button";
 			button.setAttribute("aria-label", "Fullscreen");
-			c.appendChild(button);
+			container.appendChild(button);
 		},
 		connect(): void {
 			if (!button) return;
@@ -49,7 +51,7 @@ export function createFullscreen(): UIComponent {
 				button = null;
 			}
 			document.removeEventListener("fullscreenchange", onFullscreenChange);
-			container = null;
+			fsTarget = null;
 		},
 	};
 }

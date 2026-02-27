@@ -1,4 +1,4 @@
-import type { Player } from "../../types.js";
+import type { Player, PlayerState } from "../../types.js";
 import { isAdState } from "../state.js";
 import type { AdUIStateRef, UIComponent } from "../types.js";
 import { el } from "../utils.js";
@@ -14,12 +14,16 @@ export function createAdSkip(adState: AdUIStateRef): UIComponent {
 	}
 
 	function onTimeUpdate(): void {
-		if (!button || !player || !isAdState(player.state) || !adState.current)
+		if (!button || !player || !isAdState(player.state)) return;
+
+		// Hide button entirely if no ad data or ad is non-skippable
+		if (!adState.current || adState.current.skipOffset === undefined) {
+			button.style.display = "none";
 			return;
+		}
 
+		button.style.display = "";
 		const { skipOffset } = adState.current;
-		if (skipOffset === undefined) return;
-
 		const current = player.el.currentTime;
 		if (current >= skipOffset) {
 			button.classList.remove("vide-skip--disabled");
@@ -31,11 +35,22 @@ export function createAdSkip(adState: AdUIStateRef): UIComponent {
 		}
 	}
 
+	function onStateChange({ to }: { from: PlayerState; to: PlayerState }): void {
+		if (!button) return;
+		// Reset button when leaving ad state
+		if (!isAdState(to)) {
+			button.style.display = "none";
+			button.classList.add("vide-skip--disabled");
+			button.textContent = "";
+		}
+	}
+
 	return {
 		mount(container: HTMLElement): void {
 			button = el("button", "vide-skip vide-skip--disabled");
 			button.type = "button";
 			button.setAttribute("aria-label", "Skip ad");
+			button.style.display = "none";
 			container.appendChild(button);
 		},
 		connect(p: Player): void {
@@ -43,6 +58,7 @@ export function createAdSkip(adState: AdUIStateRef): UIComponent {
 			if (!button) return;
 			button.addEventListener("click", onClick);
 			player.on("timeupdate", onTimeUpdate);
+			player.on("statechange", onStateChange);
 		},
 		destroy(): void {
 			if (button) {
@@ -52,6 +68,7 @@ export function createAdSkip(adState: AdUIStateRef): UIComponent {
 			}
 			if (player) {
 				player.off("timeupdate", onTimeUpdate);
+				player.off("statechange", onStateChange);
 				player = null;
 			}
 		},

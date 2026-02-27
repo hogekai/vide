@@ -28,9 +28,10 @@
     .vide-progress {
       flex: 1; height: 8px; background: #333;
       border-radius: 4px; cursor: pointer; position: relative;
+      overflow: hidden;
     }
     .vide-progress__bar {
-      position: absolute; top: 0; left: 0; bottom: 0;
+      position: absolute; top: 0; left: 0; right: 0; bottom: 0;
       background: #0ff; border-radius: 4px;
       transform: scaleX(var(--vide-progress, 0)); transform-origin: left;
     }
@@ -74,6 +75,7 @@
 <body>
   <h1 style="color: #0ff;">vide — Headless UI (Cyberpunk Theme)</h1>
   <p style="opacity: 0.6;">No theme.css imported. All styles are custom. Same plugin code.</p>
+  <p style="opacity: 0.6;">Excluded: <code>volume</code>, <code>fullscreen</code>, <code>ad-countdown</code>, <code>ad-skip</code>, <code>ad-overlay</code>, <code>ad-label</code></p>
 
   <div id="player-container">
     <video id="player"

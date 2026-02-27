@@ -22,14 +22,15 @@ function driveToAdPlaying(
 }
 
 describe("createAdSkip", () => {
-	it("mounts skip button with disabled class", () => {
+	it("mounts skip button hidden and disabled", () => {
 		const adState = createAdUIState();
 		const container = document.createElement("div");
 		const comp = createAdSkip(adState);
 		comp.mount(container);
-		const btn = container.querySelector(".vide-skip") as Element;
+		const btn = container.querySelector(".vide-skip") as HTMLElement;
 		expect(btn).not.toBeNull();
 		expect(btn.classList.contains("vide-skip--disabled")).toBe(true);
+		expect(btn.style.display).toBe("none");
 		comp.destroy();
 	});
 

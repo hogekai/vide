@@ -32,7 +32,7 @@ describe("createBigPlay", () => {
 		comp.destroy();
 	});
 
-	it("resets currentTime to 0 when state is ended", () => {
+	it("calls load and auto-plays when state is ended", () => {
 		const el = makeVideo();
 		const player = createPlayer(el);
 		// Drive to ended state
@@ -46,12 +46,22 @@ describe("createBigPlay", () => {
 		comp.mount(container);
 		comp.connect(player);
 
-		vi.spyOn(player, "play").mockResolvedValue();
+		const loadSpy = vi.spyOn(el, "load").mockImplementation(() => {});
+		const playSpy = vi.spyOn(player, "play").mockResolvedValue();
 		const btn = container.querySelector<HTMLButtonElement>(
 			".vide-bigplay",
 		) as HTMLButtonElement;
 		btn.click();
-		expect(player.currentTime).toBe(0);
+
+		// Should call load to restart from ended state
+		expect(loadSpy).toHaveBeenCalled();
+
+		// Simulate the reload sequence: ended → loading → ready
+		el.dispatchEvent(new Event("loadstart"));
+		el.dispatchEvent(new Event("canplay"));
+
+		// After reaching ready, should auto-play
+		expect(playSpy).toHaveBeenCalled();
 		comp.destroy();
 	});
 
