@@ -3,9 +3,9 @@
 Modular video player library. Use only what you need.
 
 ```ts
-import { createPlayer } from "videts";
-import { vast } from "videts/vast";
-import { hls } from "videts/hls";
+import { createPlayer } from "@videts/vide";
+import { vast } from "@videts/vide/vast";
+import { hls } from "@videts/vide/hls";
 
 const player = createPlayer(document.querySelector("video")!);
 player.use(hls());
@@ -14,17 +14,17 @@ player.use(vast({ tagUrl: "https://example.com/vast.xml" }));
 
 | Plugin | What | gzip |
 |--------|------|-----:|
-| `videts` | Core player | 1.7 KB |
-| `videts/vast` | VAST 4.2 ads | 1.5 KB |
-| `videts/vmap` | VMAP scheduling | 2.6 KB |
-| `videts/hls` | HLS streaming | 0.6 KB |
-| `videts/dash` | DASH streaming | 0.6 KB |
-| `videts/drm` | DRM (Widevine + FairPlay) | 0.8 KB |
-| `videts/ssai` | SSAI (server-side ads) | 1.4 KB |
-| `videts/omid` | Open Measurement | 1.7 KB |
-| `videts/simid` | Interactive ads | 2.4 KB |
-| `videts/ui` | Headless UI | 4.7 KB |
-| `videts/ui/theme.css` | Default theme | 3.4 KB |
+| `@videts/vide` | Core player | 1.7 KB |
+| `@videts/vide/vast` | VAST 4.2 ads | 1.5 KB |
+| `@videts/vide/vmap` | VMAP scheduling | 2.6 KB |
+| `@videts/vide/hls` | HLS streaming | 0.6 KB |
+| `@videts/vide/dash` | DASH streaming | 0.6 KB |
+| `@videts/vide/drm` | DRM (Widevine + FairPlay) | 0.8 KB |
+| `@videts/vide/ssai` | SSAI (server-side ads) | 1.4 KB |
+| `@videts/vide/omid` | Open Measurement | 1.7 KB |
+| `@videts/vide/simid` | Interactive ads | 2.4 KB |
+| `@videts/vide/ui` | Headless UI | 4.7 KB |
+| `@videts/vide/ui/theme.css` | Default theme | 3.4 KB |
 
 > HLS and DASH plugins require `hls.js` and `dashjs` as peer dependencies.
 
@@ -34,16 +34,16 @@ Web standards first — if the browser can do it, we don't reinvent it.
 ## Install
 
 ```sh
-npm install videts
+npm install @videts/vide
 ```
 
-> Package is published as **videts** on npm. The project name is **vide**.
+> Package is published as **@videts/vide** on npm. The project name is **vide**.
 
 ## Quick Start
 
 ```ts
-import { createPlayer } from "videts";
-// import type { PlayerEventMap } from "videts";
+import { createPlayer } from "@videts/vide";
+// import type { PlayerEventMap } from "@videts/vide";
 
 const player = createPlayer(document.querySelector("video")!);
 
@@ -75,8 +75,8 @@ npm install hls.js
 ```
 
 ```ts
-import { createPlayer } from "videts";
-import { hls } from "videts/hls";
+import { createPlayer } from "@videts/vide";
+import { hls } from "@videts/vide/hls";
 
 const player = createPlayer(document.querySelector("video")!);
 player.use(hls());
@@ -96,8 +96,8 @@ npm install dashjs
 ```
 
 ```ts
-import { createPlayer } from "videts";
-import { dash } from "videts/dash";
+import { createPlayer } from "@videts/vide";
+import { dash } from "@videts/vide/dash";
 
 const player = createPlayer(document.querySelector("video")!);
 player.use(dash());
@@ -115,9 +115,9 @@ player.use(dash({ dashConfig: { streaming: { buffer: { bufferTimeDefault: 20 } }
 Widevine (Chrome/Firefox/Edge) and FairPlay (Safari/iOS). The plugin detects the browser's key system automatically — just pass the license server URL.
 
 ```ts
-import { createPlayer } from "videts";
-import { hls } from "videts/hls";
-import { drm } from "videts/drm";
+import { createPlayer } from "@videts/vide";
+import { hls } from "@videts/vide/hls";
+import { drm } from "@videts/vide/drm";
 
 const player = createPlayer(document.querySelector("video")!);
 player.use(hls());
@@ -151,9 +151,9 @@ player.use(drm({
 Detects ad breaks from HLS/DASH in-band metadata and fires standard ad events. No vendor SDK required.
 
 ```ts
-import { createPlayer } from "videts";
-import { hls } from "videts/hls";
-import { ssai } from "videts/ssai";
+import { createPlayer } from "@videts/vide";
+import { hls } from "@videts/vide/hls";
+import { ssai } from "@videts/vide/ssai";
 
 const player = createPlayer(document.querySelector("video")!);
 player.use(hls());
@@ -188,9 +188,9 @@ Headless by default — JS creates DOM and wires behavior, styling is yours.
 Import `theme.css` for a ready-made look, or target the BEM classes (`vide-play`, `vide-progress__bar`, …) yourself.
 
 ```ts
-import { createPlayer } from "videts";
-import { ui } from "videts/ui";
-import "videts/ui/theme.css"; // optional — brings default skin
+import { createPlayer } from "@videts/vide";
+import { ui } from "@videts/vide/ui";
+import "@videts/vide/ui/theme.css"; // optional — brings default skin
 
 const player = createPlayer(document.querySelector("video")!);
 player.use(ui({ container: document.getElementById("player-container")! }));
@@ -210,7 +210,7 @@ player.use(ui({
 Components can also be used individually:
 
 ```ts
-import { createPlayButton, createProgress } from "videts/ui";
+import { createPlayButton, createProgress } from "@videts/vide/ui";
 
 const play = createPlayButton();
 play.mount(controls);
@@ -220,8 +220,8 @@ play.connect(player);
 #### UI + VAST Ads
 
 ```ts
-import { ui } from "videts/ui";
-import { vast } from "videts/vast";
+import { ui } from "@videts/vide/ui";
+import { vast } from "@videts/vide/vast";
 
 // UI plugin provides ad components (countdown, skip, overlay, label)
 // that integrate with VAST playback via getAdPlugin()
@@ -236,22 +236,22 @@ player.use(vast({
 ### VAST Ads
 
 ```ts
-import { vast } from "videts/vast";
+import { vast } from "@videts/vide/vast";
 player.use(vast({ tagUrl: "https://example.com/vast.xml" }));
 ```
 
 ### VMAP Ad Scheduling
 
 ```ts
-import { vmap } from "videts/vmap";
+import { vmap } from "@videts/vide/vmap";
 player.use(vmap({ vmapUrl: "https://example.com/vmap.xml" }));
 ```
 
 ### OMID Viewability
 
 ```ts
-import { vast } from "videts/vast";
-import { omid } from "videts/omid";
+import { vast } from "@videts/vide/vast";
+import { omid } from "@videts/vide/omid";
 
 player.use(vast({
   tagUrl: "https://example.com/vast.xml",
@@ -262,8 +262,8 @@ player.use(vast({
 ### SIMID Interactive Ads
 
 ```ts
-import { vast } from "videts/vast";
-import { simid } from "videts/simid";
+import { vast } from "@videts/vide/vast";
+import { simid } from "@videts/vide/simid";
 
 player.use(vast({
   tagUrl: "https://example.com/vast.xml",
