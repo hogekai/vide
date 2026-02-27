@@ -36,9 +36,9 @@ describe("createAutohide", () => {
 	it("adds idle class after 3s of inactivity when playing", () => {
 		const { videoEl, root, comp } = setup();
 		driveToPlaying(videoEl);
-		expect(root.classList.contains("vide-ui--idle")).toBe(false);
+		expect(root.classList.contains("vide-ui--autohide")).toBe(false);
 		vi.advanceTimersByTime(3000);
-		expect(root.classList.contains("vide-ui--idle")).toBe(true);
+		expect(root.classList.contains("vide-ui--autohide")).toBe(true);
 		comp.destroy();
 	});
 
@@ -46,9 +46,9 @@ describe("createAutohide", () => {
 		const { videoEl, root, comp } = setup();
 		driveToPlaying(videoEl);
 		vi.advanceTimersByTime(3000);
-		expect(root.classList.contains("vide-ui--idle")).toBe(true);
+		expect(root.classList.contains("vide-ui--autohide")).toBe(true);
 		root.dispatchEvent(new MouseEvent("mousemove"));
-		expect(root.classList.contains("vide-ui--idle")).toBe(false);
+		expect(root.classList.contains("vide-ui--autohide")).toBe(false);
 		comp.destroy();
 	});
 
@@ -59,10 +59,10 @@ describe("createAutohide", () => {
 		root.dispatchEvent(new MouseEvent("mousemove"));
 		vi.advanceTimersByTime(2000);
 		// Should not be idle yet (only 2s since last activity)
-		expect(root.classList.contains("vide-ui--idle")).toBe(false);
+		expect(root.classList.contains("vide-ui--autohide")).toBe(false);
 		vi.advanceTimersByTime(1000);
 		// Now 3s since last activity
-		expect(root.classList.contains("vide-ui--idle")).toBe(true);
+		expect(root.classList.contains("vide-ui--autohide")).toBe(true);
 		comp.destroy();
 	});
 
@@ -71,7 +71,7 @@ describe("createAutohide", () => {
 		driveToPlaying(videoEl);
 		videoEl.dispatchEvent(new Event("pause"));
 		vi.advanceTimersByTime(5000);
-		expect(root.classList.contains("vide-ui--idle")).toBe(false);
+		expect(root.classList.contains("vide-ui--autohide")).toBe(false);
 		comp.destroy();
 	});
 
@@ -84,7 +84,7 @@ describe("createAutohide", () => {
 		setState("ad:loading");
 		setState("ad:playing");
 		vi.advanceTimersByTime(5000);
-		expect(root.classList.contains("vide-ui--idle")).toBe(false);
+		expect(root.classList.contains("vide-ui--autohide")).toBe(false);
 		comp.destroy();
 	});
 
@@ -92,9 +92,9 @@ describe("createAutohide", () => {
 		const { videoEl, root, comp } = setup();
 		driveToPlaying(videoEl);
 		vi.advanceTimersByTime(3000);
-		expect(root.classList.contains("vide-ui--idle")).toBe(true);
+		expect(root.classList.contains("vide-ui--autohide")).toBe(true);
 		videoEl.dispatchEvent(new Event("pause"));
-		expect(root.classList.contains("vide-ui--idle")).toBe(false);
+		expect(root.classList.contains("vide-ui--autohide")).toBe(false);
 		comp.destroy();
 	});
 
@@ -102,18 +102,18 @@ describe("createAutohide", () => {
 		const { videoEl, root, comp } = setup();
 		driveToPlaying(videoEl);
 		vi.advanceTimersByTime(3000);
-		expect(root.classList.contains("vide-ui--idle")).toBe(true);
+		expect(root.classList.contains("vide-ui--autohide")).toBe(true);
 		comp.destroy();
-		expect(root.classList.contains("vide-ui--idle")).toBe(false);
+		expect(root.classList.contains("vide-ui--autohide")).toBe(false);
 	});
 
 	it("removes idle class on keydown", () => {
 		const { videoEl, root, comp } = setup();
 		driveToPlaying(videoEl);
 		vi.advanceTimersByTime(3000);
-		expect(root.classList.contains("vide-ui--idle")).toBe(true);
+		expect(root.classList.contains("vide-ui--autohide")).toBe(true);
 		root.dispatchEvent(new KeyboardEvent("keydown", { key: " " }));
-		expect(root.classList.contains("vide-ui--idle")).toBe(false);
+		expect(root.classList.contains("vide-ui--autohide")).toBe(false);
 		comp.destroy();
 	});
 });

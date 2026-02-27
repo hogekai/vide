@@ -23,14 +23,14 @@ export function createAutohide(): UIComponent {
 
 	function showControls(): void {
 		if (!root) return;
-		root.classList.remove("vide-ui--idle");
+		root.classList.remove("vide-ui--autohide");
 	}
 
 	function startTimer(): void {
 		clearTimer();
 		if (shouldStayVisible()) return;
 		timer = setTimeout(() => {
-			if (root) root.classList.add("vide-ui--idle");
+			if (root) root.classList.add("vide-ui--autohide");
 		}, IDLE_DELAY);
 	}
 
@@ -80,7 +80,7 @@ export function createAutohide(): UIComponent {
 				root.removeEventListener("mousemove", onActivity);
 				root.removeEventListener("touchstart", onActivity);
 				root.removeEventListener("keydown", onActivity);
-				root.classList.remove("vide-ui--idle");
+				root.classList.remove("vide-ui--autohide");
 				root = null;
 			}
 			if (player) {

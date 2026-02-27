@@ -102,16 +102,20 @@
 
 
 /* ═══════════════════════════════════════════
-   IDLE
+   AUTOHIDE (mouse-idle during playback)
    ═══════════════════════════════════════════ */
 
-.vide-ui--idle {
+.vide-ui--autohide {
 	cursor: none;
 }
 
-.vide-ui--idle .vide-controls {
+.vide-ui--autohide .vide-controls {
 	opacity: 0;
 	pointer-events: none;
+}
+
+.vide-ui--autohide .vide-bigplay {
+	display: none;
 }
 
 
