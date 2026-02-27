@@ -1,6 +1,6 @@
 {
   "name": "videts",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "Modular video player — use only what you need. VAST/VMAP, HLS, DASH as plugins.",
   "type": "module",
   "exports": {
