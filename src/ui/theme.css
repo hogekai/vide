@@ -1,0 +1,399 @@
+/* vide UI — Default Theme */
+
+:root {
+	--vide-accent: #fff;
+	--vide-bg: rgba(0, 0, 0, 0.7);
+	--vide-text: #fff;
+	--vide-font-size: 13px;
+	--vide-controls-height: 40px;
+	--vide-progress-height: 4px;
+	--vide-transition: 0.2s ease;
+}
+
+/* === Root === */
+.vide-ui {
+	position: relative;
+	width: 100%;
+	height: 100%;
+	font-family: system-ui, -apple-system, sans-serif;
+	font-size: var(--vide-font-size);
+	color: var(--vide-text);
+	user-select: none;
+	-webkit-user-select: none;
+}
+
+/* === Controls Bar === */
+.vide-controls {
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	height: var(--vide-controls-height);
+	padding: 0 12px;
+	background: linear-gradient(transparent, rgba(0, 0, 0, 0.6));
+	opacity: 0;
+	transition: opacity var(--vide-transition);
+}
+
+.vide-ui:hover .vide-controls,
+.vide-ui--paused .vide-controls {
+	opacity: 1;
+}
+
+/* === Play Button === */
+.vide-play {
+	appearance: none;
+	border: none;
+	background: none;
+	color: var(--vide-accent);
+	cursor: pointer;
+	width: 28px;
+	height: 28px;
+	padding: 0;
+	position: relative;
+	flex-shrink: 0;
+}
+
+.vide-play::before {
+	content: "";
+	display: block;
+	width: 0;
+	height: 0;
+	border-style: solid;
+	border-width: 8px 0 8px 14px;
+	border-color: transparent transparent transparent var(--vide-accent);
+}
+
+.vide-play--playing::before {
+	border-width: 0;
+	width: 12px;
+	height: 16px;
+	border-left: 3px solid var(--vide-accent);
+	border-right: 3px solid var(--vide-accent);
+}
+
+/* === Progress Bar === */
+.vide-progress {
+	flex: 1;
+	height: 20px;
+	display: flex;
+	align-items: center;
+	cursor: pointer;
+	position: relative;
+}
+
+.vide-progress__buffered,
+.vide-progress__bar,
+.vide-progress__handle {
+	position: absolute;
+	left: 0;
+	height: var(--vide-progress-height);
+	border-radius: calc(var(--vide-progress-height) / 2);
+	pointer-events: none;
+}
+
+.vide-progress__buffered {
+	right: 0;
+	background: rgba(255, 255, 255, 0.25);
+	transform: scaleX(var(--vide-progress-buffered, 0));
+	transform-origin: left;
+}
+
+.vide-progress__bar {
+	right: 0;
+	background: var(--vide-accent);
+	transform: scaleX(var(--vide-progress, 0));
+	transform-origin: left;
+}
+
+.vide-progress__handle {
+	width: 12px;
+	height: 12px;
+	border-radius: 50%;
+	background: var(--vide-accent);
+	transform: translateX(calc((var(--vide-progress, 0) * (100% - 12px)) + -50%));
+	left: calc(var(--vide-progress, 0) * 100%);
+	opacity: 0;
+	transition: opacity var(--vide-transition);
+}
+
+.vide-progress:hover .vide-progress__handle,
+.vide-progress--dragging .vide-progress__handle {
+	opacity: 1;
+}
+
+.vide-progress--disabled {
+	pointer-events: none;
+	opacity: 0.4;
+}
+
+/* === Time Display === */
+.vide-time {
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+	flex-shrink: 0;
+}
+
+.vide-time__separator {
+	margin: 0 2px;
+	opacity: 0.6;
+}
+
+/* === Volume === */
+.vide-volume {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	flex-shrink: 0;
+}
+
+.vide-volume__button {
+	appearance: none;
+	border: none;
+	background: none;
+	color: var(--vide-accent);
+	cursor: pointer;
+	width: 24px;
+	height: 24px;
+	padding: 0;
+	position: relative;
+}
+
+.vide-volume__button::before {
+	content: "\1F50A";
+	font-size: 16px;
+}
+
+.vide-volume--muted .vide-volume__button::before {
+	content: "\1F507";
+}
+
+.vide-volume__slider {
+	width: 60px;
+	height: 20px;
+	display: flex;
+	align-items: center;
+	cursor: pointer;
+	position: relative;
+}
+
+.vide-volume__track {
+	position: absolute;
+	left: 0;
+	right: 0;
+	height: 3px;
+	border-radius: 1.5px;
+	background: rgba(255, 255, 255, 0.25);
+}
+
+.vide-volume__filled {
+	position: absolute;
+	left: 0;
+	right: 0;
+	height: 3px;
+	border-radius: 1.5px;
+	background: var(--vide-accent);
+	transform: scaleX(var(--vide-volume, 1));
+	transform-origin: left;
+}
+
+/* === Fullscreen === */
+.vide-fullscreen {
+	appearance: none;
+	border: none;
+	background: none;
+	color: var(--vide-accent);
+	cursor: pointer;
+	width: 24px;
+	height: 24px;
+	padding: 0;
+	flex-shrink: 0;
+}
+
+.vide-fullscreen::before {
+	content: "\26F6";
+	font-size: 18px;
+}
+
+.vide-fullscreen--active::before {
+	content: "\2716";
+}
+
+/* === Big Play Button === */
+.vide-bigplay {
+	display: none;
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	appearance: none;
+	border: none;
+	width: 64px;
+	height: 64px;
+	border-radius: 50%;
+	background: var(--vide-bg);
+	color: var(--vide-accent);
+	cursor: pointer;
+	align-items: center;
+	justify-content: center;
+}
+
+.vide-bigplay::before {
+	content: "";
+	display: block;
+	width: 0;
+	height: 0;
+	border-style: solid;
+	border-width: 12px 0 12px 22px;
+	border-color: transparent transparent transparent var(--vide-accent);
+	margin-left: 4px;
+}
+
+.vide-ui--idle .vide-bigplay,
+.vide-ui--ready .vide-bigplay,
+.vide-ui--paused .vide-bigplay,
+.vide-ui--ended .vide-bigplay {
+	display: flex;
+}
+
+/* === Loader === */
+.vide-loader {
+	display: none;
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+}
+
+.vide-loader__spinner {
+	width: 40px;
+	height: 40px;
+	border: 3px solid rgba(255, 255, 255, 0.3);
+	border-top-color: var(--vide-accent);
+	border-radius: 50%;
+	animation: vide-spin 0.8s linear infinite;
+}
+
+@keyframes vide-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+.vide-ui--loading .vide-loader,
+.vide-ui--buffering .vide-loader,
+.vide-ui--ad-loading .vide-loader {
+	display: flex;
+}
+
+/* === Error Display === */
+.vide-error {
+	display: none;
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	background: var(--vide-bg);
+	padding: 16px 24px;
+	border-radius: 8px;
+	text-align: center;
+	max-width: 80%;
+}
+
+.vide-ui--error .vide-error {
+	display: flex;
+}
+
+/* === Poster === */
+.vide-poster {
+	display: none;
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+}
+
+.vide-poster__image {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+.vide-ui--idle .vide-poster,
+.vide-ui--ready .vide-poster {
+	display: block;
+}
+
+/* === Ad Layer === */
+.vide-ad {
+	display: none;
+}
+
+.vide-ui--ad-loading .vide-ad,
+.vide-ui--ad-playing .vide-ad,
+.vide-ui--ad-paused .vide-ad {
+	display: block;
+}
+
+/* === Ad Overlay === */
+.vide-ad-overlay {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: var(--vide-controls-height);
+	cursor: pointer;
+}
+
+/* === Ad Label === */
+.vide-ad-label {
+	position: absolute;
+	top: 8px;
+	left: 8px;
+	background: var(--vide-bg);
+	padding: 2px 8px;
+	border-radius: 2px;
+	font-size: 12px;
+}
+
+/* === Ad Countdown === */
+.vide-ad-countdown {
+	position: absolute;
+	bottom: calc(var(--vide-controls-height) + 8px);
+	left: 8px;
+	font-size: 12px;
+	opacity: 0.8;
+}
+
+/* === Skip Button === */
+.vide-skip {
+	position: absolute;
+	bottom: calc(var(--vide-controls-height) + 8px);
+	right: 8px;
+	appearance: none;
+	border: 1px solid rgba(255, 255, 255, 0.6);
+	background: var(--vide-bg);
+	color: var(--vide-text);
+	padding: 6px 16px;
+	font-size: 14px;
+	border-radius: 3px;
+	cursor: pointer;
+}
+
+.vide-skip--disabled {
+	opacity: 0.5;
+	cursor: default;
+	pointer-events: none;
+}
+
+/* === Hide progress during ads === */
+.vide-ui--ad-loading .vide-progress,
+.vide-ui--ad-playing .vide-progress,
+.vide-ui--ad-paused .vide-progress {
+	pointer-events: none;
+	opacity: 0.3;
+}

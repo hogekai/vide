@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>vide — UI + VAST Ad</title>
+  <link rel="stylesheet" href="../dist/ui/theme.css">
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
+    #player-container { position: relative; width: 100%; background: #000; aspect-ratio: 16/9; }
+    #player-container video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+    .controls { margin: 1rem 0; display: flex; gap: 0.5rem; }
+    button { padding: 0.4rem 1rem; cursor: pointer; }
+    #log { font-family: monospace; font-size: 13px; background: #1a1a1a; color: #0f0; padding: 1rem; max-height: 200px; overflow-y: auto; border-radius: 4px; margin-top: 1rem; }
+    .log-entry { margin: 2px 0; }
+  </style>
+</head>
+<body>
+  <h1>vide — UI + VAST Ad</h1>
+
+  <div id="player-container">
+    <video id="player"
+      src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4">
+    </video>
+  </div>
+
+  <div class="controls">
+    <button onclick="playWithAd()">Play with VAST Ad</button>
+  </div>
+
+  <h3>State: <span id="state">-</span></h3>
+  <div id="log"></div>
+
+  <script type="module">
+    import { createPlayer } from "../dist/index.mjs";
+    import { vast } from "../dist/vast/index.mjs";
+    import { ui } from "../dist/ui/index.mjs";
+
+    const el = document.getElementById("player");
+    const container = document.getElementById("player-container");
+    const stateEl = document.getElementById("state");
+    const logEl = document.getElementById("log");
+
+    function log(msg) {
+      const entry = document.createElement("div");
+      entry.className = "log-entry";
+      entry.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+      logEl.prepend(entry);
+    }
+
+    const player = createPlayer(el);
+    window.player = player;
+
+    // Create UI plugin
+    const uiPlugin = ui({ container });
+    player.use(uiPlugin);
+
+    // Google IMA sample VAST tag (pre-roll, linear, skippable)
+    function vastTag() {
+      return "https://pubads.g.doubleclick.net/gampad/ads?"
+        + "iu=/21775744923/external/single_preroll_skippable"
+        + "&sz=640x480"
+        + "&ciu_szs=300x250,728x90"
+        + "&gdfp_req=1"
+        + "&output=vast"
+        + "&unviewed_position_start=1"
+        + "&env=vp"
+        + "&impl=s"
+        + "&correlator=" + Date.now();
+    }
+
+    window.playWithAd = function() {
+      log("--- Using vast() plugin with UI ad plugin ---");
+      player.use(vast({
+        tagUrl: vastTag(),
+        timeout: 10000,
+        adPlugins: uiPlugin.getAdPlugin(),
+      }));
+    };
+
+    player.on("statechange", ({ from, to }) => {
+      stateEl.textContent = to;
+      log(`state: ${from} → ${to}`);
+    });
+    player.on("ad:start", ({ adId }) => log(`ad:start id=${adId}`));
+    player.on("ad:end", ({ adId }) => log(`ad:end id=${adId}`));
+    player.on("ad:skip", ({ adId }) => log(`ad:skip id=${adId}`));
+    player.on("ad:click", ({ clickThrough }) => {
+      log(`ad:click → ${clickThrough ?? "(no clickThrough)"}`);
+      if (clickThrough) window.open(clickThrough, "_blank");
+    });
+    player.on("ad:error", ({ error }) => log(`ad:error: ${error.message}`));
+    player.on("error", ({ code, message }) => log(`error: [${code}] ${message}`));
+
+    log("Player created. State: " + player.state);
+  </script>
+</body>
+</html>

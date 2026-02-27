@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>vide — Headless UI (Custom Styles)</title>
+  <!-- No theme.css import — custom styles only -->
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 800px; margin: 2rem auto; padding: 0 1rem; background: #111; color: #eee; }
+    #player-container { position: relative; width: 100%; background: #000; aspect-ratio: 16/9; }
+    #player-container video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+
+    /* Custom styles for vide UI components */
+    .vide-ui { position: relative; width: 100%; height: 100%; }
+    .vide-controls {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      display: flex; align-items: center; gap: 12px;
+      padding: 8px 16px;
+      background: linear-gradient(transparent, rgba(0,0,0,0.8));
+    }
+    .vide-play {
+      appearance: none; border: 2px solid #0ff; background: none;
+      color: #0ff; width: 36px; height: 36px; border-radius: 50%;
+      cursor: pointer; font-size: 14px;
+    }
+    .vide-play::after { content: "▶"; }
+    .vide-play--playing::after { content: "⏸"; }
+    .vide-progress {
+      flex: 1; height: 8px; background: #333;
+      border-radius: 4px; cursor: pointer; position: relative;
+    }
+    .vide-progress__bar {
+      position: absolute; top: 0; left: 0; bottom: 0;
+      background: #0ff; border-radius: 4px;
+      transform: scaleX(var(--vide-progress, 0)); transform-origin: left;
+    }
+    .vide-progress__buffered, .vide-progress__handle { display: none; }
+    .vide-time { font-variant-numeric: tabular-nums; color: #0ff; font-size: 13px; }
+    .vide-time__separator { margin: 0 4px; opacity: 0.5; }
+    .vide-volume, .vide-fullscreen { display: none; }
+
+    /* Overlays */
+    .vide-bigplay {
+      display: none; position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      appearance: none; border: 3px solid #0ff; background: rgba(0,0,0,0.6);
+      color: #0ff; width: 80px; height: 80px; border-radius: 50%;
+      cursor: pointer; font-size: 24px;
+    }
+    .vide-bigplay::after { content: "▶"; }
+    .vide-ui--idle .vide-bigplay,
+    .vide-ui--ready .vide-bigplay,
+    .vide-ui--paused .vide-bigplay,
+    .vide-ui--ended .vide-bigplay { display: flex; align-items: center; justify-content: center; }
+
+    .vide-loader, .vide-error, .vide-poster, .vide-ad { display: none; }
+    .vide-ui--loading .vide-loader,
+    .vide-ui--buffering .vide-loader { display: flex; }
+    .vide-loader {
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+    }
+    .vide-loader__spinner {
+      width: 48px; height: 48px;
+      border: 3px solid rgba(0,255,255,0.2); border-top-color: #0ff;
+      border-radius: 50%; animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #log { font-family: monospace; font-size: 12px; background: #1a1a1a; color: #0ff; padding: 1rem; max-height: 150px; overflow-y: auto; border-radius: 4px; margin-top: 1rem; border: 1px solid #333; }
+    .log-entry { margin: 2px 0; }
+  </style>
+</head>
+<body>
+  <h1 style="color: #0ff;">vide — Headless UI (Cyberpunk Theme)</h1>
+  <p style="opacity: 0.6;">No theme.css imported. All styles are custom. Same plugin code.</p>
+
+  <div id="player-container">
+    <video id="player"
+      src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4">
+    </video>
+  </div>
+
+  <h3>State: <span id="state" style="color: #0ff;">-</span></h3>
+  <div id="log"></div>
+
+  <script type="module">
+    import { createPlayer } from "../dist/index.mjs";
+    import { ui } from "../dist/ui/index.mjs";
+    // Note: no theme.css import!
+
+    const el = document.getElementById("player");
+    const container = document.getElementById("player-container");
+    const stateEl = document.getElementById("state");
+    const logEl = document.getElementById("log");
+
+    function log(msg) {
+      const entry = document.createElement("div");
+      entry.className = "log-entry";
+      entry.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+      logEl.prepend(entry);
+    }
+
+    const player = createPlayer(el);
+
+    // Same UI plugin, no theme.css — headless with custom styles
+    player.use(ui({
+      container,
+      exclude: ["volume", "fullscreen", "ad-countdown", "ad-skip", "ad-overlay", "ad-label"],
+    }));
+
+    player.on("statechange", ({ from, to }) => {
+      stateEl.textContent = to;
+      log(`state: ${from} → ${to}`);
+    });
+
+    log("Headless UI ready. State: " + player.state);
+  </script>
+</body>
+</html>

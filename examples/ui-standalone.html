@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>vide — Standalone Components</title>
+  <link rel="stylesheet" href="../dist/ui/theme.css">
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
+    #player-container { position: relative; width: 100%; background: #000; aspect-ratio: 16/9; }
+    #player-container video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+    #log { font-family: monospace; font-size: 13px; background: #1a1a1a; color: #0f0; padding: 1rem; max-height: 200px; overflow-y: auto; border-radius: 4px; margin-top: 1rem; }
+    .log-entry { margin: 2px 0; }
+  </style>
+</head>
+<body>
+  <h1>vide — Standalone Components</h1>
+  <p>Uses individual component factories instead of the <code>ui()</code> convenience function.</p>
+
+  <div id="player-container">
+    <video id="player"
+      src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4">
+    </video>
+    <!-- Manually assembled UI root -->
+    <div class="vide-ui" id="ui-root">
+      <div class="vide-controls" id="controls"></div>
+    </div>
+  </div>
+
+  <h3>State: <span id="state">-</span></h3>
+  <div id="log"></div>
+
+  <script type="module">
+    import { createPlayer } from "../dist/index.mjs";
+    import {
+      createPlayButton,
+      createProgress,
+      createTimeDisplay,
+      createVolume,
+      connectStateClasses,
+    } from "../dist/ui/index.mjs";
+
+    const el = document.getElementById("player");
+    const uiRoot = document.getElementById("ui-root");
+    const controls = document.getElementById("controls");
+    const stateEl = document.getElementById("state");
+    const logEl = document.getElementById("log");
+
+    function log(msg) {
+      const entry = document.createElement("div");
+      entry.className = "log-entry";
+      entry.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+      logEl.prepend(entry);
+    }
+
+    const player = createPlayer(el);
+
+    // Mount individual components into the controls bar
+    const play = createPlayButton();
+    play.mount(controls);
+    play.connect(player);
+
+    const progress = createProgress();
+    progress.mount(controls);
+    progress.connect(player);
+
+    const time = createTimeDisplay();
+    time.mount(controls);
+    time.connect(player);
+
+    const volume = createVolume();
+    volume.mount(controls);
+    volume.connect(player);
+
+    // Connect state classes so theme.css visibility rules work
+    const cleanupState = connectStateClasses(uiRoot, player);
+
+    player.on("statechange", ({ from, to }) => {
+      stateEl.textContent = to;
+      log(`state: ${from} → ${to}`);
+    });
+
+    log("Standalone components ready. State: " + player.state);
+  </script>
+</body>
+</html>
