@@ -1,6 +1,7 @@
 import type {
 	AdCategory,
 	AdVerification,
+	InteractiveCreativeFile,
 	ResolveOptions,
 	VastAd,
 	VastCreative,
@@ -161,6 +162,7 @@ function parseLinear(linearEl: Element): VastLinear {
 		skipOffsetStr !== null ? parseOffset(skipOffsetStr, duration) : undefined;
 
 	const mediaFiles = parseMediaFiles(linearEl);
+	const interactiveCreativeFiles = parseInteractiveCreativeFiles(linearEl);
 	const trackingEvents = parseTrackingEvents(linearEl);
 
 	const videoClicksEl = linearEl.querySelector("VideoClicks");
@@ -175,6 +177,7 @@ function parseLinear(linearEl: Element): VastLinear {
 		duration,
 		skipOffset,
 		mediaFiles,
+		interactiveCreativeFiles,
 		trackingEvents,
 		clickThrough,
 		clickTracking,
@@ -202,6 +205,34 @@ function parseMediaFiles(linearEl: Element): VastMediaFile[] {
 			delivery:
 				deliveryAttr === "streaming" ? "streaming" : "progressive",
 		});
+	}
+
+	return files;
+}
+
+function parseInteractiveCreativeFiles(
+	linearEl: Element,
+): InteractiveCreativeFile[] {
+	const mediaFilesEl = linearEl.querySelector("MediaFiles");
+	if (!mediaFilesEl) return [];
+
+	const files: InteractiveCreativeFile[] = [];
+	const els = directChildren(mediaFilesEl, "InteractiveCreativeFile");
+
+	for (const el of els) {
+		const url = (el.textContent ?? "").trim();
+		if (!url) continue;
+
+		const apiFramework = el.getAttribute("apiFramework") ?? "";
+		const variableDurationAttr = el.getAttribute("variableDuration");
+		const variableDuration =
+			variableDurationAttr === "true"
+				? true
+				: variableDurationAttr === "false"
+					? false
+					: undefined;
+
+		files.push({ url, apiFramework, variableDuration });
 	}
 
 	return files;

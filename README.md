@@ -62,6 +62,34 @@ player.use(vast({
 
 `adPlugins` is called per-ad with the parsed `VastAd`. Each ad plugin receives the player and the ad, and is cleaned up when the ad ends. OMID reads `ad.verifications` internally — VAST knows nothing about OMID.
 
+### With SIMID (Interactive Ads)
+
+```ts
+import { vast } from "vide/vast";
+import { simid } from "vide/simid";
+
+player.use(vast({
+  tagUrl: "https://example.com/vast.xml",
+  adPlugins: (ad) => [
+    simid({ container: document.getElementById("ad-container")! }),
+  ],
+}));
+```
+
+SIMID creatives run in a sandboxed iframe and communicate with the player via the SIMID 1.2 protocol. The creative URL is read from `<InteractiveCreativeFile apiFramework="SIMID">` in the VAST response. Creative requests (pause, play, navigate, etc.) are governed by the request policy:
+
+```ts
+simid({
+  container: document.getElementById("ad-container")!,
+  policy: {
+    allowPause: true,     // default
+    allowPlay: true,      // default
+    allowResize: false,   // default
+    navigation: "new-tab" // "new-tab" | "deny"
+  },
+})
+```
+
 ## VMAP (Multi-Ad Breaks)
 
 ```ts
@@ -122,7 +150,8 @@ export function myAdPlugin(): AdPlugin {
 | VAST plugin | ~2 KB |
 | VMAP plugin | ~2 KB |
 | OMID plugin | ~2 KB |
-| All | ~7 KB |
+| SIMID plugin | ~2 KB |
+| All | ~9 KB |
 
 ## License
 

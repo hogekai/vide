@@ -495,6 +495,81 @@ describe("parseVast — NaN and type safety", () => {
 	});
 });
 
+describe("parseVast — InteractiveCreativeFile", () => {
+	it("parses InteractiveCreativeFile with SIMID apiFramework", () => {
+		const xml = `<?xml version="1.0"?>
+<VAST version="4.1">
+  <Ad id="ad-simid">
+    <InLine>
+      <AdSystem>Test</AdSystem>
+      <AdTitle>SIMID Ad</AdTitle>
+      <Impression><![CDATA[http://example.com/imp]]></Impression>
+      <Creatives>
+        <Creative>
+          <Linear>
+            <Duration>00:00:30</Duration>
+            <MediaFiles>
+              <MediaFile delivery="progressive" type="video/mp4" width="640" height="360">
+                <![CDATA[http://example.com/ad.mp4]]>
+              </MediaFile>
+              <InteractiveCreativeFile type="text/html" apiFramework="SIMID" variableDuration="true">
+                <![CDATA[https://adserver.com/ads/creative.html]]>
+              </InteractiveCreativeFile>
+            </MediaFiles>
+          </Linear>
+        </Creative>
+      </Creatives>
+    </InLine>
+  </Ad>
+</VAST>`;
+		const result = parseVast(xml);
+		const linear = result.ads[0].creatives[0].linear!;
+		expect(linear.interactiveCreativeFiles).toHaveLength(1);
+		expect(linear.interactiveCreativeFiles[0].url).toBe(
+			"https://adserver.com/ads/creative.html",
+		);
+		expect(linear.interactiveCreativeFiles[0].apiFramework).toBe("SIMID");
+		expect(linear.interactiveCreativeFiles[0].variableDuration).toBe(true);
+	});
+
+	it("parses variableDuration=false", () => {
+		const xml = `<?xml version="1.0"?>
+<VAST version="4.1">
+  <Ad id="ad-simid2">
+    <InLine>
+      <AdSystem>Test</AdSystem>
+      <AdTitle>SIMID Ad 2</AdTitle>
+      <Impression><![CDATA[http://example.com/imp]]></Impression>
+      <Creatives>
+        <Creative>
+          <Linear>
+            <Duration>00:00:15</Duration>
+            <MediaFiles>
+              <MediaFile delivery="progressive" type="video/mp4" width="640" height="360">
+                <![CDATA[http://example.com/ad.mp4]]>
+              </MediaFile>
+              <InteractiveCreativeFile type="text/html" apiFramework="SIMID" variableDuration="false">
+                <![CDATA[https://adserver.com/creative2.html]]>
+              </InteractiveCreativeFile>
+            </MediaFiles>
+          </Linear>
+        </Creative>
+      </Creatives>
+    </InLine>
+  </Ad>
+</VAST>`;
+		const result = parseVast(xml);
+		const icf = result.ads[0].creatives[0].linear!.interactiveCreativeFiles[0];
+		expect(icf.variableDuration).toBe(false);
+	});
+
+	it("returns empty array when no InteractiveCreativeFile present", () => {
+		const result = parseVast(SAMPLE_VAST);
+		const linear = result.ads[0].creatives[0].linear!;
+		expect(linear.interactiveCreativeFiles).toEqual([]);
+	});
+});
+
 describe("parseDuration", () => {
 	it("parses HH:MM:SS", () => {
 		expect(parseDuration("00:00:30")).toBe(30);

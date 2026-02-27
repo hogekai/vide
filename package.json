@@ -1,6 +1,6 @@
 {
   "name": "vide",
-  "version": "0.3.2",
+  "version": "0.4.0",
   "description": "Zero-config, web-standard-first lightweight video player library",
   "type": "module",
   "exports": {
@@ -19,6 +19,10 @@
     "./omid": {
       "types": "./dist/omid/index.d.ts",
       "import": "./dist/omid/index.mjs"
+    },
+    "./simid": {
+      "types": "./dist/simid/index.d.ts",
+      "import": "./dist/simid/index.mjs"
     }
   },
   "files": [

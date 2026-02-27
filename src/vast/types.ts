@@ -42,6 +42,7 @@ export interface VastLinear {
 	duration: number;
 	skipOffset?: number | undefined;
 	mediaFiles: VastMediaFile[];
+	interactiveCreativeFiles: InteractiveCreativeFile[];
 	trackingEvents: VastTrackingEvents;
 	clickThrough?: string | undefined;
 	clickTracking: string[];
@@ -54,6 +55,12 @@ export interface VastMediaFile {
 	height: number;
 	bitrate?: number | undefined;
 	delivery: "progressive" | "streaming";
+}
+
+export interface InteractiveCreativeFile {
+	url: string;
+	apiFramework: string;
+	variableDuration?: boolean | undefined;
 }
 
 export interface VastTrackingEvents {
