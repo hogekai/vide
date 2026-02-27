@@ -120,6 +120,23 @@ export interface Player extends EventBus {
 	volume: number;
 	muted: boolean;
 	playbackRate: number;
+	readonly paused: boolean;
+	readonly ended: boolean;
+	readonly readyState: number;
+	readonly buffered: TimeRanges;
+	readonly seekable: TimeRanges;
+	readonly seeking: boolean;
+	readonly videoWidth: number;
+	readonly videoHeight: number;
+	readonly networkState: number;
+	loop: boolean;
+	autoplay: boolean;
+	poster: string;
+	preload: "" | "none" | "metadata" | "auto";
+	defaultPlaybackRate: number;
+	defaultMuted: boolean;
+	crossOrigin: string | null;
+	controls: boolean;
 
 	/** Web-standard addEventListener, delegates to the underlying HTMLVideoElement. */
 	addEventListener<K extends keyof HTMLVideoElementEventMap>(

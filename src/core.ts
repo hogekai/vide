@@ -303,6 +303,81 @@ export function createPlayer(el: HTMLVideoElement): Player {
 		set playbackRate(v: number) {
 			el.playbackRate = v;
 		},
+		get paused() {
+			return el.paused;
+		},
+		get ended() {
+			return el.ended;
+		},
+		get readyState() {
+			return el.readyState;
+		},
+		get buffered() {
+			return el.buffered;
+		},
+		get seekable() {
+			return el.seekable;
+		},
+		get seeking() {
+			return el.seeking;
+		},
+		get videoWidth() {
+			return el.videoWidth;
+		},
+		get videoHeight() {
+			return el.videoHeight;
+		},
+		get networkState() {
+			return el.networkState;
+		},
+		get loop() {
+			return el.loop;
+		},
+		set loop(v: boolean) {
+			el.loop = v;
+		},
+		get autoplay() {
+			return el.autoplay;
+		},
+		set autoplay(v: boolean) {
+			el.autoplay = v;
+		},
+		get poster() {
+			return el.poster;
+		},
+		set poster(v: string) {
+			el.poster = v;
+		},
+		get preload() {
+			return el.preload;
+		},
+		set preload(v: "" | "none" | "metadata" | "auto") {
+			el.preload = v;
+		},
+		get defaultPlaybackRate() {
+			return el.defaultPlaybackRate;
+		},
+		set defaultPlaybackRate(v: number) {
+			el.defaultPlaybackRate = v;
+		},
+		get defaultMuted() {
+			return el.defaultMuted;
+		},
+		set defaultMuted(v: boolean) {
+			el.defaultMuted = v;
+		},
+		get crossOrigin() {
+			return el.crossOrigin;
+		},
+		set crossOrigin(v: string | null) {
+			el.crossOrigin = v;
+		},
+		get controls() {
+			return el.controls;
+		},
+		set controls(v: boolean) {
+			el.controls = v;
+		},
 
 		// --- Source handler ---
 		get src(): string {

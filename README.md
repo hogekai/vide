@@ -14,14 +14,14 @@ player.use(vast({ tagUrl: "https://example.com/vast.xml" }));
 
 | Plugin | What | gzip |
 |--------|------|-----:|
-| `videts` | Core player | 1.4 KB |
+| `videts` | Core player | 1.7 KB |
 | `videts/vast` | VAST 4.2 ads | 1.5 KB |
 | `videts/vmap` | VMAP scheduling | 2.6 KB |
 | `videts/hls` | HLS streaming | 0.6 KB |
-| `videts/dash` | DASH streaming | 0.5 KB |
+| `videts/dash` | DASH streaming | 0.6 KB |
 | `videts/drm` | DRM (Widevine + FairPlay) | 0.8 KB |
 | `videts/omid` | Open Measurement | 1.7 KB |
-| `videts/simid` | Interactive ads | 2.3 KB |
+| `videts/simid` | Interactive ads | 2.4 KB |
 | `videts/ui` | Headless UI | 4.7 KB |
 | `videts/ui/theme.css` | Default theme | 3.4 KB |
 
