@@ -37,11 +37,18 @@ npm install videts
 
 ```ts
 import { createPlayer } from "videts";
+import type { PlayerEventMap } from "videts";
 
 const player = createPlayer(document.querySelector("video")!);
 
+// player.on() — typed custom events (statechange, ad:start, error, …)
 player.on("statechange", ({ from, to }) => console.log(`${from} → ${to}`));
-player.play();
+
+// player.on() also accepts native HTMLVideoElement events
+player.on("volumechange", (e) => console.log(e.target));
+
+// addEventListener() delegates directly to the underlying <video>
+player.addEventListener("canplay", () => player.play());
 ```
 
 ## Plugins
@@ -92,19 +99,17 @@ player.use(dash({ dashConfig: { streaming: { buffer: { bufferTimeDefault: 20 } }
 
 ### UI
 
+Headless by default — JS creates DOM and wires behavior, styling is yours.
+Import `theme.css` for a ready-made look, or target the BEM classes (`vide-play`, `vide-progress__bar`, …) yourself.
+
 ```ts
 import { createPlayer } from "videts";
 import { ui } from "videts/ui";
-import "videts/ui/theme.css"; // optional — default theme
+import "videts/ui/theme.css"; // optional — brings default skin
 
 const player = createPlayer(document.querySelector("video")!);
 player.use(ui({ container: document.getElementById("player-container")! }));
 ```
-
-- Two-layer architecture: JS logic (Layer 1) + optional CSS theme (Layer 2)
-- 13 components: play, progress, time, volume, fullscreen, loader, error, bigplay, poster, ad-countdown, ad-skip, ad-overlay, ad-label
-- BEM class names (`vide-play`, `vide-progress__bar`, etc.) — bring your own styles or use `theme.css`
-- `exclude` option to disable specific components
 
 ```ts
 player.use(ui({
@@ -114,10 +119,10 @@ player.use(ui({
 }));
 ```
 
-Individual components can be used standalone:
+Components can also be used individually:
 
 ```ts
-import { createPlayButton, createProgress, connectStateClasses } from "videts/ui";
+import { createPlayButton, createProgress } from "videts/ui";
 
 const play = createPlayButton();
 play.mount(controls);
