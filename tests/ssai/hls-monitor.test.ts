@@ -135,7 +135,7 @@ describe("createHlsMonitor", () => {
 
 		hls._fire("hlsLevelUpdated", "hlsLevelUpdated", {
 			details: {
-				dateranges: {
+				dateRanges: {
 					"ad-1": {
 						attr: {
 							ID: "ad-1",
@@ -159,7 +159,7 @@ describe("createHlsMonitor", () => {
 
 		const data = {
 			details: {
-				dateranges: {
+				dateRanges: {
 					"ad-1": {
 						attr: {
 							ID: "ad-1",
@@ -188,7 +188,7 @@ describe("createHlsMonitor", () => {
 
 		hls._fire("hlsLevelUpdated", "hlsLevelUpdated", {
 			details: {
-				dateranges: {
+				dateRanges: {
 					"dr-1": {
 						attr: { ID: "dr-1", CLASS: "vendor.custom" },
 					},
@@ -233,14 +233,14 @@ describe("createHlsMonitor", () => {
 		);
 	});
 
-	it("ignores dateranges that are not ad markers in auto mode", () => {
+	it("ignores dateRanges that are not ad markers in auto mode", () => {
 		const hls = createMockHls();
 		const onMetadata = vi.fn();
 		createHlsMonitor(hls, undefined, onMetadata);
 
 		hls._fire("hlsLevelUpdated", "hlsLevelUpdated", {
 			details: {
-				dateranges: {
+				dateRanges: {
 					"non-ad": {
 						attr: {
 							ID: "non-ad",

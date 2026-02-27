@@ -9,6 +9,16 @@ const HLS_MIME_TYPES = [
 ];
 
 function isHlsUrl(url: string): boolean {
+	if (url.startsWith("data:")) {
+		const mimeEnd = url.indexOf(";");
+		if (mimeEnd === -1) return false;
+		return HLS_MIME_TYPES.includes(url.slice(5, mimeEnd).toLowerCase());
+	}
+	if (url.startsWith("blob:")) {
+		// Blob URLs carry no file extension; check for an explicit
+		// fragment hint (e.g. blob:...#.m3u8) that callers can append.
+		return url.includes(".m3u8");
+	}
 	try {
 		const pathname = new URL(url, "https://placeholder.invalid").pathname;
 		return pathname.endsWith(".m3u8");

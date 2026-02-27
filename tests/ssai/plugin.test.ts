@@ -73,7 +73,7 @@ describe("ssai plugin — HLS integration", () => {
 		// Inject a daterange ad break
 		mockHls._fire("hlsLevelUpdated", "hlsLevelUpdated", {
 			details: {
-				dateranges: {
+				dateRanges: {
 					"ad-1": {
 						attr: {
 							ID: "ad-1",
@@ -106,7 +106,7 @@ describe("ssai plugin — HLS integration", () => {
 
 		mockHls._fire("hlsLevelUpdated", "hlsLevelUpdated", {
 			details: {
-				dateranges: {
+				dateRanges: {
 					"ad-1": {
 						attr: {
 							ID: "ad-1",
@@ -162,7 +162,7 @@ describe("ssai plugin — HLS integration", () => {
 
 		mockHls2._fire("hlsLevelUpdated", "hlsLevelUpdated", {
 			details: {
-				dateranges: {
+				dateRanges: {
 					"dr-1": {
 						attr: { ID: "dr-1" },
 					},
@@ -185,7 +185,7 @@ describe("ssai plugin — HLS integration", () => {
 
 		mockHls._fire("hlsLevelUpdated", "hlsLevelUpdated", {
 			details: {
-				dateranges: {
+				dateRanges: {
 					"ad-1": {
 						attr: {
 							ID: "ad-1",
@@ -217,7 +217,7 @@ describe("ssai plugin — HLS integration", () => {
 
 		mockHls._fire("hlsLevelUpdated", "hlsLevelUpdated", {
 			details: {
-				dateranges: {
+				dateRanges: {
 					"ad-1": {
 						attr: {
 							ID: "ad-1",
@@ -253,7 +253,7 @@ describe("ssai plugin — custom parser", () => {
 
 		mockHls._fire("hlsLevelUpdated", "hlsLevelUpdated", {
 			details: {
-				dateranges: {
+				dateRanges: {
 					"dr-1": {
 						attr: { ID: "dr-1", CLASS: "vendor.custom" },
 					},
@@ -282,7 +282,7 @@ describe("ssai plugin — custom parser", () => {
 
 		mockHls._fire("hlsLevelUpdated", "hlsLevelUpdated", {
 			details: {
-				dateranges: {
+				dateRanges: {
 					"dr-1": {
 						attr: { ID: "dr-1" },
 					},
@@ -349,7 +349,7 @@ describe("ssai plugin — deferred attach", () => {
 
 		mockHls._fire("hlsLevelUpdated", "hlsLevelUpdated", {
 			details: {
-				dateranges: {
+				dateRanges: {
 					"ad-1": {
 						attr: {
 							ID: "ad-1",
@@ -380,7 +380,7 @@ describe("ssai plugin — lifecycle", () => {
 
 		mockHls._fire("hlsLevelUpdated", "hlsLevelUpdated", {
 			details: {
-				dateranges: {
+				dateRanges: {
 					"ad-1": {
 						attr: {
 							ID: "ad-1",
@@ -431,7 +431,7 @@ describe("ssai plugin — tolerance", () => {
 
 		mockHls._fire("hlsLevelUpdated", "hlsLevelUpdated", {
 			details: {
-				dateranges: {
+				dateRanges: {
 					"ad-1": {
 						attr: {
 							ID: "ad-1",
@@ -461,7 +461,7 @@ describe("ssai plugin — tolerance", () => {
 
 		mockHls._fire("hlsLevelUpdated", "hlsLevelUpdated", {
 			details: {
-				dateranges: {
+				dateRanges: {
 					"ad-1": {
 						attr: {
 							ID: "ad-1",
