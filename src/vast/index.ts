@@ -141,16 +141,16 @@ export function vast(options: VastPluginOptions): Plugin {
 					}
 
 					function restoreContent(): void {
-						// Set src first, then register listener — same order
-						// as hls.html. The src setter emits statechange
-						// synchronously (playing→loading), so registering
-						// the listener after ensures we only see the async
-						// loading→ready transition.
-						player.src = prevSrc;
-						player.once("statechange", ({
+						// Listen for "ready" to restore playback position
+						// and auto-play. Use on() instead of once() because
+						// setting src triggers intermediate state changes
+						// (e.g. playing→paused) that would consume a once()
+						// listener before "ready" arrives.
+						function onReady({
 							to,
-						}: { from: string; to: string }) => {
+						}: { from: string; to: string }): void {
 							if (to !== "ready") return;
+							player.off("statechange", onReady);
 							if (originalTime > 0) {
 								player.el.currentTime = originalTime;
 							}
@@ -158,7 +158,9 @@ export function vast(options: VastPluginOptions): Plugin {
 								player.el.muted = true;
 								player.play().catch(() => {});
 							});
-						});
+						}
+						player.on("statechange", onReady);
+						player.src = prevSrc;
 					}
 
 					// --- ad:click: fire tracking, emit event ---
