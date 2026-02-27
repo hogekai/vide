@@ -18,7 +18,7 @@ export function vast(options: VastPluginOptions): Plugin {
 		name: "vast",
 		setup(player: Player): () => void {
 			let aborted = false;
-			let quartileCleanup: (() => void) | null = null;
+			let adCleanup: (() => void) | null = null;
 
 			const setState = (
 				player as unknown as { _setState(s: PlayerState): void }
@@ -85,25 +85,21 @@ export function vast(options: VastPluginOptions): Plugin {
 					const prevSrc = player.el.src;
 
 					// Set up quartile tracking
-					const tracker = createQuartileTracker(linear.duration, (event) => {
-						if (!linear) return;
-						const urls = linear.trackingEvents[event];
-						if (urls) {
-							track(urls);
-						}
-					});
+					const quartileTracker = createQuartileTracker(
+						linear.duration,
+						(event) => {
+							if (!linear) return;
+							const urls = linear.trackingEvents[event];
+							if (urls) {
+								track(urls);
+							}
+						},
+					);
 
-					function onAdTimeUpdate(): void {
-						tracker(player.el.currentTime);
-					}
+					// --- Ad ended: restore content ---
+					let adEnding = false;
 
-					function onAdEnded(): void {
-						cleanup();
-						if (!linear) return;
-						track(linear.trackingEvents.complete);
-						player.emit("ad:end", { adId });
-
-						// Restore original content
+					function restoreContent(): void {
 						player.el.src = prevSrc;
 						player.el.load();
 						player.el.currentTime = originalTime;
@@ -115,10 +111,96 @@ export function vast(options: VastPluginOptions): Plugin {
 						}
 					}
 
-					function cleanup(): void {
-						player.el.removeEventListener("timeupdate", onAdTimeUpdate);
-						player.el.removeEventListener("ended", onAdEnded);
-						player.el.removeEventListener("canplay", onAdCanPlay);
+					// --- Click overlay ---
+					const overlay = document.createElement("div");
+					overlay.style.cssText =
+						"position:absolute;inset:0;cursor:pointer;z-index:1;";
+					const parent = player.el.parentElement;
+					if (parent) {
+						const pos = getComputedStyle(parent).position;
+						if (pos === "static" || pos === "") {
+							parent.style.position = "relative";
+						}
+						parent.appendChild(overlay);
+					}
+
+					function onOverlayClick(): void {
+						if (!linear) return;
+						track(linear.clickTracking);
+						if (linear.clickThrough) {
+							window.open(linear.clickThrough, "_blank");
+						}
+						player.el.pause();
+					}
+					overlay.addEventListener("click", onOverlayClick);
+
+					// --- Skip button ---
+					let skipButton: HTMLButtonElement | null = null;
+					const skipOffset = linear.skipOffset;
+
+					if (skipOffset !== undefined && parent) {
+						skipButton = document.createElement("button");
+						skipButton.disabled = true;
+						skipButton.style.cssText =
+							"position:absolute;bottom:1rem;right:1rem;z-index:2;padding:0.4rem 1rem;cursor:pointer;background:rgba(0,0,0,0.7);color:#fff;border:1px solid rgba(255,255,255,0.5);border-radius:4px;font-size:14px;";
+						const remaining = Math.ceil(skipOffset);
+						skipButton.textContent = `Skip in ${remaining}s`;
+						parent.appendChild(skipButton);
+
+						function onSkipClick(): void {
+							if (!linear) return;
+							track(linear.trackingEvents.skip);
+							player.emit("ad:skip", { adId });
+							adEnding = true;
+							cleanup();
+							player.emit("ad:end", { adId });
+							restoreContent();
+						}
+						skipButton.addEventListener("click", onSkipClick);
+					}
+
+					// --- Pause / Resume tracking ---
+					function onAdPause(): void {
+						if (!linear || adEnding) return;
+						if (player.state === "ad:playing") {
+							track(linear.trackingEvents.pause);
+							setState("ad:paused");
+						}
+					}
+
+					function onAdPlay(): void {
+						if (!linear || adEnding) return;
+						if (player.state === "ad:paused") {
+							track(linear.trackingEvents.resume);
+							setState("ad:playing");
+						}
+					}
+
+					// --- Time update: quartiles + skip countdown ---
+					function onAdTimeUpdate(): void {
+						quartileTracker(player.el.currentTime);
+
+						// Update skip button countdown
+						if (skipButton && skipOffset !== undefined) {
+							const remaining = Math.ceil(
+								skipOffset - player.el.currentTime,
+							);
+							if (remaining <= 0) {
+								skipButton.disabled = false;
+								skipButton.textContent = "Skip ad";
+							} else {
+								skipButton.textContent = `Skip in ${remaining}s`;
+							}
+						}
+					}
+
+					function onAdEnded(): void {
+						adEnding = true;
+						cleanup();
+						if (!linear) return;
+						track(linear.trackingEvents.complete);
+						player.emit("ad:end", { adId });
+						restoreContent();
 					}
 
 					function onAdCanPlay(): void {
@@ -132,10 +214,25 @@ export function vast(options: VastPluginOptions): Plugin {
 						});
 					}
 
+					function cleanup(): void {
+						player.el.removeEventListener("timeupdate", onAdTimeUpdate);
+						player.el.removeEventListener("ended", onAdEnded);
+						player.el.removeEventListener("canplay", onAdCanPlay);
+						player.el.removeEventListener("pause", onAdPause);
+						player.el.removeEventListener("play", onAdPlay);
+						overlay.removeEventListener("click", onOverlayClick);
+						overlay.remove();
+						if (skipButton) {
+							skipButton.remove();
+						}
+					}
+
 					player.el.addEventListener("canplay", onAdCanPlay);
 					player.el.addEventListener("timeupdate", onAdTimeUpdate);
 					player.el.addEventListener("ended", onAdEnded);
-					quartileCleanup = cleanup;
+					player.el.addEventListener("pause", onAdPause);
+					player.el.addEventListener("play", onAdPlay);
+					adCleanup = cleanup;
 
 					player.el.src = mediaFile.url;
 					player.el.load();
@@ -174,8 +271,8 @@ export function vast(options: VastPluginOptions): Plugin {
 			return () => {
 				aborted = true;
 				player.off("statechange", onStateChange);
-				if (quartileCleanup) {
-					quartileCleanup();
+				if (adCleanup) {
+					adCleanup();
 				}
 			};
 		},
