@@ -142,6 +142,8 @@ play.connect(player);
 import { ui } from "videts/ui";
 import { vast } from "videts/vast";
 
+// UI plugin provides ad components (countdown, skip, overlay, label)
+// that integrate with VAST playback via getAdPlugin()
 const uiPlugin = ui({ container: el });
 player.use(uiPlugin);
 player.use(vast({
