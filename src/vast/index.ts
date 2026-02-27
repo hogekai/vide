@@ -141,17 +141,24 @@ export function vast(options: VastPluginOptions): Plugin {
 					}
 
 					function restoreContent(): void {
-						function onReady({ to }: { to: string }): void {
-							if (to !== "ready") return;
-							player.off("statechange", onReady);
-							player.el.currentTime = originalTime;
-							player.el.play().catch(() => {
-								player.el.muted = true;
-								player.el.play().catch(() => {});
-							});
-						}
-						player.on("statechange", onReady);
+						// Set src first, then register listener — same order
+						// as hls.html. The src setter emits statechange
+						// synchronously (playing→loading), so registering
+						// the listener after ensures we only see the async
+						// loading→ready transition.
 						player.src = prevSrc;
+						player.once("statechange", ({
+							to,
+						}: { from: string; to: string }) => {
+							if (to !== "ready") return;
+							if (originalTime > 0) {
+								player.el.currentTime = originalTime;
+							}
+							player.play().catch(() => {
+								player.el.muted = true;
+								player.play().catch(() => {});
+							});
+						});
 					}
 
 					// --- ad:click: fire tracking, emit event ---
@@ -296,6 +303,16 @@ export function vast(options: VastPluginOptions): Plugin {
 					);
 					player.on("ad:skip", onAdSkip);
 					adCleanup = cleanup;
+
+					// Detach any active source handler (e.g. hls.js) before
+					// loading the ad MP4 directly on the video element.
+					// Setting player.src to empty triggers handler.unload()
+					// in the core, which properly destroys the hls.js instance
+					// and frees the MediaSource. Without this, hls.js remains
+					// attached during ad playback and its internal state becomes
+					// corrupted, causing ORB-blocked segment fetches when
+					// restoring the HLS content after the ad ends.
+					player.src = "";
 
 					player.el.src = mediaFile.url;
 					player.el.load();

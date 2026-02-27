@@ -103,15 +103,17 @@ describe("hls plugin — canHandle", () => {
 });
 
 describe("hls plugin — Safari native fallback", () => {
-	it("uses el.src directly when canPlayType is truthy", async () => {
+	it("uses el.src directly when Hls.isSupported() is false and canPlayType is truthy", async () => {
 		const el = makeVideo();
 		(el.canPlayType as ReturnType<typeof vi.fn>).mockReturnValue("maybe");
+		MockHls.isSupported.mockReturnValue(false);
 		const player = createPlayer(el);
 		player.use(hls());
 		player.src = "https://example.com/stream.m3u8";
 		await flushImport();
 		expect(el.src).toContain("stream.m3u8");
 		expect(mockInstance.attachMedia).not.toHaveBeenCalled();
+		MockHls.isSupported.mockReturnValue(true);
 	});
 });
 

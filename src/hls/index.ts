@@ -48,13 +48,6 @@ export function hls(options: HlsPluginOptions = {}): Plugin {
 
 				load(url: string, videoElement: HTMLVideoElement): void {
 					this.unload(videoElement);
-
-					// Safari/iOS: native HLS support
-					if (videoElement.canPlayType("application/vnd.apple.mpegurl")) {
-						videoElement.src = url;
-						return;
-					}
-
 					loadWithHlsJs(url, videoElement);
 				},
 
@@ -77,6 +70,12 @@ export function hls(options: HlsPluginOptions = {}): Plugin {
 						const Hls = HlsModule.default;
 
 						if (!Hls.isSupported()) {
+							// hls.js not supported (e.g. Safari) — fall back
+							// to native HLS if available.
+							if (videoElement.canPlayType("application/vnd.apple.mpegurl")) {
+								videoElement.src = url;
+								return;
+							}
 							player.emit("error", {
 								code: 0,
 								message: "HLS is not supported in this browser",
