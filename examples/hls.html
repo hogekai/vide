@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>vide — HLS Streaming</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
+    video { width: 100%; background: #000; display: block; }
+    #log { font-family: monospace; font-size: 13px; background: #1a1a1a; color: #0f0; padding: 1rem; max-height: 300px; overflow-y: auto; border-radius: 4px; }
+    .log-entry { margin: 2px 0; }
+    .controls { margin: 1rem 0; display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    button { padding: 0.4rem 1rem; cursor: pointer; }
+  </style>
+  <script type="importmap">
+    { "imports": { "hls.js": "https://esm.sh/hls.js@1" } }
+  </script>
+</head>
+<body>
+  <h1>vide — HLS Streaming</h1>
+
+  <video id="player" controls></video>
+
+  <div class="controls">
+    <button onclick="player.play()">Play</button>
+    <button onclick="player.pause()">Pause</button>
+    <button onclick="player.currentTime = 0">Restart</button>
+    <button onclick="player.muted = !player.muted">Toggle Mute</button>
+    <button onclick="loadStream()">Load HLS Stream</button>
+    <button onclick="player.destroy(); log('destroyed')">Destroy</button>
+  </div>
+
+  <h3>State: <span id="state">-</span></h3>
+  <div id="log"></div>
+
+  <script type="module">
+    import { createPlayer } from "../dist/index.mjs";
+    import { hls } from "../dist/hls/index.mjs";
+
+    const el = document.getElementById("player");
+    const stateEl = document.getElementById("state");
+    const logEl = document.getElementById("log");
+
+    function log(msg) {
+      const entry = document.createElement("div");
+      entry.className = "log-entry";
+      entry.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+      logEl.prepend(entry);
+    }
+    window.log = log;
+
+    const player = createPlayer(el);
+    window.player = player;
+
+    // Register HLS plugin
+    player.use(hls());
+    log("HLS plugin registered");
+
+    // Wire up events
+    player.on("statechange", ({ from, to }) => {
+      stateEl.textContent = to;
+      log(`state: ${from} → ${to}`);
+    });
+    player.on("play", () => log("event: play"));
+    player.on("pause", () => log("event: pause"));
+    player.on("ended", () => log("event: ended"));
+    player.on("error", ({ code, message }) => log(`error: [${code}] ${message}`));
+
+    log("Player created. State: " + player.state);
+
+    // Load HLS stream and autoplay when ready
+    window.loadStream = function() {
+      const url = "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8";
+      log("Loading: " + url);
+      player.src = url;
+      player.once("statechange", ({ to }) => {
+        if (to === "ready") {
+          player.play().catch(() => {
+            // Autoplay blocked — mute and retry
+            player.muted = true;
+            player.play().catch(() => {});
+          });
+        }
+      });
+    };
+
+    // Auto-load on page open
+    window.loadStream();
+  </script>
+</body>
+</html>

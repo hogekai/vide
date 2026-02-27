@@ -8,4 +8,5 @@ export type {
 	PlayerEventMap,
 	PlayerState,
 	Plugin,
+	SourceHandler,
 } from "./types.js";

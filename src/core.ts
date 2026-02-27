@@ -5,6 +5,7 @@ import type {
 	PlayerEventMap,
 	PlayerState,
 	Plugin,
+	SourceHandler,
 } from "./types.js";
 
 // === State Machine ===
@@ -12,10 +13,10 @@ import type {
 const transitions: Record<PlayerState, PlayerState[]> = {
 	idle: ["loading", "error"],
 	loading: ["ready", "error"],
-	ready: ["playing", "ad:loading", "error"],
-	playing: ["paused", "buffering", "ad:loading", "ended", "error"],
-	paused: ["playing", "ad:loading", "ended", "error"],
-	buffering: ["playing", "error"],
+	ready: ["playing", "loading", "ad:loading", "error"],
+	playing: ["paused", "buffering", "loading", "ad:loading", "ended", "error"],
+	paused: ["playing", "loading", "ad:loading", "ended", "error"],
+	buffering: ["playing", "loading", "error"],
 	"ad:loading": ["ad:playing", "playing", "error"],
 	"ad:playing": ["ad:paused", "playing", "error"],
 	"ad:paused": ["ad:playing", "playing", "error"],
@@ -47,6 +48,10 @@ export function createPlayer(el: HTMLVideoElement): Player {
 	const handlers = new Map<string, Set<EventHandler<unknown>>>();
 	const cleanups: (() => void)[] = [];
 	let destroyed = false;
+	const sourceHandlers: SourceHandler[] = [];
+	let activeHandler: SourceHandler | null = null;
+	let currentSrc = "";
+	let srcExplicitlySet = false;
 
 	function getHandlers(event: string): Set<EventHandler<unknown>> {
 		let set = handlers.get(event);
@@ -201,6 +206,25 @@ export function createPlayer(el: HTMLVideoElement): Player {
 		el.removeEventListener("error", onError);
 	}
 
+	function processSourceElements(): void {
+		if (activeHandler || srcExplicitlySet) return;
+		const sources = el.querySelectorAll("source");
+		for (const sourceEl of sources) {
+			const sourceUrl = sourceEl.getAttribute("src");
+			const sourceType = sourceEl.getAttribute("type") ?? undefined;
+			if (!sourceUrl) continue;
+			for (const handler of sourceHandlers) {
+				if (handler.canHandle(sourceUrl, sourceType)) {
+					activeHandler = handler;
+					currentSrc = sourceUrl;
+					setState("loading");
+					handler.load(sourceUrl, el);
+					return;
+				}
+			}
+		}
+	}
+
 	const player: Player = {
 		get el() {
 			return el;
@@ -274,6 +298,42 @@ export function createPlayer(el: HTMLVideoElement): Player {
 			el.playbackRate = v;
 		},
 
+		// --- Source handler ---
+		get src(): string {
+			return currentSrc;
+		},
+		set src(url: string) {
+			if (activeHandler) {
+				activeHandler.unload(el);
+				activeHandler = null;
+			}
+			srcExplicitlySet = true;
+			currentSrc = url;
+			if (!url) {
+				el.removeAttribute("src");
+				return;
+			}
+			for (const handler of sourceHandlers) {
+				if (handler.canHandle(url)) {
+					activeHandler = handler;
+					setState("loading");
+					handler.load(url, el);
+					return;
+				}
+			}
+			el.src = url;
+		},
+		registerSourceHandler(handler: SourceHandler): void {
+			if (destroyed) {
+				console.warn("[vide] Cannot register source handler after destroy");
+				return;
+			}
+			sourceHandlers.push(handler);
+			if (!srcExplicitlySet && !activeHandler) {
+				processSourceElements();
+			}
+		},
+
 		// --- Web-standard delegation ---
 		addEventListener(
 			type: string,
@@ -305,6 +365,10 @@ export function createPlayer(el: HTMLVideoElement): Player {
 		destroy(): void {
 			if (destroyed) return;
 			destroyed = true;
+			if (activeHandler) {
+				activeHandler.unload(el);
+				activeHandler = null;
+			}
 			for (const cleanup of cleanups) {
 				try {
 					cleanup();

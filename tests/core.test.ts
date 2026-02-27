@@ -403,3 +403,203 @@ describe("destroy", () => {
 		errorSpy.mockRestore();
 	});
 });
+
+describe("player.src", () => {
+	it("sets el.src when no handler is registered", () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		player.src = "https://example.com/video.mp4";
+		expect(el.src).toContain("video.mp4");
+		expect(player.src).toBe("https://example.com/video.mp4");
+	});
+
+	it("delegates to registered SourceHandler when canHandle returns true", () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		const load = vi.fn();
+		const unload = vi.fn();
+		player.registerSourceHandler({
+			canHandle: (url) => url.endsWith(".m3u8"),
+			load,
+			unload,
+		});
+		player.src = "https://example.com/stream.m3u8";
+		expect(load).toHaveBeenCalledWith("https://example.com/stream.m3u8", el);
+		expect(player.src).toBe("https://example.com/stream.m3u8");
+	});
+
+	it("falls through to el.src when no handler matches", () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		player.registerSourceHandler({
+			canHandle: (url) => url.endsWith(".m3u8"),
+			load: vi.fn(),
+			unload: vi.fn(),
+		});
+		player.src = "https://example.com/video.mp4";
+		expect(el.src).toContain("video.mp4");
+	});
+
+	it("calls unload on previous handler when src changes", () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		const unload = vi.fn();
+		player.registerSourceHandler({
+			canHandle: () => true,
+			load: vi.fn(),
+			unload,
+		});
+		player.src = "https://example.com/a.m3u8";
+		player.src = "https://example.com/b.m3u8";
+		expect(unload).toHaveBeenCalledTimes(1);
+		expect(unload).toHaveBeenCalledWith(el);
+	});
+
+	it("transitions to loading state when handler claims the source", () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		player.registerSourceHandler({
+			canHandle: () => true,
+			load: vi.fn(),
+			unload: vi.fn(),
+		});
+		player.src = "https://example.com/stream.m3u8";
+		expect(player.state).toBe("loading");
+	});
+
+	it("calls active handler unload on destroy", () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		const unload = vi.fn();
+		player.registerSourceHandler({
+			canHandle: () => true,
+			load: vi.fn(),
+			unload,
+		});
+		player.src = "https://example.com/stream.m3u8";
+		player.destroy();
+		expect(unload).toHaveBeenCalledWith(el);
+	});
+
+	it("clears src when set to empty string", () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		player.src = "https://example.com/video.mp4";
+		player.src = "";
+		expect(player.src).toBe("");
+	});
+
+	it("FIFO order: first matching handler wins", () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		const load1 = vi.fn();
+		const load2 = vi.fn();
+		player.registerSourceHandler({
+			canHandle: () => true,
+			load: load1,
+			unload: vi.fn(),
+		});
+		player.registerSourceHandler({
+			canHandle: () => true,
+			load: load2,
+			unload: vi.fn(),
+		});
+		player.src = "https://example.com/stream.m3u8";
+		expect(load1).toHaveBeenCalled();
+		expect(load2).not.toHaveBeenCalled();
+	});
+
+	it("warns when registering handler after destroy", () => {
+		const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+		const player = createPlayer(makeVideo());
+		player.destroy();
+		player.registerSourceHandler({
+			canHandle: () => true,
+			load: vi.fn(),
+			unload: vi.fn(),
+		});
+		expect(warn).toHaveBeenCalledWith(
+			expect.stringContaining("Cannot register source handler after destroy"),
+		);
+		warn.mockRestore();
+	});
+
+	it("allows source change during playback (playing → loading)", () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		player.registerSourceHandler({
+			canHandle: () => true,
+			load: vi.fn(),
+			unload: vi.fn(),
+		});
+		// Reach playing state
+		el.dispatchEvent(new Event("loadstart"));
+		el.dispatchEvent(new Event("canplay"));
+		el.dispatchEvent(new Event("play"));
+		expect(player.state).toBe("playing");
+		// Change source mid-playback
+		player.src = "https://example.com/other.m3u8";
+		expect(player.state).toBe("loading");
+	});
+});
+
+describe("<source> element auto-processing", () => {
+	it("processes <source> element when handler is registered", () => {
+		const el = document.createElement("video");
+		const source = document.createElement("source");
+		source.setAttribute("src", "https://example.com/stream.m3u8");
+		source.setAttribute("type", "application/vnd.apple.mpegurl");
+		el.appendChild(source);
+
+		const load = vi.fn();
+		const player = createPlayer(el);
+		player.registerSourceHandler({
+			canHandle: (_url, type) => type === "application/vnd.apple.mpegurl",
+			load,
+			unload: vi.fn(),
+		});
+		expect(load).toHaveBeenCalledWith("https://example.com/stream.m3u8", el);
+		expect(player.src).toBe("https://example.com/stream.m3u8");
+	});
+
+	it("skips <source> auto-read if player.src was explicitly set", () => {
+		const el = document.createElement("video");
+		const source = document.createElement("source");
+		source.setAttribute("src", "https://example.com/stream.m3u8");
+		el.appendChild(source);
+
+		const load = vi.fn();
+		const player = createPlayer(el);
+		player.src = "https://example.com/other.mp4";
+		player.registerSourceHandler({
+			canHandle: () => true,
+			load,
+			unload: vi.fn(),
+		});
+		expect(load).not.toHaveBeenCalled();
+	});
+
+	it("does not re-process sources if a handler already claimed one", () => {
+		const el = document.createElement("video");
+		const source = document.createElement("source");
+		source.setAttribute("src", "https://example.com/stream.m3u8");
+		el.appendChild(source);
+
+		const load1 = vi.fn();
+		const load2 = vi.fn();
+		const player = createPlayer(el);
+		player.registerSourceHandler({
+			canHandle: () => true,
+			load: load1,
+			unload: vi.fn(),
+		});
+		expect(load1).toHaveBeenCalledTimes(1);
+		// Second handler registration should not re-trigger
+		player.registerSourceHandler({
+			canHandle: () => true,
+			load: load2,
+			unload: vi.fn(),
+		});
+		expect(load2).not.toHaveBeenCalled();
+	});
+});

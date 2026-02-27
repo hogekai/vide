@@ -92,6 +92,16 @@ export interface EventBus {
 	once(event: string, handler: (...args: any[]) => void): void;
 }
 
+// === Source Handler ===
+export interface SourceHandler {
+	/** Whether this handler can process the given URL/type. */
+	canHandle(url: string, type?: string): boolean;
+	/** Load the source into the video element. */
+	load(url: string, videoElement: HTMLVideoElement): void;
+	/** Unload the source and clean up. */
+	unload(videoElement: HTMLVideoElement): void;
+}
+
 // === Plugin ===
 export interface Plugin {
 	name: string;
@@ -134,6 +144,11 @@ export interface Player extends EventBus {
 		listener: EventListenerOrEventListenerObject,
 		options?: boolean | EventListenerOptions,
 	): void;
+
+	/** Current media source URL. Setting triggers SourceHandler lookup. */
+	src: string;
+	/** Register a handler for custom source types (e.g., HLS, DASH). */
+	registerSourceHandler(handler: SourceHandler): void;
 
 	use(plugin: Plugin): void;
 	destroy(): void;

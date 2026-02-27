@@ -23,6 +23,10 @@
     "./simid": {
       "types": "./dist/simid/index.d.ts",
       "import": "./dist/simid/index.mjs"
+    },
+    "./hls": {
+      "types": "./dist/hls/index.d.ts",
+      "import": "./dist/hls/index.mjs"
     }
   },
   "files": [
@@ -39,10 +43,19 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.0",
+    "hls.js": "^1.6.15",
     "jsdom": "^25.0.0",
     "tsup": "^8.0.0",
     "typescript": "^5.6.0",
     "vitest": "^2.0.0"
+  },
+  "peerDependencies": {
+    "hls.js": "^1.0.0"
+  },
+  "peerDependenciesMeta": {
+    "hls.js": {
+      "optional": true
+    }
   },
   "license": "MIT",
   "engines": {

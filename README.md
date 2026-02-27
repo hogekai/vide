@@ -1,157 +1,126 @@
 # vide
 
-Zero-config, web-standard-first video player. Tiny. No magic.
+Lightweight video player library. Web standards first, zero config, explicit plugin opt-in.
 
 ## Install
 
-```
+```sh
 npm install vide
 ```
 
-## Usage
+## Quick Start
 
 ```ts
 import { createPlayer } from "vide";
 
 const player = createPlayer(document.querySelector("video")!);
 
-// It's just HTMLVideoElement. You already know the API.
+player.on("statechange", ({ from, to }) => console.log(`${from} → ${to}`));
 player.play();
-player.pause();
-player.currentTime = 30;
-console.log(player.duration);
-
-// Events
-player.on("statechange", ({ from, to }) => console.log(from, "→", to));
-player.on("play", () => {});
-player.on("ended", () => {});
-
-// Done? Clean up.
-player.destroy();
 ```
 
-## VAST Ads
+## Plugins
+
+Plugins are explicit opt-in. Import only what you need.
+
+### HLS Streaming
+
+```sh
+npm install hls.js
+```
 
 ```ts
 import { createPlayer } from "vide";
-import { vast } from "vide/vast";
+import { hls } from "vide/hls";
 
 const player = createPlayer(document.querySelector("video")!);
+player.use(hls());
 
-player.use(vast({
-  tagUrl: "https://example.com/vast.xml",
-}));
+player.src = "https://example.com/stream.m3u8";
 ```
 
-### With OMID (Open Measurement)
+- Safari/iOS uses native HLS (no hls.js needed)
+- Non-Safari uses hls.js via dynamic import
+- `hlsConfig` option passes config directly to hls.js constructor
+
+```ts
+player.use(hls({ hlsConfig: { maxBufferLength: 60 } }));
+```
+
+`<source>` elements are auto-detected:
+
+```html
+<video>
+  <source src="stream.m3u8" type="application/vnd.apple.mpegurl">
+</video>
+```
+
+```ts
+const player = createPlayer(document.querySelector("video")!);
+player.use(hls()); // auto-loads from <source>
+```
+
+### VAST Ads
 
 ```ts
 import { vast } from "vide/vast";
-import { omid } from "vide/omid";
-
-player.use(vast({
-  tagUrl: "https://example.com/vast.xml",
-  adPlugins: (ad) => [
-    omid({
-      partner: { name: "your-company", version: "1.0.0" },
-      serviceScriptUrl: "https://your-cdn.example.com/omweb-v1.js",
-    }),
-  ],
-}));
+player.use(vast({ tagUrl: "https://example.com/vast.xml" }));
 ```
 
-`adPlugins` is called per-ad with the parsed `VastAd`. Each ad plugin receives the player and the ad, and is cleaned up when the ad ends. OMID reads `ad.verifications` internally — VAST knows nothing about OMID.
-
-### With SIMID (Interactive Ads)
+### VMAP Ad Scheduling
 
 ```ts
-import { vast } from "vide/vast";
-import { simid } from "vide/simid";
-
-player.use(vast({
-  tagUrl: "https://example.com/vast.xml",
-  adPlugins: (ad) => [
-    simid({ container: document.getElementById("ad-container")! }),
-  ],
-}));
-```
-
-SIMID creatives run in a sandboxed iframe and communicate with the player via the SIMID 1.2 protocol. The creative URL is read from `<InteractiveCreativeFile apiFramework="SIMID">` in the VAST response. Creative requests (pause, play, navigate, etc.) are governed by the request policy:
-
-```ts
-simid({
-  container: document.getElementById("ad-container")!,
-  policy: {
-    allowPause: true,     // default
-    allowPlay: true,      // default
-    allowResize: false,   // default
-    navigation: "new-tab" // "new-tab" | "deny"
-  },
-})
-```
-
-## VMAP (Multi-Ad Breaks)
-
-```ts
-import { createPlayer } from "vide";
 import { vmap } from "vide/vmap";
+player.use(vmap({ vmapUrl: "https://example.com/vmap.xml" }));
+```
+
+### OMID Viewability
+
+```ts
 import { omid } from "vide/omid";
-
-const player = createPlayer(document.querySelector("video")!);
-
-player.use(vmap({
-  url: "https://example.com/vmap.xml",
-  adPlugins: (ad) => [
-    omid({
-      partner: { name: "your-company", version: "1.0.0" },
-      serviceScriptUrl: "https://your-cdn.example.com/omweb-v1.js",
-    }),
-  ],
-}));
+player.use(omid());
 ```
 
-## Custom Plugin
+### SIMID Interactive Ads
 
 ```ts
-import type { Plugin } from "vide";
-
-export function myPlugin(): Plugin {
-  return {
-    name: "my-plugin",
-    setup(player) {
-      player.on("play", () => { /* ... */ });
-      return () => { /* cleanup on destroy */ };
-    },
-  };
-}
+import { simid } from "vide/simid";
+player.use(simid());
 ```
 
-## Custom Ad Plugin
+## API
 
-```ts
-import type { AdPlugin } from "vide/vast";
+### `createPlayer(el: HTMLVideoElement): Player`
 
-export function myAdPlugin(): AdPlugin {
-  return {
-    name: "my-ad-plugin",
-    setup(player, ad) {
-      // ad is the parsed VastAd — read ad.verifications, ad.creatives, etc.
-      return () => { /* cleanup on ad end */ };
-    },
-  };
-}
-```
+Wraps a `<video>` element. Returns a `Player` with:
 
-## Bundle Size
+| Property / Method | Description |
+|---|---|
+| `state` | Current state: `idle` \| `loading` \| `ready` \| `playing` \| `paused` \| `buffering` \| `ended` \| `error` |
+| `src` | Get/set media source URL. Triggers SourceHandler lookup |
+| `play()` / `pause()` | Delegates to HTMLVideoElement |
+| `currentTime` / `duration` / `volume` / `muted` / `playbackRate` | Proxied from HTMLVideoElement |
+| `on(event, handler)` / `off()` / `once()` | EventBus for player events |
+| `use(plugin)` | Register a plugin |
+| `registerSourceHandler(handler)` | Register custom source handler |
+| `destroy()` | Cleanup all plugins and listeners |
 
-| Entry | Gzip |
-|-------|------|
-| Core | ~1 KB |
-| VAST plugin | ~2 KB |
-| VMAP plugin | ~2 KB |
-| OMID plugin | ~2 KB |
-| SIMID plugin | ~2 KB |
-| All | ~9 KB |
+### Events
+
+`statechange`, `play`, `pause`, `ended`, `timeupdate`, `error`, `destroy`
+
+Ad events: `ad:start`, `ad:end`, `ad:skip`, `ad:click`, `ad:error`, `ad:impression`, `ad:loaded`, `ad:quartile`, `ad:mute`, `ad:unmute`, `ad:volumeChange`, `ad:fullscreen`, `ad:breakStart`, `ad:breakEnd`
+
+## Entry Points
+
+| Import | Description |
+|---|---|
+| `vide` | Core player |
+| `vide/hls` | HLS streaming (hls.js) |
+| `vide/vast` | VAST 4.1 linear ads |
+| `vide/vmap` | VMAP ad scheduling |
+| `vide/omid` | OMID viewability |
+| `vide/simid` | SIMID interactive ads |
 
 ## License
 
