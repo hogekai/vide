@@ -96,6 +96,54 @@ const player = createPlayer(document.querySelector("video")!);
 player.use(dash()); // auto-loads from <source>
 ```
 
+### UI
+
+```ts
+import { createPlayer } from "vide";
+import { ui } from "vide/ui";
+import "vide/ui/theme.css"; // optional — default theme
+
+const player = createPlayer(document.querySelector("video")!);
+player.use(ui({ container: document.getElementById("player-container")! }));
+```
+
+- Two-layer architecture: JS logic (Layer 1) + optional CSS theme (Layer 2)
+- 13 components: play, progress, time, volume, fullscreen, loader, error, bigplay, poster, ad-countdown, ad-skip, ad-overlay, ad-label
+- BEM class names (`vide-play`, `vide-progress__bar`, etc.) — bring your own styles or use `theme.css`
+- `exclude` option to disable specific components
+
+```ts
+player.use(ui({
+  container: el,
+  exclude: ["volume", "fullscreen"],
+  poster: "https://example.com/poster.jpg",
+}));
+```
+
+Individual components can be used standalone:
+
+```ts
+import { createPlayButton, createProgress, connectStateClasses } from "vide/ui";
+
+const play = createPlayButton();
+play.mount(controls);
+play.connect(player);
+```
+
+#### UI + VAST Ads
+
+```ts
+import { ui } from "vide/ui";
+import { vast } from "vide/vast";
+
+const uiPlugin = ui({ container: el });
+player.use(uiPlugin);
+player.use(vast({
+  tagUrl: "https://example.com/vast.xml",
+  adPlugins: uiPlugin.getAdPlugin(),
+}));
+```
+
 ### VAST Ads
 
 ```ts
@@ -139,13 +187,15 @@ player.use(vast({
 | Import | Description | gzip |
 |---|---|---:|
 | `vide` | Core player | 1.4 KB |
+| `vide/ui` | UI plugin (13 components) | 3.0 KB |
+| `vide/ui/theme.css` | Default theme (optional) | 1.7 KB |
 | `vide/hls` | HLS streaming (hls.js) | 0.6 KB |
 | `vide/dash` | DASH streaming (dashjs) | 0.6 KB |
 | `vide/vast` | VAST 4.1 linear ads | 1.6 KB |
 | `vide/vmap` | VMAP ad scheduling | 2.7 KB |
 | `vide/omid` | OMID viewability | 1.7 KB |
 | `vide/simid` | SIMID interactive ads | 2.5 KB |
-| **Total** | **All entry points** | **~11 KB** |
+| **Total** | **All entry points** | **~16 KB** |
 
 ## License
 
