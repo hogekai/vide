@@ -160,9 +160,8 @@ describe("createKeyboard", () => {
 			writable: true,
 		});
 
-		const setState = (
-			player as unknown as { _setState(s: PlayerState): void }
-		)._setState;
+		const setState = (player as unknown as { _setState(s: PlayerState): void })
+			._setState;
 		setState("ad:loading");
 		setState("ad:playing");
 

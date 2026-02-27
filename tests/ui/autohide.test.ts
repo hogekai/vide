@@ -78,9 +78,8 @@ describe("createAutohide", () => {
 	it("does not go idle during ad state", () => {
 		const { videoEl, player, root, comp } = setup();
 		driveToPlaying(videoEl);
-		const setState = (
-			player as unknown as { _setState(s: PlayerState): void }
-		)._setState;
+		const setState = (player as unknown as { _setState(s: PlayerState): void })
+			._setState;
 		setState("ad:loading");
 		setState("ad:playing");
 		vi.advanceTimersByTime(5000);

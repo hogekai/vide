@@ -202,8 +202,7 @@ function parseMediaFiles(linearEl: Element): VastMediaFile[] {
 			width: safeInt(mf.getAttribute("width"), 0),
 			height: safeInt(mf.getAttribute("height"), 0),
 			bitrate: safeInt(mf.getAttribute("bitrate"), undefined),
-			delivery:
-				deliveryAttr === "streaming" ? "streaming" : "progressive",
+			delivery: deliveryAttr === "streaming" ? "streaming" : "progressive",
 		});
 	}
 
@@ -582,10 +581,7 @@ function mergeWrapperIntoAd(ad: VastAd, wrapperChain: WrapperAd[]): VastAd {
 }
 
 function safeInt(value: string | null, fallback: number): number;
-function safeInt(
-	value: string | null,
-	fallback: undefined,
-): number | undefined;
+function safeInt(value: string | null, fallback: undefined): number | undefined;
 function safeInt(
 	value: string | null,
 	fallback: number | undefined,

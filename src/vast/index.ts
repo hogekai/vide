@@ -120,8 +120,7 @@ export function vast(options: VastPluginOptions): Plugin {
 					}
 
 					// Mute/unmute tracking
-					let wasMuted =
-						player.el.muted || player.el.volume === 0;
+					let wasMuted = player.el.muted || player.el.volume === 0;
 
 					// Fullscreen tracking
 					let wasFullscreen = !!document.fullscreenElement;
@@ -146,9 +145,7 @@ export function vast(options: VastPluginOptions): Plugin {
 						// setting src triggers intermediate state changes
 						// (e.g. playing→paused) that would consume a once()
 						// listener before "ready" arrives.
-						function onReady({
-							to,
-						}: { from: string; to: string }): void {
+						function onReady({ to }: { from: string; to: string }): void {
 							if (to !== "ready") return;
 							player.off("statechange", onReady);
 							if (originalTime > 0) {
@@ -209,8 +206,7 @@ export function vast(options: VastPluginOptions): Plugin {
 					// --- Mute / Unmute tracking ---
 					function onAdVolumeChange(): void {
 						if (!linear || adEnding) return;
-						const nowMuted =
-							player.el.muted || player.el.volume === 0;
+						const nowMuted = player.el.muted || player.el.volume === 0;
 						if (nowMuted && !wasMuted) {
 							track(linear.trackingEvents.mute);
 							player.emit("ad:mute", { adId });
@@ -280,10 +276,7 @@ export function vast(options: VastPluginOptions): Plugin {
 						player.el.removeEventListener("pause", onAdPause);
 						player.el.removeEventListener("play", onAdPlay);
 						player.el.removeEventListener("click", onAdClick);
-						player.el.removeEventListener(
-							"volumechange",
-							onAdVolumeChange,
-						);
+						player.el.removeEventListener("volumechange", onAdVolumeChange);
 						document.removeEventListener(
 							"fullscreenchange",
 							onAdFullscreenChange,
@@ -299,10 +292,7 @@ export function vast(options: VastPluginOptions): Plugin {
 					player.el.addEventListener("play", onAdPlay);
 					player.el.addEventListener("click", onAdClick);
 					player.el.addEventListener("volumechange", onAdVolumeChange);
-					document.addEventListener(
-						"fullscreenchange",
-						onAdFullscreenChange,
-					);
+					document.addEventListener("fullscreenchange", onAdFullscreenChange);
 					player.on("ad:skip", onAdSkip);
 					adCleanup = cleanup;
 

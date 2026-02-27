@@ -117,10 +117,7 @@ export function vmap(options: VmapPluginOptions): Plugin {
 					function checkProgress(currentTime: number): void {
 						if (!linear) return;
 						for (const p of linear.trackingEvents.progress) {
-							if (
-								!firedProgress.has(p.offset) &&
-								currentTime >= p.offset
-							) {
+							if (!firedProgress.has(p.offset) && currentTime >= p.offset) {
 								firedProgress.add(p.offset);
 								track([p.url]);
 							}
@@ -128,8 +125,7 @@ export function vmap(options: VmapPluginOptions): Plugin {
 					}
 
 					// Mute/unmute tracking
-					let wasMuted =
-						player.el.muted || player.el.volume === 0;
+					let wasMuted = player.el.muted || player.el.volume === 0;
 
 					// Fullscreen tracking
 					let wasFullscreen = !!document.fullscreenElement;
@@ -142,8 +138,7 @@ export function vmap(options: VmapPluginOptions): Plugin {
 
 						function onAdVolumeChange(): void {
 							if (!linear) return;
-							const nowMuted =
-								player.el.muted || player.el.volume === 0;
+							const nowMuted = player.el.muted || player.el.volume === 0;
 							if (nowMuted && !wasMuted) {
 								track(linear.trackingEvents.mute);
 								player.emit("ad:mute", { adId });
@@ -196,19 +191,10 @@ export function vmap(options: VmapPluginOptions): Plugin {
 						}
 
 						function cleanup(): void {
-							player.el.removeEventListener(
-								"timeupdate",
-								onAdTimeUpdate,
-							);
+							player.el.removeEventListener("timeupdate", onAdTimeUpdate);
 							player.el.removeEventListener("ended", onAdEnded);
-							player.el.removeEventListener(
-								"canplay",
-								onAdCanPlay,
-							);
-							player.el.removeEventListener(
-								"volumechange",
-								onAdVolumeChange,
-							);
+							player.el.removeEventListener("canplay", onAdCanPlay);
+							player.el.removeEventListener("volumechange", onAdVolumeChange);
 							document.removeEventListener(
 								"fullscreenchange",
 								onAdFullscreenChange,
@@ -217,10 +203,7 @@ export function vmap(options: VmapPluginOptions): Plugin {
 						}
 
 						function onAdCanPlay(): void {
-							player.el.removeEventListener(
-								"canplay",
-								onAdCanPlay,
-							);
+							player.el.removeEventListener("canplay", onAdCanPlay);
 							if (!linear) return;
 							track(linear.trackingEvents.loaded);
 							track(linear.trackingEvents.creativeView);
@@ -233,19 +216,10 @@ export function vmap(options: VmapPluginOptions): Plugin {
 						}
 
 						player.el.addEventListener("canplay", onAdCanPlay);
-						player.el.addEventListener(
-							"timeupdate",
-							onAdTimeUpdate,
-						);
+						player.el.addEventListener("timeupdate", onAdTimeUpdate);
 						player.el.addEventListener("ended", onAdEnded);
-						player.el.addEventListener(
-							"volumechange",
-							onAdVolumeChange,
-						);
-						document.addEventListener(
-							"fullscreenchange",
-							onAdFullscreenChange,
-						);
+						player.el.addEventListener("volumechange", onAdVolumeChange);
+						document.addEventListener("fullscreenchange", onAdFullscreenChange);
 						adCleanup = cleanup;
 
 						player.el.src = mediaFile.url;
@@ -255,10 +229,7 @@ export function vmap(options: VmapPluginOptions): Plugin {
 					if (!aborted) {
 						track(adBreak.trackingEvents.error);
 						player.emit("ad:error", {
-							error:
-								err instanceof Error
-									? err
-									: new Error(String(err)),
+							error: err instanceof Error ? err : new Error(String(err)),
 						});
 					}
 				} finally {

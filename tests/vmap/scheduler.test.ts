@@ -248,11 +248,7 @@ describe("createScheduler", () => {
 		const onBreak = vi.fn().mockResolvedValue(undefined);
 		const midroll = makeBreak({ type: "time", seconds: 30 }, "mid-30");
 
-		const scheduler = createScheduler(
-			player as never,
-			[midroll],
-			onBreak,
-		);
+		const scheduler = createScheduler(player as never, [midroll], onBreak);
 		scheduler.start();
 
 		// Advance to 10s
@@ -315,10 +311,7 @@ describe("createScheduler", () => {
 		const player = createMockPlayer();
 		player.duration = 200;
 		const onBreak = vi.fn().mockResolvedValue(undefined);
-		const midroll = makeBreak(
-			{ type: "percentage", pct: 50 },
-			"mid-50pct",
-		);
+		const midroll = makeBreak({ type: "percentage", pct: 50 }, "mid-50pct");
 
 		const scheduler = createScheduler(player as never, [midroll], onBreak);
 		scheduler.start();

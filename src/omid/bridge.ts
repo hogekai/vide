@@ -28,7 +28,8 @@ export function createOmidBridge(
 		if (!active) return;
 		if (data.quartile === "firstQuartile") session.mediaEvents.firstQuartile();
 		else if (data.quartile === "midpoint") session.mediaEvents.midpoint();
-		else if (data.quartile === "thirdQuartile") session.mediaEvents.thirdQuartile();
+		else if (data.quartile === "thirdQuartile")
+			session.mediaEvents.thirdQuartile();
 		// 'start' and 'complete' are dispatched separately
 	}
 

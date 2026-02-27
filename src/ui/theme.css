@@ -72,7 +72,6 @@
 	--vide-skip-icon-size: 18px;
 }
 
-
 /* ═══════════════════════════════════════════
    ROOT
    ═══════════════════════════════════════════ */
@@ -100,7 +99,6 @@
 	box-sizing: border-box;
 }
 
-
 /* ═══════════════════════════════════════════
    AUTOHIDE (mouse-idle during playback)
    ═══════════════════════════════════════════ */
@@ -117,7 +115,6 @@
 .vide-ui--autohide .vide-bigplay {
 	display: none;
 }
-
 
 /* ═══════════════════════════════════════════
    CONTROLS BAR
@@ -154,7 +151,6 @@
 	pointer-events: auto;
 }
 
-
 /* ═══════════════════════════════════════════
    ICON BASE
    ═══════════════════════════════════════════ */
@@ -170,7 +166,6 @@
 	fill: var(--vide-text);
 	pointer-events: none;
 }
-
 
 /* ═══════════════════════════════════════════
    PLAY BUTTON
@@ -203,7 +198,6 @@
 .vide-play:active {
 	opacity: 0.7;
 }
-
 
 /* ═══════════════════════════════════════════
    PROGRESS BAR
@@ -269,9 +263,8 @@
 	left: calc(var(--vide-progress, 0) * 100%);
 	transform: translateX(-50%) scale(0);
 	opacity: 0;
-	transition:
-		opacity var(--vide-duration-fast),
-		transform var(--vide-duration-fast) var(--vide-ease);
+	transition: opacity var(--vide-duration-fast), transform
+		var(--vide-duration-fast) var(--vide-ease);
 	pointer-events: none;
 }
 
@@ -285,7 +278,6 @@
 	pointer-events: none;
 	opacity: 0.35;
 }
-
 
 /* ═══════════════════════════════════════════
    TIME
@@ -310,7 +302,6 @@
 	margin: 0 2px;
 	opacity: 0.35;
 }
-
 
 /* ═══════════════════════════════════════════
    VOLUME
@@ -389,7 +380,6 @@
 	transform-origin: left;
 }
 
-
 /* ═══════════════════════════════════════════
    FULLSCREEN
    ═══════════════════════════════════════════ */
@@ -419,7 +409,6 @@
 	background: var(--vide-hover);
 }
 
-
 /* ═══════════════════════════════════════════
    BIG PLAY
    ═══════════════════════════════════════════ */
@@ -445,9 +434,8 @@
 	align-items: center;
 	justify-content: center;
 	z-index: 1;
-	transition:
-		background var(--vide-duration-fast),
-		transform var(--vide-duration) var(--vide-ease);
+	transition: background var(--vide-duration-fast), transform
+		var(--vide-duration) var(--vide-ease);
 }
 
 .vide-bigplay:hover {
@@ -468,7 +456,6 @@
 .vide-ui--ended .vide-bigplay {
 	display: flex;
 }
-
 
 /* ═══════════════════════════════════════════
    CLICK-TO-PLAY
@@ -491,7 +478,6 @@
 .vide-ui--ad-paused .vide-clickplay {
 	display: none;
 }
-
 
 /* ═══════════════════════════════════════════
    LOADER
@@ -520,7 +506,9 @@
 }
 
 @keyframes vide-spin {
-	to { transform: rotate(360deg); }
+	to {
+		transform: rotate(360deg);
+	}
 }
 
 .vide-ui--loading .vide-loader,
@@ -528,7 +516,6 @@
 .vide-ui--ad-loading .vide-loader {
 	display: flex;
 }
-
 
 /* ═══════════════════════════════════════════
    ERROR
@@ -554,7 +541,6 @@
 .vide-ui--error .vide-error {
 	display: flex;
 }
-
 
 /* ═══════════════════════════════════════════
    POSTER
@@ -585,7 +571,6 @@
 	display: block;
 }
 
-
 /* ═══════════════════════════════════════════════════════════
 
    A D    S T A T E
@@ -606,7 +591,6 @@
 	display: block;
 }
 
-
 /* ── Ad overlay (click-through) ── */
 
 .vide-ad-overlay {
@@ -620,7 +604,6 @@
 	cursor: pointer;
 	z-index: 3;
 }
-
 
 /* ─────────────────────────────────────────
    Ad Label
@@ -640,7 +623,8 @@
 
 	background: var(--vide-chip);
 	border-radius: var(--vide-radius-sm);
-	padding: var(--vide-ad-label-pad-y) var(--vide-ad-label-pad-x) var(--vide-ad-label-pad-y) 0;
+	padding: var(--vide-ad-label-pad-y) var(--vide-ad-label-pad-x)
+		var(--vide-ad-label-pad-y) 0;
 
 	font-family: var(--vide-font);
 	font-size: var(--vide-font-size-sm);
@@ -662,8 +646,6 @@
 	background: var(--vide-accent-ad);
 	flex-shrink: 0;
 }
-
-
 
 /* ─────────────────────────────────────────
    Ad Countdown
@@ -698,7 +680,6 @@
 	color: var(--vide-text);
 	font-weight: 600;
 }
-
 
 /* ─────────────────────────────────────────
    Skip Button
@@ -736,9 +717,8 @@
 	align-items: center;
 	gap: var(--vide-skip-gap);
 
-	transition:
-		background var(--vide-duration-fast),
-		border-color var(--vide-duration-fast);
+	transition: background var(--vide-duration-fast), border-color
+		var(--vide-duration-fast);
 }
 
 .vide-skip svg {
@@ -773,7 +753,6 @@
 .vide-skip--disabled svg {
 	fill: var(--vide-text-dim);
 }
-
 
 /* ─────────────────────────────────────────
    Ad CTA (companion card)
@@ -857,7 +836,6 @@
 	line-height: 1.2;
 	color: var(--vide-text-dim);
 }
-
 
 /* ── Ad progress accent ── */
 

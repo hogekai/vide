@@ -174,9 +174,7 @@ describe("parseVmap — AdBreak TrackingEvents", () => {
 		expect(adBreak.trackingEvents.breakEnd).toEqual([
 			"http://example.com/breakEnd",
 		]);
-		expect(adBreak.trackingEvents.error).toEqual([
-			"http://example.com/error",
-		]);
+		expect(adBreak.trackingEvents.error).toEqual(["http://example.com/error"]);
 	});
 
 	it("returns empty arrays when no TrackingEvents element", () => {

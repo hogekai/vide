@@ -615,13 +615,9 @@ describe("parseVast — extended tracking events", () => {
 		expect(events.playerExpand).toEqual(["http://example.com/expand"]);
 		expect(events.playerCollapse).toEqual(["http://example.com/collapse"]);
 		expect(events.closeLinear).toEqual(["http://example.com/close"]);
-		expect(events.creativeView).toEqual([
-			"http://example.com/creativeView",
-		]);
+		expect(events.creativeView).toEqual(["http://example.com/creativeView"]);
 		expect(events.notUsed).toEqual(["http://example.com/notUsed"]);
-		expect(events.otherAdInteraction).toEqual([
-			"http://example.com/other",
-		]);
+		expect(events.otherAdInteraction).toEqual(["http://example.com/other"]);
 	});
 
 	it("parses progress events with offsets", () => {

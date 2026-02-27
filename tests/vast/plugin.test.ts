@@ -1,8 +1,8 @@
-import { describe, expect, it, vi, beforeEach, type Mock } from "vitest";
+import { type Mock, beforeEach, describe, expect, it, vi } from "vitest";
 import { createPlayer } from "../../src/core.js";
+import type { Player } from "../../src/types.js";
 import { vast } from "../../src/vast/index.js";
 import * as tracker from "../../src/vast/tracker.js";
-import type { Player } from "../../src/types.js";
 
 // Mock fetchVast to avoid network calls
 vi.mock("../../src/vast/parser.js", async (importOriginal) => {
@@ -19,17 +19,21 @@ import { fetchVast } from "../../src/vast/parser.js";
 const mockedFetchVast = fetchVast as Mock;
 
 // Minimal VAST XML with all tracking events and click data
-function makeVastXml(opts: {
-	skipOffset?: number;
-	clickThrough?: string;
-	clickTracking?: string[];
-} = {}): string {
+function makeVastXml(
+	opts: {
+		skipOffset?: number;
+		clickThrough?: string;
+		clickTracking?: string[];
+	} = {},
+): string {
 	const skipAttr =
 		opts.skipOffset !== undefined
 			? ` skipoffset="${formatTime(opts.skipOffset)}"`
 			: "";
 	const clickThrough = opts.clickThrough ?? "https://example.com/landing";
-	const clickTrackingTags = (opts.clickTracking ?? ["https://example.com/click-track"])
+	const clickTrackingTags = (
+		opts.clickTracking ?? ["https://example.com/click-track"]
+	)
 		.map((u) => `<ClickTracking><![CDATA[${u}]]></ClickTracking>`)
 		.join("");
 
@@ -90,7 +94,11 @@ function stubMediaMethods(el: HTMLVideoElement): void {
 }
 
 /** Set up a player that is in "ready" state with a parent container. */
-function setupPlayer(): { player: Player; el: HTMLVideoElement; container: HTMLDivElement } {
+function setupPlayer(): {
+	player: Player;
+	el: HTMLVideoElement;
+	container: HTMLDivElement;
+} {
 	const container = document.createElement("div");
 	const el = document.createElement("video");
 	stubMediaMethods(el);
@@ -146,10 +154,7 @@ describe("vast plugin — ad:click", () => {
 		const { player, el, container } = setupPlayer();
 		const xml = makeVastXml({ clickThrough: "" });
 		mockedFetchVast.mockResolvedValueOnce(
-			xml.replace(
-				/<ClickThrough><!\[CDATA\[\]\]><\/ClickThrough>/,
-				"",
-			),
+			xml.replace(/<ClickThrough><!\[CDATA\[\]\]><\/ClickThrough>/, ""),
 		);
 
 		const clickHandler = vi.fn();

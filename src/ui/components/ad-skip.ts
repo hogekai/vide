@@ -37,9 +37,7 @@ export function createAdSkip(adState: AdUIStateRef): UIComponent {
 		}
 	}
 
-	function onStateChange({
-		to,
-	}: { from: PlayerState; to: PlayerState }): void {
+	function onStateChange({ to }: { from: PlayerState; to: PlayerState }): void {
 		if (!button || !label) return;
 		// Reset button when leaving ad state
 		if (!isAdState(to)) {
