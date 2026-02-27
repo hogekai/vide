@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>vide — DASH + VAST Ads</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
+    video { width: 100%; background: #000; display: block; }
+    #log { font-family: monospace; font-size: 13px; background: #1a1a1a; color: #0f0; padding: 1rem; max-height: 300px; overflow-y: auto; border-radius: 4px; }
+    .log-entry { margin: 2px 0; }
+    .controls { margin: 1rem 0; display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    button { padding: 0.4rem 1rem; cursor: pointer; }
+    #video-wrapper { position: relative; }
+    #ad-overlay {
+      display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      cursor: pointer;
+    }
+    #ad-overlay .ad-label {
+      position: absolute; top: 8px; left: 8px;
+      background: rgba(0,0,0,0.7); color: #fff; padding: 2px 8px;
+      font-size: 12px; border-radius: 2px;
+    }
+    #ad-overlay .ad-skip {
+      display: none; position: absolute; bottom: 48px; right: 8px;
+      background: rgba(0,0,0,0.8); color: #fff; padding: 6px 16px;
+      font-size: 14px; border: 1px solid #fff; border-radius: 3px; cursor: pointer;
+    }
+  </style>
+  <script type="importmap">
+    { "imports": { "dashjs": "https://esm.sh/dashjs@4" } }
+  </script>
+</head>
+<body>
+  <h1>vide — DASH + VAST Ads</h1>
+
+  <div id="video-wrapper">
+    <video id="player" controls></video>
+    <div id="ad-overlay">
+      <span class="ad-label">Ad</span>
+      <button class="ad-skip">Skip Ad</button>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button onclick="player.play()">Play</button>
+    <button onclick="player.pause()">Pause</button>
+    <button onclick="player.currentTime = 0">Restart</button>
+    <button onclick="player.muted = !player.muted">Toggle Mute</button>
+    <button onclick="playWithAd()">Play DASH with VAST Ad</button>
+    <button onclick="player.destroy(); log('destroyed')">Destroy</button>
+  </div>
+
+  <h3>State: <span id="state">-</span></h3>
+  <div id="log"></div>
+
+  <script type="module">
+    import { createPlayer } from "../dist/index.mjs";
+    import { dash } from "../dist/dash/index.mjs";
+    import { vast } from "../dist/vast/index.mjs";
+
+    const el = document.getElementById("player");
+    const stateEl = document.getElementById("state");
+    const logEl = document.getElementById("log");
+    const adOverlay = document.getElementById("ad-overlay");
+    const adSkipBtn = adOverlay.querySelector(".ad-skip");
+
+    function log(msg) {
+      const entry = document.createElement("div");
+      entry.className = "log-entry";
+      entry.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+      logEl.prepend(entry);
+    }
+    window.log = log;
+
+    const player = createPlayer(el);
+    window.player = player;
+
+    // Register DASH plugin
+    player.use(dash());
+    log("DASH plugin registered");
+
+    // --- Ad overlay UI ---
+    adOverlay.addEventListener("click", (e) => {
+      if (e.target === adSkipBtn) return;
+      el.click();
+      if (el.paused) { el.play(); } else { el.pause(); }
+    });
+
+    adSkipBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      player.emit("ad:skip", { adId: "" });
+    });
+
+    // --- Events ---
+    player.on("statechange", ({ from, to }) => {
+      stateEl.textContent = to;
+      log(`state: ${from} → ${to}`);
+      if (to === "ad:playing" || to === "ad:paused") {
+        adOverlay.style.display = "block";
+      } else {
+        adOverlay.style.display = "none";
+        adSkipBtn.style.display = "none";
+      }
+    });
+    player.on("play", () => log("event: play"));
+    player.on("pause", () => log("event: pause"));
+    player.on("ended", () => log("event: ended"));
+    player.on("error", ({ code, message }) => log(`error: [${code}] ${message}`));
+    player.on("ad:start", ({ adId }) => log(`ad:start id=${adId}`));
+    player.on("ad:end", ({ adId }) => log(`ad:end id=${adId}`));
+    player.on("ad:click", ({ clickThrough }) => {
+      log(`ad:click → ${clickThrough ?? "(no clickThrough)"}`);
+      if (clickThrough) window.open(clickThrough, "_blank");
+    });
+    player.on("ad:error", ({ error }) => log(`ad:error: ${error.message}`));
+    player.on("ad:quartile", ({ quartile }) => log(`ad:quartile: ${quartile}`));
+
+    log("Player created. State: " + player.state);
+
+    // Google IMA sample VAST tag (pre-roll, linear, skippable)
+    function vastTag() {
+      return "https://pubads.g.doubleclick.net/gampad/ads?"
+        + "iu=/21775744923/external/single_preroll_skippable"
+        + "&sz=640x480"
+        + "&ciu_szs=300x250,728x90"
+        + "&gdfp_req=1"
+        + "&output=vast"
+        + "&unviewed_position_start=1"
+        + "&env=vp"
+        + "&impl=s"
+        + "&correlator=" + Date.now();
+    }
+
+    // --- Play DASH with VAST pre-roll ---
+    window.playWithAd = function() {
+      const url = "https://dash.akamaized.net/akamai/bbb_30fps/bbb_30fps.mpd";
+      log("Loading DASH: " + url);
+      player.src = url;
+
+      // Wait for DASH to be ready, then attach VAST pre-roll
+      player.once("statechange", ({ to }) => {
+        if (to === "ready") {
+          log("DASH ready — loading VAST ad");
+          player.use(vast({
+            tagUrl: vastTag(),
+            timeout: 10000,
+          }));
+        }
+      });
+    };
+
+    // Auto-load on page open
+    window.playWithAd();
+  </script>
+</body>
+</html>
