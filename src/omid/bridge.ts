@@ -78,7 +78,7 @@ export function createOmidBridge(
 		session.finish();
 	}
 
-	// --- HTMLVideoElement direct listeners ---
+	// --- HTMLVideoElement events (forwarded via player.on fallback) ---
 
 	function onVolumeChange(): void {
 		if (!active) return;
@@ -100,7 +100,7 @@ export function createOmidBridge(
 	player.on("ad:skip", onAdSkip);
 	player.on("ad:error", onAdError);
 	player.on("destroy", onDestroy);
-	player.el.addEventListener("volumechange", onVolumeChange);
+	player.on("volumechange", onVolumeChange);
 	document.addEventListener("fullscreenchange", onFullscreenChange);
 
 	// --- Cleanup ---
@@ -112,7 +112,7 @@ export function createOmidBridge(
 		player.off("ad:skip", onAdSkip);
 		player.off("ad:error", onAdError);
 		player.off("destroy", onDestroy);
-		player.el.removeEventListener("volumechange", onVolumeChange);
+		player.off("volumechange", onVolumeChange);
 		document.removeEventListener("fullscreenchange", onFullscreenChange);
 	};
 }

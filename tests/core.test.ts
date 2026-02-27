@@ -222,6 +222,82 @@ describe("EventBus", () => {
 	});
 });
 
+describe("EventBus fallback to HTMLVideoElement", () => {
+	it("forwards unknown event names to el.addEventListener", () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		const handler = vi.fn();
+		player.on("volumechange", handler);
+		el.dispatchEvent(new Event("volumechange"));
+		expect(handler).toHaveBeenCalled();
+	});
+
+	it("removes forwarded listeners via off()", () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		const handler = vi.fn();
+		player.on("volumechange", handler);
+		player.off("volumechange", handler);
+		el.dispatchEvent(new Event("volumechange"));
+		expect(handler).not.toHaveBeenCalled();
+	});
+
+	it("once() works for forwarded events", () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		const handler = vi.fn();
+		player.once("volumechange", handler);
+		el.dispatchEvent(new Event("volumechange"));
+		el.dispatchEvent(new Event("volumechange"));
+		expect(handler).toHaveBeenCalledTimes(1);
+	});
+
+	it("does not forward known player events to el", () => {
+		const el = makeVideo();
+		const addSpy = vi.spyOn(el, "addEventListener");
+		const player = createPlayer(el);
+		const callsBefore = addSpy.mock.calls.length;
+		const handler = vi.fn();
+		player.on("ad:start", handler);
+		// ad:start should go through EventBus, not el.addEventListener
+		expect(addSpy.mock.calls.length).toBe(callsBefore);
+	});
+});
+
+describe("addEventListener / removeEventListener", () => {
+	it("addEventListener delegates to the video element", () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		const handler = vi.fn();
+		player.addEventListener("volumechange", handler);
+		el.dispatchEvent(new Event("volumechange"));
+		expect(handler).toHaveBeenCalled();
+	});
+
+	it("removeEventListener removes the listener", () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		const handler = vi.fn();
+		player.addEventListener("volumechange", handler);
+		player.removeEventListener("volumechange", handler);
+		el.dispatchEvent(new Event("volumechange"));
+		expect(handler).not.toHaveBeenCalled();
+	});
+
+	it("supports options parameter", () => {
+		const el = makeVideo();
+		const addSpy = vi.spyOn(el, "addEventListener");
+		const player = createPlayer(el);
+		const callsBefore = addSpy.mock.calls.length;
+		const handler = vi.fn();
+		player.addEventListener("volumechange", handler, { once: true });
+		expect(addSpy.mock.calls.length).toBe(callsBefore + 1);
+		expect(addSpy).toHaveBeenLastCalledWith("volumechange", handler, {
+			once: true,
+		});
+	});
+});
+
 describe("HTMLVideoElement proxy", () => {
 	it("delegates play() to the video element", async () => {
 		const el = makeVideo();

@@ -162,6 +162,21 @@ export function createPlayer(el: HTMLVideoElement): Player {
 	el.addEventListener("timeupdate", onTimeUpdate);
 	el.addEventListener("error", onError);
 
+	/** Known player event names managed by the EventBus. */
+	const playerEvents = new Set<string>([
+		"statechange",
+		"play",
+		"pause",
+		"ended",
+		"timeupdate",
+		"error",
+		"ad:start",
+		"ad:end",
+		"ad:skip",
+		"ad:error",
+		"destroy",
+	]);
+
 	function removeVideoListeners(): void {
 		el.removeEventListener("loadstart", onLoadStart);
 		el.removeEventListener("canplay", onCanPlay);
@@ -183,27 +198,29 @@ export function createPlayer(el: HTMLVideoElement): Player {
 		},
 
 		// --- EventBus ---
-		on<K extends PlayerEvent>(
-			event: K,
-			handler: EventHandler<PlayerEventMap[K]>,
-		): void {
-			getHandlers(event).add(handler as EventHandler<unknown>);
+		// biome-ignore lint/suspicious/noExplicitAny: implementation signature covers both overloads
+		on(event: string, handler: any): void {
+			if (playerEvents.has(event)) {
+				getHandlers(event).add(handler as EventHandler<unknown>);
+			} else {
+				el.addEventListener(event, handler as EventListener);
+			}
 		},
-		off<K extends PlayerEvent>(
-			event: K,
-			handler: EventHandler<PlayerEventMap[K]>,
-		): void {
-			getHandlers(event).delete(handler as EventHandler<unknown>);
+		// biome-ignore lint/suspicious/noExplicitAny: implementation signature covers both overloads
+		off(event: string, handler: any): void {
+			if (playerEvents.has(event)) {
+				getHandlers(event).delete(handler as EventHandler<unknown>);
+			} else {
+				el.removeEventListener(event, handler as EventListener);
+			}
 		},
 		emit,
-		once<K extends PlayerEvent>(
-			event: K,
-			handler: EventHandler<PlayerEventMap[K]>,
-		): void {
-			const wrapper = ((data: PlayerEventMap[K]) => {
+		// biome-ignore lint/suspicious/noExplicitAny: implementation signature covers both overloads
+		once(event: string, handler: any): void {
+			const wrapper = (data: unknown) => {
 				player.off(event, wrapper);
 				handler(data);
-			}) as EventHandler<PlayerEventMap[K]>;
+			};
 			player.on(event, wrapper);
 		},
 
@@ -243,6 +260,22 @@ export function createPlayer(el: HTMLVideoElement): Player {
 		},
 		set playbackRate(v: number) {
 			el.playbackRate = v;
+		},
+
+		// --- Web-standard delegation ---
+		addEventListener(
+			type: string,
+			listener: EventListenerOrEventListenerObject,
+			options?: boolean | AddEventListenerOptions,
+		): void {
+			el.addEventListener(type, listener, options);
+		},
+		removeEventListener(
+			type: string,
+			listener: EventListenerOrEventListenerObject,
+			options?: boolean | EventListenerOptions,
+		): void {
+			el.removeEventListener(type, listener, options);
 		},
 
 		// --- vide specific ---
