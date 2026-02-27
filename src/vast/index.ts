@@ -141,18 +141,17 @@ export function vast(options: VastPluginOptions): Plugin {
 					}
 
 					function restoreContent(): void {
+						function onReady({ to }: { to: string }): void {
+							if (to !== "ready") return;
+							player.off("statechange", onReady);
+							player.el.currentTime = originalTime;
+							player.el.play().catch(() => {
+								player.el.muted = true;
+								player.el.play().catch(() => {});
+							});
+						}
+						player.on("statechange", onReady);
 						player.src = prevSrc;
-						player.el.addEventListener(
-							"canplay",
-							function onContentReady() {
-								player.el.removeEventListener("canplay", onContentReady);
-								player.el.currentTime = originalTime;
-								player.el.play().catch(() => {
-									player.el.muted = true;
-									player.el.play().catch(() => {});
-								});
-							},
-						);
 					}
 
 					// --- ad:click: fire tracking, emit event ---
