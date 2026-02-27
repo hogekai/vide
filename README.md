@@ -56,6 +56,26 @@ player.use(vmap({
 }));
 ```
 
+## OMID (Open Measurement)
+
+```ts
+import { createPlayer } from "vide";
+import { vast } from "vide/vast";
+import { omid } from "vide/omid";
+
+const player = createPlayer(document.querySelector("video")!);
+
+player.use(vast({ tagUrl: "https://example.com/vast.xml" }));
+
+player.use(omid({
+  verifications: vast.verifications, // from VAST AdVerifications
+  partner: { name: "your-company", version: "1.0.0" },
+  serviceScriptUrl: "https://cdn.example.com/omweb-v1.js",
+}));
+```
+
+OM SDK scripts are loaded dynamically — zero runtime dependencies. If the SDK fails to load, ad playback continues unaffected.
+
 ## Custom Plugin
 
 ```ts
@@ -79,7 +99,8 @@ export function myPlugin(): Plugin {
 | Core | ~1 KB |
 | VAST plugin | ~2 KB |
 | VMAP plugin | ~2 KB |
-| All | ~5 KB |
+| OMID plugin | ~2 KB |
+| All | ~7 KB |
 
 ## License
 
