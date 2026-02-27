@@ -35,3 +35,7 @@ Single package, multiple entry points via `exports` field:
 - `vide` — core (createPlayer + EventBus + StateMachine)
 - `vide/vast` — VAST 4.1 Linear Ad plugin
 - `vide/vmap` — VMAP plugin (depends on vast internally)
+- `vide/hls` — HLS streaming plugin (wraps hls.js, optional peer dep)
+- `vide/dash` — DASH streaming plugin (wraps dashjs, optional peer dep)
+- `vide/omid` — OM SDK (Open Measurement) viewability plugin
+- `vide/simid` — SIMID (Secure Interactive Media Interface) plugin

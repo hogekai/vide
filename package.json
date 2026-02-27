@@ -1,6 +1,6 @@
 {
   "name": "vide",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Zero-config, web-standard-first lightweight video player library",
   "type": "module",
   "exports": {
@@ -27,6 +27,10 @@
     "./hls": {
       "types": "./dist/hls/index.d.ts",
       "import": "./dist/hls/index.mjs"
+    },
+    "./dash": {
+      "types": "./dist/dash/index.d.ts",
+      "import": "./dist/dash/index.mjs"
     }
   },
   "files": [
@@ -43,6 +47,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.0",
+    "dashjs": "^4.7.0",
     "hls.js": "^1.6.15",
     "jsdom": "^25.0.0",
     "tsup": "^8.0.0",
@@ -50,9 +55,13 @@
     "vitest": "^2.0.0"
   },
   "peerDependencies": {
+    "dashjs": "^4.0.0",
     "hls.js": "^1.0.0"
   },
   "peerDependenciesMeta": {
+    "dashjs": {
+      "optional": true
+    },
     "hls.js": {
       "optional": true
     }

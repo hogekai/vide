@@ -60,6 +60,42 @@ const player = createPlayer(document.querySelector("video")!);
 player.use(hls()); // auto-loads from <source>
 ```
 
+### DASH Streaming
+
+```sh
+npm install dashjs
+```
+
+```ts
+import { createPlayer } from "vide";
+import { dash } from "vide/dash";
+
+const player = createPlayer(document.querySelector("video")!);
+player.use(dash());
+
+player.src = "https://example.com/stream.mpd";
+```
+
+- Uses dash.js via dynamic import
+- `dashConfig` option passes settings directly to `dashjs.updateSettings()`
+
+```ts
+player.use(dash({ dashConfig: { streaming: { buffer: { bufferTimeDefault: 20 } } } }));
+```
+
+`<source>` elements are auto-detected:
+
+```html
+<video>
+  <source src="stream.mpd" type="application/dash+xml">
+</video>
+```
+
+```ts
+const player = createPlayer(document.querySelector("video")!);
+player.use(dash()); // auto-loads from <source>
+```
+
 ### VAST Ads
 
 ```ts
@@ -98,39 +134,18 @@ player.use(vast({
 }));
 ```
 
-## API
-
-### `createPlayer(el: HTMLVideoElement): Player`
-
-Wraps a `<video>` element. Returns a `Player` with:
-
-| Property / Method | Description |
-|---|---|
-| `state` | Current state: `idle` \| `loading` \| `ready` \| `playing` \| `paused` \| `buffering` \| `ended` \| `error` |
-| `src` | Get/set media source URL. Triggers SourceHandler lookup |
-| `play()` / `pause()` | Delegates to HTMLVideoElement |
-| `currentTime` / `duration` / `volume` / `muted` / `playbackRate` | Proxied from HTMLVideoElement |
-| `on(event, handler)` / `off()` / `once()` | EventBus for player events |
-| `use(plugin)` | Register a plugin |
-| `registerSourceHandler(handler)` | Register custom source handler |
-| `destroy()` | Cleanup all plugins and listeners |
-
-### Events
-
-`statechange`, `play`, `pause`, `ended`, `timeupdate`, `error`, `destroy`
-
-Ad events: `ad:start`, `ad:end`, `ad:skip`, `ad:click`, `ad:error`, `ad:impression`, `ad:loaded`, `ad:quartile`, `ad:mute`, `ad:unmute`, `ad:volumeChange`, `ad:fullscreen`, `ad:breakStart`, `ad:breakEnd`
-
 ## Entry Points
 
-| Import | Description |
-|---|---|
-| `vide` | Core player |
-| `vide/hls` | HLS streaming (hls.js) |
-| `vide/vast` | VAST 4.1 linear ads |
-| `vide/vmap` | VMAP ad scheduling |
-| `vide/omid` | OMID viewability |
-| `vide/simid` | SIMID interactive ads |
+| Import | Description | gzip |
+|---|---|---:|
+| `vide` | Core player | 1.4 KB |
+| `vide/hls` | HLS streaming (hls.js) | 0.6 KB |
+| `vide/dash` | DASH streaming (dashjs) | 0.6 KB |
+| `vide/vast` | VAST 4.1 linear ads | 1.6 KB |
+| `vide/vmap` | VMAP ad scheduling | 2.7 KB |
+| `vide/omid` | OMID viewability | 1.7 KB |
+| `vide/simid` | SIMID interactive ads | 2.5 KB |
+| **Total** | **All entry points** | **~11 KB** |
 
 ## License
 
