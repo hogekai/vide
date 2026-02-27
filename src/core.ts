@@ -50,7 +50,7 @@ export function createPlayer(el: HTMLVideoElement): Player {
 	let destroyed = false;
 	const sourceHandlers: SourceHandler[] = [];
 	let activeHandler: SourceHandler | null = null;
-	let currentSrc = "";
+	let currentSrc = el.getAttribute("src") ?? "";
 	let srcExplicitlySet = false;
 
 	function getHandlers(event: string): Set<EventHandler<unknown>> {
