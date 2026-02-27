@@ -1,8 +1,8 @@
 import type {
 	OmidAdEvents,
 	OmidMediaEvents,
-	OmidPluginOptions,
 	OmidSessionClientNamespace,
+	OmidSessionOptions,
 	OmidVastProperties,
 } from "./types.js";
 
@@ -28,7 +28,7 @@ export interface OmidSession {
 export function createOmidSession(
 	sdk: OmidSessionClientNamespace,
 	videoElement: HTMLVideoElement,
-	options: OmidPluginOptions,
+	options: OmidSessionOptions,
 ): OmidSession {
 	const partner = new sdk.Partner(
 		options.partner.name,

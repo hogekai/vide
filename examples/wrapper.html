@@ -111,8 +111,8 @@
         for (const ad of response.ads) {
           log(`  Ad: id=${ad.id}, system=${ad.adSystem}`);
           log(`    impressions=${ad.impressions.length}, errors=${ad.errors.length}`);
-          if (ad.adVerifications) {
-            log(`    verifications=${ad.adVerifications.length}`);
+          if (ad.verifications) {
+            log(`    verifications=${ad.verifications.length}`);
           }
           if (ad.categories) {
             log(`    categories=${ad.categories.map(c => c.value).join(", ")}`);

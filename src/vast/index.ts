@@ -1,10 +1,11 @@
 import type { Player, PlayerState, Plugin } from "../types.js";
 import { fetchVast, parseVast } from "./parser.js";
 import { createQuartileTracker, track } from "./tracker.js";
-import type { VastLinear, VastPluginOptions } from "./types.js";
+import type { VastAd, VastLinear, VastPluginOptions } from "./types.js";
 
 export type {
 	VastPluginOptions,
+	AdPlugin,
 	ResolveOptions,
 	AdVerification,
 	AdCategory,
@@ -45,24 +46,34 @@ export function vast(options: VastPluginOptions): Plugin {
 
 					// Find the first linear creative with media files
 					let linear: VastLinear | null = null;
-					let adId = "";
+					let matchedAd: VastAd | null = null;
 					for (const ad of response.ads) {
 						for (const creative of ad.creatives) {
 							if (creative.linear && creative.linear.mediaFiles.length > 0) {
 								linear = creative.linear;
-								adId = ad.id;
+								matchedAd = ad;
 								break;
 							}
 						}
 						if (linear) break;
 					}
 
-					if (!linear) {
+					if (!linear || !matchedAd) {
 						setState("playing");
 						return;
 					}
 
+					const adId = matchedAd.id;
 					player.emit("ad:start", { adId });
+
+					// --- Ad plugins lifecycle ---
+					const adPluginCleanups: (() => void)[] = [];
+					if (options.adPlugins) {
+						for (const p of options.adPlugins(matchedAd)) {
+							const c = p.setup(player, matchedAd);
+							if (c) adPluginCleanups.push(c);
+						}
+					}
 
 					// Fire impressions
 					for (const ad of response.ads) {
@@ -98,6 +109,11 @@ export function vast(options: VastPluginOptions): Plugin {
 
 					// --- Ad ended: restore content ---
 					let adEnding = false;
+
+					function cleanupAdPlugins(): void {
+						for (const c of adPluginCleanups) c();
+						adPluginCleanups.length = 0;
+					}
 
 					function restoreContent(): void {
 						player.el.src = prevSrc;
@@ -153,6 +169,7 @@ export function vast(options: VastPluginOptions): Plugin {
 							player.emit("ad:skip", { adId });
 							adEnding = true;
 							cleanup();
+							cleanupAdPlugins();
 							player.emit("ad:end", { adId });
 							restoreContent();
 						}
@@ -182,9 +199,7 @@ export function vast(options: VastPluginOptions): Plugin {
 
 						// Update skip button countdown
 						if (skipButton && skipOffset !== undefined) {
-							const remaining = Math.ceil(
-								skipOffset - player.el.currentTime,
-							);
+							const remaining = Math.ceil(skipOffset - player.el.currentTime);
 							if (remaining <= 0) {
 								skipButton.disabled = false;
 								skipButton.textContent = "Skip ad";
@@ -197,6 +212,7 @@ export function vast(options: VastPluginOptions): Plugin {
 					function onAdEnded(): void {
 						adEnding = true;
 						cleanup();
+						cleanupAdPlugins();
 						if (!linear) return;
 						track(linear.trackingEvents.complete);
 						player.emit("ad:end", { adId });

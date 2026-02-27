@@ -1,7 +1,7 @@
 import type { Player, PlayerState, Plugin } from "../types.js";
 import { parseVast, resolveVast } from "../vast/parser.js";
 import { createQuartileTracker, track } from "../vast/tracker.js";
-import type { VastLinear, VastResponse } from "../vast/types.js";
+import type { VastAd, VastLinear, VastResponse } from "../vast/types.js";
 import { parseVmap } from "./parser.js";
 import { createScheduler } from "./scheduler.js";
 import type { AdBreak, VmapPluginOptions } from "./types.js";
@@ -49,25 +49,37 @@ export function vmap(options: VmapPluginOptions): Plugin {
 					if (aborted || response.ads.length === 0) return;
 
 					let linear: VastLinear | null = null;
-					let adId = "";
+					let matchedAd: VastAd | null = null;
 					for (const ad of response.ads) {
 						for (const creative of ad.creatives) {
-							if (
-								creative.linear &&
-								creative.linear.mediaFiles.length > 0
-							) {
+							if (creative.linear && creative.linear.mediaFiles.length > 0) {
 								linear = creative.linear;
-								adId = ad.id;
+								matchedAd = ad;
 								break;
 							}
 						}
 						if (linear) break;
 					}
 
-					if (!linear) return;
+					if (!linear || !matchedAd) return;
 
+					const adId = matchedAd.id;
 					setState("ad:loading");
 					player.emit("ad:start", { adId });
+
+					// --- Ad plugins lifecycle ---
+					const adPluginCleanups: (() => void)[] = [];
+					if (options.adPlugins) {
+						for (const p of options.adPlugins(matchedAd)) {
+							const c = p.setup(player, matchedAd);
+							if (c) adPluginCleanups.push(c);
+						}
+					}
+
+					function cleanupAdPlugins(): void {
+						for (const c of adPluginCleanups) c();
+						adPluginCleanups.length = 0;
+					}
 
 					for (const ad of response.ads) {
 						track(ad.impressions);
@@ -78,6 +90,7 @@ export function vmap(options: VmapPluginOptions): Plugin {
 						player.emit("ad:error", {
 							error: new Error("No suitable media file found"),
 						});
+						cleanupAdPlugins();
 						setState("playing");
 						return;
 					}
@@ -86,14 +99,11 @@ export function vmap(options: VmapPluginOptions): Plugin {
 					const originalPaused = player.el.paused;
 					const prevSrc = player.el.src;
 
-					const tracker = createQuartileTracker(
-						linear.duration,
-						(event) => {
-							if (!linear) return;
-							const urls = linear.trackingEvents[event];
-							if (urls) track(urls);
-						},
-					);
+					const tracker = createQuartileTracker(linear.duration, (event) => {
+						if (!linear) return;
+						const urls = linear.trackingEvents[event];
+						if (urls) track(urls);
+					});
 
 					await new Promise<void>((resolve) => {
 						function onAdTimeUpdate(): void {
@@ -102,6 +112,7 @@ export function vmap(options: VmapPluginOptions): Plugin {
 
 						function onAdEnded(): void {
 							cleanup();
+							cleanupAdPlugins();
 							if (linear) track(linear.trackingEvents.complete);
 							player.emit("ad:end", { adId });
 
@@ -118,23 +129,14 @@ export function vmap(options: VmapPluginOptions): Plugin {
 						}
 
 						function cleanup(): void {
-							player.el.removeEventListener(
-								"timeupdate",
-								onAdTimeUpdate,
-							);
+							player.el.removeEventListener("timeupdate", onAdTimeUpdate);
 							player.el.removeEventListener("ended", onAdEnded);
-							player.el.removeEventListener(
-								"canplay",
-								onAdCanPlay,
-							);
+							player.el.removeEventListener("canplay", onAdCanPlay);
 							adCleanup = null;
 						}
 
 						function onAdCanPlay(): void {
-							player.el.removeEventListener(
-								"canplay",
-								onAdCanPlay,
-							);
+							player.el.removeEventListener("canplay", onAdCanPlay);
 							if (!linear) return;
 							setState("ad:playing");
 							track(linear.trackingEvents.start);
@@ -145,10 +147,7 @@ export function vmap(options: VmapPluginOptions): Plugin {
 						}
 
 						player.el.addEventListener("canplay", onAdCanPlay);
-						player.el.addEventListener(
-							"timeupdate",
-							onAdTimeUpdate,
-						);
+						player.el.addEventListener("timeupdate", onAdTimeUpdate);
 						player.el.addEventListener("ended", onAdEnded);
 						adCleanup = cleanup;
 

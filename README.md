@@ -43,38 +43,44 @@ player.use(vast({
 }));
 ```
 
+### With OMID (Open Measurement)
+
+```ts
+import { vast } from "vide/vast";
+import { omid } from "vide/omid";
+
+player.use(vast({
+  tagUrl: "https://example.com/vast.xml",
+  adPlugins: (ad) => [
+    omid({
+      partner: { name: "your-company", version: "1.0.0" },
+      serviceScriptUrl: "https://your-cdn.example.com/omweb-v1.js",
+    }),
+  ],
+}));
+```
+
+`adPlugins` is called per-ad with the parsed `VastAd`. Each ad plugin receives the player and the ad, and is cleaned up when the ad ends. OMID reads `ad.verifications` internally — VAST knows nothing about OMID.
+
 ## VMAP (Multi-Ad Breaks)
 
 ```ts
 import { createPlayer } from "vide";
 import { vmap } from "vide/vmap";
+import { omid } from "vide/omid";
 
 const player = createPlayer(document.querySelector("video")!);
 
 player.use(vmap({
   url: "https://example.com/vmap.xml",
+  adPlugins: (ad) => [
+    omid({
+      partner: { name: "your-company", version: "1.0.0" },
+      serviceScriptUrl: "https://your-cdn.example.com/omweb-v1.js",
+    }),
+  ],
 }));
 ```
-
-## OMID (Open Measurement)
-
-```ts
-import { createPlayer } from "vide";
-import { vast } from "vide/vast";
-import { omid } from "vide/omid";
-
-const player = createPlayer(document.querySelector("video")!);
-
-player.use(vast({ tagUrl: "https://example.com/vast.xml" }));
-
-player.use(omid({
-  verifications: vast.verifications, // from VAST AdVerifications
-  partner: { name: "your-company", version: "1.0.0" },
-  serviceScriptUrl: "https://cdn.example.com/omweb-v1.js",
-}));
-```
-
-OM SDK scripts are loaded dynamically — zero runtime dependencies. If the SDK fails to load, ad playback continues unaffected.
 
 ## Custom Plugin
 
@@ -87,6 +93,22 @@ export function myPlugin(): Plugin {
     setup(player) {
       player.on("play", () => { /* ... */ });
       return () => { /* cleanup on destroy */ };
+    },
+  };
+}
+```
+
+## Custom Ad Plugin
+
+```ts
+import type { AdPlugin } from "vide/vast";
+
+export function myAdPlugin(): AdPlugin {
+  return {
+    name: "my-ad-plugin",
+    setup(player, ad) {
+      // ad is the parsed VastAd — read ad.verifications, ad.creatives, etc.
+      return () => { /* cleanup on ad end */ };
     },
   };
 }

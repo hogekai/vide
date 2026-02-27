@@ -2,7 +2,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { createPlayer } from "../../src/core.js";
 import { omid } from "../../src/omid/index.js";
 import type { OmidPluginOptions } from "../../src/omid/types.js";
-import type { Player, PlayerState } from "../../src/types.js";
+import type { Player } from "../../src/types.js";
+import type { VastAd } from "../../src/vast/types.js";
 
 vi.mock("../../src/omid/loader.js", () => ({
 	loadOmSdk: vi.fn(),
@@ -79,6 +80,20 @@ function defaultOptions(
 	overrides?: Partial<OmidPluginOptions>,
 ): OmidPluginOptions {
 	return {
+		partner: { name: "vide", version: "0.3.0" },
+		serviceScriptUrl: "https://cdn.example.com/omweb-v1.js",
+		...overrides,
+	};
+}
+
+function defaultAd(overrides?: Partial<VastAd>): VastAd {
+	return {
+		id: "ad1",
+		adSystem: "test",
+		adTitle: "Test Ad",
+		impressions: [],
+		creatives: [],
+		errors: [],
 		verifications: [
 			{
 				vendor: "moat",
@@ -86,8 +101,6 @@ function defaultOptions(
 				parameters: "p1=v1",
 			},
 		],
-		partner: { name: "vide", version: "0.3.0" },
-		serviceScriptUrl: "https://cdn.example.com/omweb-v1.js",
 		...overrides,
 	};
 }
@@ -109,13 +122,13 @@ afterEach(() => {
 	}
 });
 
-describe("omid plugin", () => {
-	it("starts SDK load on use() (preload)", () => {
+describe("omid ad plugin", () => {
+	it("starts SDK load on setup()", () => {
 		const { player } = setupPlayer();
 		const { sdk } = createMockSdkNamespace();
 		mockLoadOmSdk.mockResolvedValue(sdk);
 
-		player.use(omid(defaultOptions()));
+		omid(defaultOptions()).setup(player, defaultAd());
 
 		expect(mockLoadOmSdk).toHaveBeenCalledWith(
 			"https://cdn.example.com/omweb-v1.js",
@@ -124,33 +137,17 @@ describe("omid plugin", () => {
 		);
 	});
 
-	it("does not create session before ad:start", async () => {
-		const { player } = setupPlayer();
-		const { sdk } = createMockSdkNamespace();
-		mockLoadOmSdk.mockResolvedValue(sdk);
-
-		player.use(omid(defaultOptions()));
-
-		// Wait a tick for the preload promise to resolve
-		await vi.waitFor(() => {});
-
-		expect(sdk.AdSession).not.toHaveBeenCalled();
-	});
-
-	it("creates session and bridge after ad:start", async () => {
+	it("creates session after SDK loads", async () => {
 		const { player } = setupPlayer();
 		const { sdk, mockAdEvents, triggerSessionStart } = createMockSdkNamespace();
 		mockLoadOmSdk.mockResolvedValue(sdk);
 
-		player.use(omid(defaultOptions()));
-		player.emit("ad:start", { adId: "ad1" });
+		omid(defaultOptions()).setup(player, defaultAd());
 
-		// Wait for async init
 		await vi.waitFor(() => {
 			expect(sdk.AdSession).toHaveBeenCalled();
 		});
 
-		// Trigger sessionStart to let bridge be created
 		triggerSessionStart();
 
 		await vi.waitFor(() => {
@@ -167,8 +164,7 @@ describe("omid plugin", () => {
 		const errorEvents: Error[] = [];
 		player.on("ad:error", ({ error }) => errorEvents.push(error));
 
-		player.use(omid(defaultOptions()));
-		player.emit("ad:start", { adId: "ad1" });
+		omid(defaultOptions()).setup(player, defaultAd());
 
 		await vi.waitFor(() => {
 			expect(errorEvents.length).toBe(1);
@@ -193,8 +189,7 @@ describe("omid plugin", () => {
 		const errorEvents: Error[] = [];
 		player.on("ad:error", ({ error }) => errorEvents.push(error));
 
-		player.use(omid(defaultOptions()));
-		player.emit("ad:start", { adId: "ad1" });
+		omid(defaultOptions()).setup(player, defaultAd());
 
 		await vi.waitFor(() => {
 			expect(errorEvents.length).toBe(1);
@@ -208,9 +203,24 @@ describe("omid plugin", () => {
 		const { player } = setupPlayer();
 		mockLoadOmSdk.mockResolvedValue({});
 
-		const cleanup = omid(defaultOptions({ verifications: [] })).setup(player);
+		const cleanup = omid(defaultOptions()).setup(
+			player,
+			defaultAd({ verifications: [] }),
+		);
 
-		// Should return void (no cleanup needed)
+		expect(cleanup).toBeUndefined();
+		expect(mockLoadOmSdk).not.toHaveBeenCalled();
+	});
+
+	it("skips initialization if verifications is undefined", () => {
+		const { player } = setupPlayer();
+		mockLoadOmSdk.mockResolvedValue({});
+
+		const cleanup = omid(defaultOptions()).setup(
+			player,
+			defaultAd({ verifications: undefined }),
+		);
+
 		expect(cleanup).toBeUndefined();
 		expect(mockLoadOmSdk).not.toHaveBeenCalled();
 	});
@@ -226,10 +236,10 @@ describe("omid plugin", () => {
 			}),
 		);
 
-		player.use(omid(defaultOptions()));
+		const cleanup = omid(defaultOptions()).setup(player, defaultAd());
 
-		// Destroy before SDK loads
-		player.destroy();
+		// Cleanup before SDK loads
+		cleanup?.();
 
 		// Now resolve the SDK load
 		resolveLoad?.(sdk);
@@ -245,8 +255,7 @@ describe("omid plugin", () => {
 			createMockSdkNamespace();
 		mockLoadOmSdk.mockResolvedValue(sdk);
 
-		player.use(omid(defaultOptions()));
-		player.emit("ad:start", { adId: "ad1" });
+		const cleanup = omid(defaultOptions()).setup(player, defaultAd());
 
 		await vi.waitFor(() => {
 			expect(sdk.AdSession).toHaveBeenCalled();
@@ -258,11 +267,9 @@ describe("omid plugin", () => {
 			expect(sdk.AdEvents).toHaveBeenCalled();
 		});
 
-		// Now destroy - should finish the session
-		player.destroy();
+		// Now cleanup - should finish the session
+		cleanup?.();
 
-		// finish is called twice: once by bridge's destroy listener, once by cleanup
-		// But session.finish() is idempotent
 		expect(mockAdSession.finish).toHaveBeenCalled();
 	});
 
@@ -271,7 +278,7 @@ describe("omid plugin", () => {
 		const { sdk } = createMockSdkNamespace();
 		mockLoadOmSdk.mockResolvedValue(sdk);
 
-		player.use(omid(defaultOptions({ timeout: 10000 })));
+		omid(defaultOptions({ timeout: 10000 })).setup(player, defaultAd());
 
 		expect(mockLoadOmSdk).toHaveBeenCalledWith(
 			"https://cdn.example.com/omweb-v1.js",
@@ -285,13 +292,11 @@ describe("omid plugin", () => {
 		const { sdk } = createMockSdkNamespace();
 		mockLoadOmSdk.mockResolvedValue(sdk);
 
-		player.use(
-			omid(
-				defaultOptions({
-					sessionClientUrl: "https://cdn.example.com/omid-session-client-v1.js",
-				}),
-			),
-		);
+		omid(
+			defaultOptions({
+				sessionClientUrl: "https://cdn.example.com/omid-session-client-v1.js",
+			}),
+		).setup(player, defaultAd());
 
 		expect(mockLoadOmSdk).toHaveBeenCalledWith(
 			"https://cdn.example.com/omweb-v1.js",

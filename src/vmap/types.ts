@@ -24,6 +24,8 @@ export interface AdSource {
 	vastData?: string | undefined;
 }
 
+import type { AdPlugin, VastAd } from "../vast/types.js";
+
 export interface VmapPluginOptions {
 	url: string;
 	timeout?: number | undefined;
@@ -31,4 +33,6 @@ export interface VmapPluginOptions {
 		timeout?: number | undefined;
 		maxDepth?: number | undefined;
 	};
+	/** Create per-ad plugins. Called once per ad with the parsed VastAd. */
+	adPlugins?: ((ad: VastAd) => AdPlugin[]) | undefined;
 }

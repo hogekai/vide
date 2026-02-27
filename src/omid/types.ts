@@ -3,26 +3,24 @@ import type { AdVerification } from "../vast/types.js";
 // === Plugin Options ===
 
 export interface OmidPluginOptions {
-	/** Verification scripts from VAST AdVerifications. */
-	verifications: AdVerification[];
 	/** Partner identification for the OM SDK. */
 	partner: { name: string; version: string };
 	/** URL to the OM SDK service script (omweb-v1.js). */
 	serviceScriptUrl: string;
 	/** URL to the OM SDK session client script. If omitted, assumes OmidSessionClient is already global. */
 	sessionClientUrl?: string | undefined;
-	/** Content URL passed to the OM SDK Context. */
-	contentUrl?: string | undefined;
-	/** Ad position within content. Defaults to 'standalone'. */
-	position?: OmidVideoPosition | undefined;
-	/** Whether the ad plays automatically. Defaults to true. */
-	isAutoPlay?: boolean | undefined;
-	/** Skip offset in seconds, if the ad is skippable. */
-	skipOffset?: number | undefined;
-	/** Custom reference data for the OM SDK session. */
-	customReferenceData?: string | undefined;
 	/** Timeout in ms for loading OM SDK scripts. Defaults to 5000. */
 	timeout?: number | undefined;
+}
+
+/** Internal options passed to createOmidSession (includes resolved verifications). */
+export interface OmidSessionOptions extends OmidPluginOptions {
+	verifications: AdVerification[];
+	contentUrl?: string | undefined;
+	position?: OmidVideoPosition | undefined;
+	isAutoPlay?: boolean | undefined;
+	skipOffset?: number | undefined;
+	customReferenceData?: string | undefined;
 }
 
 // === OM SDK Enum Types ===

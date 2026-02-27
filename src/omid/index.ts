@@ -1,17 +1,19 @@
-import type { Player, Plugin } from "../types.js";
+import type { Player } from "../types.js";
+import type { AdPlugin, VastAd } from "../vast/types.js";
 import { createOmidBridge } from "./bridge.js";
 import { loadOmSdk } from "./loader.js";
 import { createOmidSession } from "./session.js";
-import type { OmidPluginOptions } from "./types.js";
+import type { OmidPluginOptions, OmidSessionOptions } from "./types.js";
 
 export type { OmidPluginOptions } from "./types.js";
 
-/** Create an OMID (Open Measurement) plugin for vide. */
-export function omid(options: OmidPluginOptions): Plugin {
+/** Create an OMID (Open Measurement) ad plugin for use with VAST adPlugins. */
+export function omid(options: OmidPluginOptions): AdPlugin {
 	return {
 		name: "omid",
-		setup(player: Player) {
-			if (options.verifications.length === 0) return;
+		setup(player: Player, ad: VastAd) {
+			const verifications = ad.verifications ?? [];
+			if (verifications.length === 0) return;
 
 			let aborted = false;
 			let bridgeCleanup: (() => void) | null = null;
@@ -19,18 +21,19 @@ export function omid(options: OmidPluginOptions): Plugin {
 
 			const timeout = options.timeout ?? 5000;
 
-			// Preload SDK immediately on use()
+			const sessionOptions: OmidSessionOptions = {
+				...options,
+				verifications,
+				skipOffset: ad.creatives[0]?.linear?.skipOffset,
+			};
+
 			const sdkPromise = loadOmSdk(
 				options.serviceScriptUrl,
 				options.sessionClientUrl,
 				timeout,
-			).catch((err) => {
-				// Store the error, will be handled on ad:start
-				return err as Error;
-			});
+			).catch((err) => err as Error);
 
-			async function onAdStart(): Promise<void> {
-				player.off("ad:start", onAdStart);
+			async function init(): Promise<void> {
 				if (aborted) return;
 
 				try {
@@ -42,7 +45,7 @@ export function omid(options: OmidPluginOptions): Plugin {
 					}
 
 					const sdk = sdkOrError;
-					const session = createOmidSession(sdk, player.el, options);
+					const session = createOmidSession(sdk, player.el, sessionOptions);
 					sessionRef = session;
 					if (aborted) {
 						session.finish();
@@ -77,11 +80,10 @@ export function omid(options: OmidPluginOptions): Plugin {
 				}
 			}
 
-			player.on("ad:start", onAdStart);
+			init();
 
 			return () => {
 				aborted = true;
-				player.off("ad:start", onAdStart);
 				if (bridgeCleanup) {
 					bridgeCleanup();
 					bridgeCleanup = null;

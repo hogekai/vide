@@ -73,7 +73,7 @@ function parseAd(adEl: Element): VastAd | null {
 		}
 	}
 
-	const adVerifications = parseAdVerifications(inlineEl);
+	const verifications = parseAdVerifications(inlineEl);
 	const categories = parseCategories(inlineEl);
 
 	return {
@@ -84,7 +84,7 @@ function parseAd(adEl: Element): VastAd | null {
 		impressions,
 		creatives,
 		errors,
-		adVerifications,
+		verifications,
 		categories,
 	};
 }

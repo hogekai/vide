@@ -339,19 +339,19 @@ describe("parseVast — VAST 4.2 additions", () => {
 </VAST>`;
 		const result = parseVast(xml);
 		const ad = result.ads[0];
-		expect(ad.adVerifications).toBeDefined();
-		expect(ad.adVerifications).toHaveLength(1);
-		expect(ad.adVerifications![0].vendor).toBe("company.com-omid");
-		expect(ad.adVerifications![0].resourceUrl).toBe(
+		expect(ad.verifications).toBeDefined();
+		expect(ad.verifications).toHaveLength(1);
+		expect(ad.verifications![0].vendor).toBe("company.com-omid");
+		expect(ad.verifications![0].resourceUrl).toBe(
 			"http://example.com/verify.js",
 		);
-		expect(ad.adVerifications![0].apiFramework).toBe("omid");
-		expect(ad.adVerifications![0].parameters).toBe("param=value");
+		expect(ad.verifications![0].apiFramework).toBe("omid");
+		expect(ad.verifications![0].parameters).toBe("param=value");
 	});
 
-	it("returns undefined adVerifications when absent", () => {
+	it("returns undefined verifications when absent", () => {
 		const result = parseVast(SAMPLE_VAST);
-		expect(result.ads[0].adVerifications).toBeUndefined();
+		expect(result.ads[0].verifications).toBeUndefined();
 	});
 
 	it("parses Categories", () => {
