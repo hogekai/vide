@@ -37,18 +37,25 @@ npm install videts
 
 ```ts
 import { createPlayer } from "videts";
-import type { PlayerEventMap } from "videts";
+// import type { PlayerEventMap } from "videts";
 
 const player = createPlayer(document.querySelector("video")!);
 
+// HTMLVideoElement-compatible — play, pause, src, currentTime, … all proxied
+player.play();
+// player.pause();
+// player.src = "video.mp4";
+// player.currentTime = 30;
+
+// player.el — direct access to the underlying <video> element
+// player.el.requestPictureInPicture();
+
 // player.on() — typed custom events (statechange, ad:start, error, …)
 player.on("statechange", ({ from, to }) => console.log(`${from} → ${to}`));
+// player.on("volumechange", (e) => console.log(e.target));  // native events too
 
-// player.on() also accepts native HTMLVideoElement events
-player.on("volumechange", (e) => console.log(e.target));
-
-// addEventListener() delegates directly to the underlying <video>
-player.addEventListener("canplay", () => player.play());
+// addEventListener() delegates directly to the <video> element
+// player.addEventListener("canplay", () => { ... });
 ```
 
 ## Plugins
