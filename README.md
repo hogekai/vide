@@ -1,5 +1,9 @@
 # vide
 
+[![CI](https://github.com/hogekai/vide/actions/workflows/ci.yml/badge.svg)](https://github.com/hogekai/vide/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/@videts/vide)](https://www.npmjs.com/package/@videts/vide)
+[![gzip](https://img.shields.io/badge/core-1.7KB-blue)](https://bundlephobia.com/package/@videts/vide)
+
 Modular video player library. Use only what you need.
 
 ```ts
