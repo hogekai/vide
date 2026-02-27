@@ -32,7 +32,8 @@ Web standards first — if the browser can do it, we don't reinvent it.
 ```sh
 npm install videts
 ```
-| Package is published as videts on npm. The project name is vide.
+
+> Package is published as **videts** on npm. The project name is **vide**.
 
 ## Quick Start
 
