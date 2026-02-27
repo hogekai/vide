@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>vide — SIMID Test</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
+    video { width: 100%; background: #000; display: block; }
+    #log { font-family: monospace; font-size: 13px; background: #1a1a1a; color: #0f0; padding: 1rem; max-height: 400px; overflow-y: auto; border-radius: 4px; }
+    .log-entry { margin: 2px 0; }
+    .controls { margin: 1rem 0; display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    button { padding: 0.4rem 1rem; cursor: pointer; }
+    h3 span { font-weight: normal; }
+    #video-wrapper { position: relative; }
+    #ad-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+  </style>
+</head>
+<body>
+  <h1>vide SIMID test</h1>
+  <p>Tests the SIMID (Secure Interactive Media Interface) plugin with a synthetic VAST ad
+     containing an <code>&lt;InteractiveCreativeFile apiFramework="SIMID"&gt;</code>.
+     The interactive creative runs in a sandboxed iframe overlay.</p>
+
+  <div id="video-wrapper">
+    <video id="player" controls
+      src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4">
+    </video>
+    <div id="ad-container"></div>
+  </div>
+
+  <div class="controls">
+    <button onclick="startSimid()">Start SIMID Ad</button>
+    <button onclick="resetPlayer()">Reset</button>
+  </div>
+
+  <h3>State: <span id="state">-</span></h3>
+  <div id="log"></div>
+
+  <script type="module">
+    import { createPlayer } from "../dist/index.mjs";
+    import { vast } from "../dist/vast/index.mjs";
+    import { simid } from "../dist/simid/index.mjs";
+
+    const el = document.getElementById("player");
+    const contentSrc = el.src;
+    const stateEl = document.getElementById("state");
+    const logEl = document.getElementById("log");
+    const container = document.getElementById("ad-container");
+
+    function log(msg) {
+      const entry = document.createElement("div");
+      entry.className = "log-entry";
+      entry.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+      logEl.prepend(entry);
+      console.log(msg);
+    }
+
+    let player = null;
+
+    function initPlayer() {
+      if (player) player.destroy();
+      // Remove leftover SIMID iframes
+      for (const iframe of container.querySelectorAll("iframe")) {
+        iframe.remove();
+      }
+      el.src = contentSrc;
+      el.load();
+
+      player = createPlayer(el);
+      window.player = player;
+
+      player.on("statechange", ({ from, to }) => {
+        stateEl.textContent = to;
+        log(`state: ${from} → ${to}`);
+      });
+      player.on("play", () => log("event: play"));
+      player.on("pause", () => log("event: pause"));
+      player.on("ended", () => log("event: ended"));
+      player.on("error", ({ code, message }) => log(`error: [${code}] ${message}`));
+      player.on("ad:start", ({ adId }) => log(`ad:start id=${adId}`));
+      player.on("ad:end", ({ adId }) => log(`ad:end id=${adId}`));
+      player.on("ad:click", ({ clickThrough }) => {
+        log(`ad:click → ${clickThrough ?? "(no clickThrough)"}`);
+        if (clickThrough) window.open(clickThrough, "_blank");
+      });
+      player.on("ad:error", ({ error }) => log(`ad:error: ${error.message}`));
+
+      log("Player created. State: " + player.state);
+    }
+
+    initPlayer();
+
+    window.resetPlayer = function() {
+      initPlayer();
+    };
+
+    window.startSimid = function() {
+      initPlayer();
+      log("=== Starting SIMID Ad ===");
+
+      const vastXml = `<?xml version="1.0" encoding="UTF-8"?>
+<VAST version="4.1">
+  <Ad id="simid-demo-1">
+    <InLine>
+      <AdSystem>vide-example</AdSystem>
+      <AdTitle>SIMID Interactive Demo</AdTitle>
+      <Impression><![CDATA[https://example.com/impression]]></Impression>
+      <Creatives>
+        <Creative>
+          <Linear>
+            <Duration>00:00:16</Duration>
+            <MediaFiles>
+              <MediaFile delivery="progressive" type="video/mp4"
+                width="640" height="360" bitrate="600">
+                <![CDATA[https://storage.googleapis.com/gvabox/media/samples/stock.mp4]]>
+              </MediaFile>
+              <InteractiveCreativeFile apiFramework="SIMID">
+                <![CDATA[simid-creative.html]]>
+              </InteractiveCreativeFile>
+            </MediaFiles>
+          </Linear>
+        </Creative>
+      </Creatives>
+    </InLine>
+  </Ad>
+</VAST>`;
+
+      const blob = new Blob([vastXml], { type: "application/xml" });
+      const tagUrl = URL.createObjectURL(blob);
+
+      log("Synthetic VAST with InteractiveCreativeFile generated");
+
+      player.use(vast({
+        tagUrl,
+        timeout: 10000,
+        adPlugins: (ad) => {
+          const icFiles = ad.creatives
+            .flatMap(c => c.linear?.interactiveCreativeFiles ?? []);
+          log(`  interactiveCreativeFiles: ${JSON.stringify(icFiles)}`);
+          return [
+            simid({
+              container,
+              policy: {
+                allowPause: true,
+                allowPlay: true,
+                allowResize: false,
+                navigation: "new-tab",
+              },
+            }),
+          ];
+        },
+      }));
+    };
+  </script>
+</body>
+</html>

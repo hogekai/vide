@@ -23,6 +23,7 @@ export interface PlayerEventMap {
 	"ad:start": { adId: string };
 	"ad:end": { adId: string };
 	"ad:skip": { adId: string };
+	"ad:click": { clickThrough: string | undefined; clickTracking: string[] };
 	"ad:error": { error: Error };
 	destroy: void;
 }

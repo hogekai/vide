@@ -109,47 +109,42 @@ function triggerAdPlaying(el: HTMLVideoElement): void {
 	el.dispatchEvent(new Event("canplay"));
 }
 
-describe("vast plugin — click tracking", () => {
+describe("vast plugin — ad:click", () => {
 	let trackSpy: ReturnType<typeof vi.spyOn>;
-	let windowOpenSpy: ReturnType<typeof vi.spyOn>;
 
 	beforeEach(() => {
 		trackSpy = vi.spyOn(tracker, "track");
-		windowOpenSpy = vi.spyOn(window, "open").mockImplementation(() => null);
 		vi.stubGlobal("navigator", { sendBeacon: vi.fn() });
 	});
 
-	it("fires clickTracking and opens clickThrough on overlay click", async () => {
+	it("emits ad:click with clickThrough and fires clickTracking on video click", async () => {
 		const { player, el, container } = setupPlayer();
 		mockedFetchVast.mockResolvedValueOnce(makeVastXml());
 
+		const clickHandler = vi.fn();
+		player.on("ad:click", clickHandler);
+
 		player.use(vast({ tagUrl: "https://example.com/vast.xml" }));
 		await vi.waitFor(() => expect(player.state).toBe("ad:loading"));
-
 		triggerAdPlaying(el);
 		await vi.waitFor(() => expect(player.state).toBe("ad:playing"));
 
-		// Find the overlay
-		const overlay = container.querySelector("div[style*='inset']") as HTMLDivElement;
-		expect(overlay).not.toBeNull();
-
-		overlay.click();
+		el.click();
 
 		expect(trackSpy).toHaveBeenCalledWith(["https://example.com/click-track"]);
-		expect(windowOpenSpy).toHaveBeenCalledWith(
-			"https://example.com/landing",
-			"_blank",
-		);
+		expect(clickHandler).toHaveBeenCalledWith({
+			clickThrough: "https://example.com/landing",
+			clickTracking: ["https://example.com/click-track"],
+		});
 
 		player.destroy();
 		container.remove();
 		vi.restoreAllMocks();
 	});
 
-	it("does not open window if clickThrough is absent", async () => {
+	it("emits ad:click with undefined clickThrough when absent", async () => {
 		const { player, el, container } = setupPlayer();
 		const xml = makeVastXml({ clickThrough: "" });
-		// Remove the ClickThrough from XML by replacing with empty
 		mockedFetchVast.mockResolvedValueOnce(
 			xml.replace(
 				/<ClickThrough><!\[CDATA\[\]\]><\/ClickThrough>/,
@@ -157,35 +152,42 @@ describe("vast plugin — click tracking", () => {
 			),
 		);
 
+		const clickHandler = vi.fn();
+		player.on("ad:click", clickHandler);
+
 		player.use(vast({ tagUrl: "https://example.com/vast.xml" }));
 		await vi.waitFor(() => expect(player.state).toBe("ad:loading"));
 		triggerAdPlaying(el);
 		await vi.waitFor(() => expect(player.state).toBe("ad:playing"));
 
-		const overlay = container.querySelector("div[style*='inset']") as HTMLDivElement;
-		overlay.click();
+		el.click();
 
-		expect(windowOpenSpy).not.toHaveBeenCalled();
+		expect(clickHandler).toHaveBeenCalledWith({
+			clickThrough: undefined,
+			clickTracking: ["https://example.com/click-track"],
+		});
 
 		player.destroy();
 		container.remove();
 		vi.restoreAllMocks();
 	});
 
-	it("removes overlay on ad end", async () => {
+	it("does not emit ad:click after ad has ended", async () => {
 		const { player, el, container } = setupPlayer();
 		mockedFetchVast.mockResolvedValueOnce(makeVastXml());
+
+		const clickHandler = vi.fn();
+		player.on("ad:click", clickHandler);
 
 		player.use(vast({ tagUrl: "https://example.com/vast.xml" }));
 		await vi.waitFor(() => expect(player.state).toBe("ad:loading"));
 		triggerAdPlaying(el);
 		await vi.waitFor(() => expect(player.state).toBe("ad:playing"));
 
-		expect(container.querySelector("div[style*='inset']")).not.toBeNull();
-
 		el.dispatchEvent(new Event("ended"));
 
-		expect(container.querySelector("div[style*='inset']")).toBeNull();
+		el.click();
+		expect(clickHandler).not.toHaveBeenCalled();
 
 		player.destroy();
 		container.remove();
@@ -267,7 +269,7 @@ describe("vast plugin — pause/resume tracking", () => {
 	});
 });
 
-describe("vast plugin — skip", () => {
+describe("vast plugin — ad:skip", () => {
 	let trackSpy: ReturnType<typeof vi.spyOn>;
 
 	beforeEach(() => {
@@ -275,61 +277,57 @@ describe("vast plugin — skip", () => {
 		vi.stubGlobal("navigator", { sendBeacon: vi.fn() });
 	});
 
-	it("shows skip button that enables after skipOffset", async () => {
+	it("fires skip tracking and ends ad on ad:skip event", async () => {
 		const { player, el, container } = setupPlayer();
 		mockedFetchVast.mockResolvedValueOnce(makeVastXml({ skipOffset: 5 }));
+
+		const endHandler = vi.fn();
+		player.on("ad:end", endHandler);
 
 		player.use(vast({ tagUrl: "https://example.com/vast.xml" }));
 		await vi.waitFor(() => expect(player.state).toBe("ad:loading"));
 		triggerAdPlaying(el);
 		await vi.waitFor(() => expect(player.state).toBe("ad:playing"));
-
-		const skipBtn = container.querySelector("button") as HTMLButtonElement;
-		expect(skipBtn).not.toBeNull();
-		expect(skipBtn.disabled).toBe(true);
-		expect(skipBtn.textContent).toContain("5s");
-
-		// Simulate time progressing past skipOffset
-		Object.defineProperty(el, "currentTime", { value: 6, writable: true, configurable: true });
-		el.dispatchEvent(new Event("timeupdate"));
-
-		expect(skipBtn.disabled).toBe(false);
-		expect(skipBtn.textContent).toBe("Skip ad");
-
-		player.destroy();
-		container.remove();
-		vi.restoreAllMocks();
-	});
-
-	it("fires skip tracking and emits ad:skip on skip click", async () => {
-		const { player, el, container } = setupPlayer();
-		mockedFetchVast.mockResolvedValueOnce(makeVastXml({ skipOffset: 5 }));
-
-		const skipHandler = vi.fn();
-		player.on("ad:skip", skipHandler);
-
-		player.use(vast({ tagUrl: "https://example.com/vast.xml" }));
-		await vi.waitFor(() => expect(player.state).toBe("ad:loading"));
-		triggerAdPlaying(el);
-		await vi.waitFor(() => expect(player.state).toBe("ad:playing"));
-
-		// Make skip button enabled
-		Object.defineProperty(el, "currentTime", { value: 6, writable: true, configurable: true });
-		el.dispatchEvent(new Event("timeupdate"));
 
 		trackSpy.mockClear();
-		const skipBtn = container.querySelector("button") as HTMLButtonElement;
-		skipBtn.click();
+		player.emit("ad:skip", { adId: "ad-1" });
 
 		expect(trackSpy).toHaveBeenCalledWith(["https://example.com/skip"]);
-		expect(skipHandler).toHaveBeenCalledWith({ adId: "ad-1" });
+		expect(endHandler).toHaveBeenCalledWith({ adId: "ad-1" });
 
 		player.destroy();
 		container.remove();
 		vi.restoreAllMocks();
 	});
 
-	it("does not show skip button when skipOffset is not set", async () => {
+	it("does not fire skip tracking after ad has ended", async () => {
+		const { player, el, container } = setupPlayer();
+		mockedFetchVast.mockResolvedValueOnce(makeVastXml({ skipOffset: 5 }));
+
+		player.use(vast({ tagUrl: "https://example.com/vast.xml" }));
+		await vi.waitFor(() => expect(player.state).toBe("ad:loading"));
+		triggerAdPlaying(el);
+		await vi.waitFor(() => expect(player.state).toBe("ad:playing"));
+
+		el.dispatchEvent(new Event("ended"));
+		trackSpy.mockClear();
+
+		player.emit("ad:skip", { adId: "ad-1" });
+		expect(trackSpy).not.toHaveBeenCalledWith(["https://example.com/skip"]);
+
+		player.destroy();
+		container.remove();
+		vi.restoreAllMocks();
+	});
+});
+
+describe("vast plugin — content restoration after ad", () => {
+	beforeEach(() => {
+		vi.spyOn(tracker, "track");
+		vi.stubGlobal("navigator", { sendBeacon: vi.fn() });
+	});
+
+	it("transitions to playing state after pause→ended sequence (browser behavior)", async () => {
 		const { player, el, container } = setupPlayer();
 		mockedFetchVast.mockResolvedValueOnce(makeVastXml());
 
@@ -338,31 +336,60 @@ describe("vast plugin — skip", () => {
 		triggerAdPlaying(el);
 		await vi.waitFor(() => expect(player.state).toBe("ad:playing"));
 
-		const skipBtn = container.querySelector("button");
-		expect(skipBtn).toBeNull();
+		// Browser fires pause before ended
+		el.dispatchEvent(new Event("pause"));
+		expect(player.state).toBe("ad:paused");
+
+		el.dispatchEvent(new Event("ended"));
+		expect(player.state).toBe("playing");
 
 		player.destroy();
 		container.remove();
 		vi.restoreAllMocks();
 	});
 
-	it("removes skip button and overlay after skip", async () => {
+	it("transitions to playing state when ended fires without prior pause", async () => {
 		const { player, el, container } = setupPlayer();
-		mockedFetchVast.mockResolvedValueOnce(makeVastXml({ skipOffset: 5 }));
+		mockedFetchVast.mockResolvedValueOnce(makeVastXml());
 
 		player.use(vast({ tagUrl: "https://example.com/vast.xml" }));
 		await vi.waitFor(() => expect(player.state).toBe("ad:loading"));
 		triggerAdPlaying(el);
 		await vi.waitFor(() => expect(player.state).toBe("ad:playing"));
 
-		Object.defineProperty(el, "currentTime", { value: 6, writable: true, configurable: true });
-		el.dispatchEvent(new Event("timeupdate"));
+		el.dispatchEvent(new Event("ended"));
+		expect(player.state).toBe("playing");
 
-		const skipBtn = container.querySelector("button") as HTMLButtonElement;
-		skipBtn.click();
+		player.destroy();
+		container.remove();
+		vi.restoreAllMocks();
+	});
+});
 
-		expect(container.querySelector("button")).toBeNull();
-		expect(container.querySelector("div[style*='inset']")).toBeNull();
+describe("vast plugin — ad error recovery", () => {
+	beforeEach(() => {
+		vi.spyOn(tracker, "track");
+		vi.stubGlobal("navigator", { sendBeacon: vi.fn() });
+	});
+
+	it("restores content and emits ad:end on media error", async () => {
+		const { player, el, container } = setupPlayer();
+		mockedFetchVast.mockResolvedValueOnce(makeVastXml());
+
+		const errorHandler = vi.fn();
+		const endHandler = vi.fn();
+		player.on("ad:error", errorHandler);
+		player.on("ad:end", endHandler);
+
+		player.use(vast({ tagUrl: "https://example.com/vast.xml" }));
+		await vi.waitFor(() => expect(player.state).toBe("ad:loading"));
+		triggerAdPlaying(el);
+		await vi.waitFor(() => expect(player.state).toBe("ad:playing"));
+
+		el.dispatchEvent(new Event("error"));
+
+		expect(errorHandler).toHaveBeenCalled();
+		expect(endHandler).toHaveBeenCalledWith({ adId: "ad-1" });
 
 		player.destroy();
 		container.remove();

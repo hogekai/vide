@@ -5,8 +5,12 @@ import type { AdVerification } from "../vast/types.js";
 export interface OmidPluginOptions {
 	/** Partner identification for the OM SDK. */
 	partner: { name: string; version: string };
-	/** URL to the OM SDK service script (omweb-v1.js). */
-	serviceScriptUrl: string;
+	/**
+	 * URL to the OM SDK service script (omweb-v1.js).
+	 * Defaults to the Google-hosted release.
+	 * In production, host the script on your own CDN.
+	 */
+	serviceScriptUrl?: string | undefined;
 	/** URL to the OM SDK session client script. If omitted, assumes OmidSessionClient is already global. */
 	sessionClientUrl?: string | undefined;
 	/** Timeout in ms for loading OM SDK scripts. Defaults to 5000. */

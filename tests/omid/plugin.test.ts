@@ -287,6 +287,23 @@ describe("omid ad plugin", () => {
 		);
 	});
 
+	it("uses default Google-hosted service script URL when omitted", () => {
+		const { player } = setupPlayer();
+		const { sdk } = createMockSdkNamespace();
+		mockLoadOmSdk.mockResolvedValue(sdk);
+
+		omid({ partner: { name: "vide", version: "0.3.0" } }).setup(
+			player,
+			defaultAd(),
+		);
+
+		expect(mockLoadOmSdk).toHaveBeenCalledWith(
+			"https://pagead2.googlesyndication.com/omsdk/releases/live/omweb-v1.js",
+			undefined,
+			5000,
+		);
+	});
+
 	it("passes sessionClientUrl to loadOmSdk", () => {
 		const { player } = setupPlayer();
 		const { sdk } = createMockSdkNamespace();

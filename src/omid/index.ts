@@ -7,6 +7,9 @@ import type { OmidPluginOptions, OmidSessionOptions } from "./types.js";
 
 export type { OmidPluginOptions } from "./types.js";
 
+const DEFAULT_SERVICE_SCRIPT_URL =
+	"https://pagead2.googlesyndication.com/omsdk/releases/live/omweb-v1.js";
+
 /** Create an OMID (Open Measurement) ad plugin for use with VAST adPlugins. */
 export function omid(options: OmidPluginOptions): AdPlugin {
 	return {
@@ -20,15 +23,18 @@ export function omid(options: OmidPluginOptions): AdPlugin {
 			let sessionRef: ReturnType<typeof createOmidSession> | null = null;
 
 			const timeout = options.timeout ?? 5000;
+			const serviceScriptUrl =
+				options.serviceScriptUrl ?? DEFAULT_SERVICE_SCRIPT_URL;
 
 			const sessionOptions: OmidSessionOptions = {
 				...options,
+				serviceScriptUrl,
 				verifications,
 				skipOffset: ad.creatives[0]?.linear?.skipOffset,
 			};
 
 			const sdkPromise = loadOmSdk(
-				options.serviceScriptUrl,
+				serviceScriptUrl,
 				options.sessionClientUrl,
 				timeout,
 			).catch((err) => err as Error);

@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SIMID Creative</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: system-ui, sans-serif;
+      width: 100%; height: 100vh;
+      display: flex; flex-direction: column;
+      justify-content: flex-end; align-items: center;
+      background: transparent;
+      color: #fff;
+    }
+    #overlay {
+      background: rgba(0, 0, 0, 0.65);
+      padding: 1rem 2rem;
+      border-radius: 8px 8px 0 0;
+      text-align: center;
+      width: 100%;
+      display: none;
+    }
+    h2 { font-size: 16px; margin-bottom: 0.5rem; }
+    .btn-row { display: flex; gap: 0.5rem; justify-content: center; margin-top: 0.5rem; }
+    button {
+      padding: 0.4rem 1rem; cursor: pointer;
+      border: 1px solid rgba(255,255,255,0.5);
+      background: rgba(255,255,255,0.15);
+      color: #fff; border-radius: 4px; font-size: 13px;
+    }
+    button:hover { background: rgba(255,255,255,0.3); }
+    #status { font-size: 11px; color: #aaa; margin-top: 0.5rem; }
+  </style>
+</head>
+<body>
+  <div id="overlay">
+    <h2>Interactive Ad Overlay</h2>
+    <p>SIMID creative running in a sandboxed iframe.</p>
+    <div class="btn-row">
+      <button id="btn-learn">Learn More</button>
+      <button id="btn-pause">Pause</button>
+      <button id="btn-play">Resume</button>
+      <button id="btn-close">Close Ad</button>
+    </div>
+    <div id="status">Waiting...</div>
+  </div>
+
+  <script>
+    let port = null;
+    let sessionId = crypto.randomUUID();
+    let messageId = 0;
+
+    const statusEl = document.getElementById("status");
+    const overlayEl = document.getElementById("overlay");
+
+    function nextId() { return messageId++; }
+
+    function send(type, args) {
+      const id = nextId();
+      port.postMessage({
+        sessionId, messageId: id, timestamp: Date.now(), type, args,
+      });
+      return id;
+    }
+
+    function sendResolve(inReplyTo, value) {
+      const id = nextId();
+      const args = { messageId: inReplyTo };
+      if (value !== undefined) args.value = value;
+      port.postMessage({
+        sessionId, messageId: id, timestamp: Date.now(), type: "resolve", args,
+      });
+    }
+
+    function onMessage(event) {
+      const msg = event.data;
+      if (!msg || typeof msg !== "object" || msg.sessionId !== sessionId) return;
+
+      // Route resolve/reject to log only (we don't block on responses in this demo)
+      if (msg.type === "resolve" || msg.type === "reject") return;
+
+      if (msg.type === "SIMID:Player:init") {
+        statusEl.textContent = "Received Player:init";
+        sendResolve(msg.messageId);
+        return;
+      }
+
+      if (msg.type === "SIMID:Player:startCreative") {
+        statusEl.textContent = "Creative started!";
+        overlayEl.style.display = "";
+        sendResolve(msg.messageId);
+        return;
+      }
+
+      if (msg.type === "SIMID:Player:adStopped") {
+        statusEl.textContent = "Ad stopped by player";
+        overlayEl.style.display = "none";
+        return;
+      }
+
+      // Media events — update status
+      if (msg.type.startsWith("SIMID:Media:")) {
+        const evt = msg.type.replace("SIMID:Media:", "");
+        if (evt === "timeupdate") {
+          statusEl.textContent = "Playing: " + (msg.args?.currentTime ?? 0).toFixed(1) + "s";
+        } else {
+          statusEl.textContent = "Media: " + evt;
+        }
+      }
+    }
+
+    // Button handlers
+    document.getElementById("btn-learn").addEventListener("click", () => {
+      send("SIMID:Creative:requestNavigation", { uri: "https://example.com/learn-more" });
+      send("SIMID:Creative:clickThru", { url: "https://example.com/learn-more" });
+    });
+
+    document.getElementById("btn-pause").addEventListener("click", () => {
+      send("SIMID:Creative:requestPause");
+    });
+
+    document.getElementById("btn-play").addEventListener("click", () => {
+      send("SIMID:Creative:requestPlay");
+    });
+
+    document.getElementById("btn-close").addEventListener("click", () => {
+      send("SIMID:Creative:requestStop");
+    });
+
+    // Receive MessagePort from host via "simid:connect"
+    window.addEventListener("message", (event) => {
+      if (event.data === "simid:connect" && event.ports.length > 0) {
+        port = event.ports[0];
+        port.addEventListener("message", onMessage);
+        port.start();
+
+        statusEl.textContent = "Sending createSession...";
+        send("createSession", {});
+      }
+    });
+  </script>
+</body>
+</html>

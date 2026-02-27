@@ -6,21 +6,42 @@
   <title>vide — VMAP Test</title>
   <style>
     body { font-family: system-ui, sans-serif; max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
-    video { width: 100%; background: #000; }
+    video { width: 100%; background: #000; display: block; }
     #log { font-family: monospace; font-size: 13px; background: #1a1a1a; color: #0f0; padding: 1rem; max-height: 400px; overflow-y: auto; border-radius: 4px; }
     .log-entry { margin: 2px 0; }
     .controls { margin: 1rem 0; display: flex; gap: 0.5rem; flex-wrap: wrap; }
     button { padding: 0.4rem 1rem; cursor: pointer; }
     h3 span { font-weight: normal; }
+    #video-wrapper { position: relative; }
+    #ad-overlay {
+      display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      cursor: pointer;
+    }
+    #ad-overlay .ad-label {
+      position: absolute; top: 8px; left: 8px;
+      background: rgba(0,0,0,0.7); color: #fff; padding: 2px 8px;
+      font-size: 12px; border-radius: 2px;
+    }
+    #ad-overlay .ad-skip {
+      display: none; position: absolute; bottom: 48px; right: 8px;
+      background: rgba(0,0,0,0.8); color: #fff; padding: 6px 16px;
+      font-size: 14px; border: 1px solid #fff; border-radius: 3px; cursor: pointer;
+    }
   </style>
 </head>
 <body>
   <h1>vide VMAP test</h1>
   <p>Tests preroll &rarr; content &rarr; midroll (5s) &rarr; content &rarr; postroll flow using local sample VMAP/VAST XML.</p>
 
-  <video id="player" controls
-    src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4">
-  </video>
+  <div id="video-wrapper">
+    <video id="player" controls
+      src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4">
+    </video>
+    <div id="ad-overlay">
+      <span class="ad-label">Ad</span>
+      <button class="ad-skip">Skip Ad</button>
+    </div>
+  </div>
 
   <div class="controls">
     <button onclick="startVmap()">Start VMAP</button>
@@ -39,6 +60,8 @@
     const el = document.getElementById("player");
     const stateEl = document.getElementById("state");
     const logEl = document.getElementById("log");
+    const adOverlay = document.getElementById("ad-overlay");
+    const adSkipBtn = adOverlay.querySelector(".ad-skip");
 
     function log(msg) {
       const entry = document.createElement("div");
@@ -51,9 +74,27 @@
     const player = createPlayer(el);
     window.player = player;
 
+    // --- Ad overlay UI ---
+    adOverlay.addEventListener("click", (e) => {
+      if (e.target === adSkipBtn) return;
+      el.click();
+      if (el.paused) { el.play(); } else { el.pause(); }
+    });
+
+    adSkipBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      player.emit("ad:skip", { adId: "" });
+    });
+
     player.on("statechange", ({ from, to }) => {
       stateEl.textContent = to;
       log(`state: ${from} → ${to}`);
+      if (to === "ad:playing" || to === "ad:paused") {
+        adOverlay.style.display = "block";
+      } else {
+        adOverlay.style.display = "none";
+        adSkipBtn.style.display = "none";
+      }
     });
     player.on("play", () => log("event: play"));
     player.on("pause", () => log("event: pause"));
@@ -66,6 +107,10 @@
     player.on("error", ({ code, message }) => log(`error: [${code}] ${message}`));
     player.on("ad:start", ({ adId }) => log(`*** ad:start id=${adId}`));
     player.on("ad:end", ({ adId }) => log(`*** ad:end id=${adId}`));
+    player.on("ad:click", ({ clickThrough }) => {
+      log(`*** ad:click → ${clickThrough ?? "(no clickThrough)"}`);
+      if (clickThrough) window.open(clickThrough, "_blank");
+    });
     player.on("ad:error", ({ error }) => log(`*** ad:error: ${error.message}`));
 
     log("Player created. State: " + player.state);

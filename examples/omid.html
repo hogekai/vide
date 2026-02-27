@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>vide — OMID Test</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
+    video { width: 100%; background: #000; display: block; }
+    #log { font-family: monospace; font-size: 13px; background: #1a1a1a; color: #0f0; padding: 1rem; max-height: 400px; overflow-y: auto; border-radius: 4px; }
+    .log-entry { margin: 2px 0; }
+    .controls { margin: 1rem 0; display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    button { padding: 0.4rem 1rem; cursor: pointer; }
+    h3 span { font-weight: normal; }
+    #video-wrapper { position: relative; }
+    #ad-overlay {
+      display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      cursor: pointer;
+    }
+    #ad-overlay .ad-label {
+      position: absolute; top: 8px; left: 8px;
+      background: rgba(0,0,0,0.7); color: #fff; padding: 2px 8px;
+      font-size: 12px; border-radius: 2px;
+    }
+    #ad-overlay .ad-skip {
+      display: none; position: absolute; bottom: 48px; right: 8px;
+      background: rgba(0,0,0,0.8); color: #fff; padding: 6px 16px;
+      font-size: 14px; border: 1px solid #fff; border-radius: 3px; cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>vide OMID test</h1>
+  <p>Tests the OMID (Open Measurement) ad plugin with VAST ads.
+     OMID only activates when the VAST response contains <code>&lt;AdVerification&gt;</code> elements.</p>
+
+  <div id="video-wrapper">
+    <video id="player" controls
+      src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4">
+    </video>
+    <div id="ad-overlay">
+      <span class="ad-label">Ad</span>
+      <button class="ad-skip">Skip Ad</button>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button onclick="playGoogleIma()">Play with Google IMA tag</button>
+    <button onclick="playSynthetic()">Play with Synthetic VAST (with AdVerification)</button>
+    <button onclick="resetPlayer()">Reset</button>
+  </div>
+
+  <h3>State: <span id="state">-</span></h3>
+  <div id="log"></div>
+
+  <script type="module">
+    import { createPlayer } from "../dist/index.mjs";
+    import { vast } from "../dist/vast/index.mjs";
+    import { omid } from "../dist/omid/index.mjs";
+
+    const el = document.getElementById("player");
+    const contentSrc = el.src;
+    const stateEl = document.getElementById("state");
+    const logEl = document.getElementById("log");
+    const adOverlay = document.getElementById("ad-overlay");
+    const adSkipBtn = adOverlay.querySelector(".ad-skip");
+
+    function log(msg) {
+      const entry = document.createElement("div");
+      entry.className = "log-entry";
+      entry.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+      logEl.prepend(entry);
+      console.log(msg);
+    }
+
+    let player = null;
+
+    function initPlayer() {
+      if (player) player.destroy();
+      el.src = contentSrc;
+      el.load();
+
+      player = createPlayer(el);
+      window.player = player;
+
+      adOverlay.addEventListener("click", onOverlayClick);
+      adSkipBtn.addEventListener("click", onSkipClick);
+
+      player.on("statechange", ({ from, to }) => {
+        stateEl.textContent = to;
+        log(`state: ${from} → ${to}`);
+        if (to === "ad:playing" || to === "ad:paused") {
+          adOverlay.style.display = "block";
+        } else {
+          adOverlay.style.display = "none";
+          adSkipBtn.style.display = "none";
+        }
+      });
+      player.on("play", () => log("event: play"));
+      player.on("pause", () => log("event: pause"));
+      player.on("ended", () => log("event: ended"));
+      player.on("error", ({ code, message }) => log(`error: [${code}] ${message}`));
+      player.on("ad:start", ({ adId }) => log(`ad:start id=${adId}`));
+      player.on("ad:end", ({ adId }) => log(`ad:end id=${adId}`));
+      player.on("ad:click", ({ clickThrough }) => {
+        log(`ad:click → ${clickThrough ?? "(no clickThrough)"}`);
+        if (clickThrough) window.open(clickThrough, "_blank");
+      });
+      player.on("ad:error", ({ error }) => log(`ad:error: ${error.message}`));
+
+      log("Player created. State: " + player.state);
+    }
+
+    function onOverlayClick(e) {
+      if (e.target === adSkipBtn) return;
+      el.click();
+      if (el.paused) { el.play(); } else { el.pause(); }
+    }
+
+    function onSkipClick(e) {
+      e.stopPropagation();
+      player.emit("ad:skip", { adId: "" });
+    }
+
+    initPlayer();
+
+    const OMID_PARTNER = { name: "vide-example", version: "1.0.0" };
+
+    function createOmidAdPlugins(ad) {
+      log(`  ad.verifications = ${JSON.stringify(ad.verifications ?? [])}`);
+      return [
+        omid({
+          partner: OMID_PARTNER,
+          // serviceScriptUrl defaults to Google-hosted omweb-v1.js
+          // Override with your own CDN URL in production:
+          // serviceScriptUrl: "https://your-cdn.example.com/omweb-v1.js",
+        }),
+      ];
+    }
+
+    // Google IMA sample VAST tag (pre-roll, skippable)
+    function vastTag() {
+      return "https://pubads.g.doubleclick.net/gampad/ads?"
+        + "iu=/21775744923/external/single_preroll_skippable"
+        + "&sz=640x480&gdfp_req=1&output=vast&unviewed_position_start=1"
+        + "&env=vp&impl=s&correlator=" + Date.now();
+    }
+
+    window.resetPlayer = function() {
+      initPlayer();
+    };
+
+    // --- Google IMA tag (likely no AdVerification → OMID skips) ---
+    window.playGoogleIma = function() {
+      initPlayer();
+      log("=== Google IMA + OMID ===");
+      log("Note: Google IMA tags rarely include AdVerification elements.");
+      log("OMID will wire up but skip if no verifications found.");
+
+      player.use(vast({
+        tagUrl: vastTag(),
+        timeout: 10000,
+        adPlugins: (ad) => createOmidAdPlugins(ad),
+      }));
+    };
+
+    // --- Synthetic VAST with AdVerification → OMID activates ---
+    window.playSynthetic = function() {
+      initPlayer();
+      log("=== Synthetic VAST + OMID ===");
+
+      const vastXml = `<?xml version="1.0" encoding="UTF-8"?>
+<VAST version="4.1">
+  <Ad id="omid-demo-1">
+    <InLine>
+      <AdSystem>vide-example</AdSystem>
+      <AdTitle>OMID Demo Ad</AdTitle>
+      <Impression><![CDATA[https://example.com/impression]]></Impression>
+      <AdVerifications>
+        <Verification vendor="example-vendor.com">
+          <JavaScriptResource apiFramework="omid">
+            <![CDATA[https://example.com/verification.js]]>
+          </JavaScriptResource>
+          <VerificationParameters><![CDATA[param1=value1]]></VerificationParameters>
+        </Verification>
+      </AdVerifications>
+      <Creatives>
+        <Creative>
+          <Linear>
+            <Duration>00:00:16</Duration>
+            <MediaFiles>
+              <MediaFile delivery="progressive" type="video/mp4"
+                width="640" height="360" bitrate="600">
+                <![CDATA[https://storage.googleapis.com/gvabox/media/samples/stock.mp4]]>
+              </MediaFile>
+            </MediaFiles>
+          </Linear>
+        </Creative>
+      </Creatives>
+    </InLine>
+  </Ad>
+</VAST>`;
+
+      const blob = new Blob([vastXml], { type: "application/xml" });
+      const tagUrl = URL.createObjectURL(blob);
+
+      log("Synthetic VAST with AdVerification generated");
+
+      player.use(vast({
+        tagUrl,
+        timeout: 10000,
+        adPlugins: (ad) => createOmidAdPlugins(ad),
+      }));
+    };
+  </script>
+</body>
+</html>

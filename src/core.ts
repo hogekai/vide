@@ -145,7 +145,9 @@ export function createPlayer(el: HTMLVideoElement): Player {
 
 	function onError(): void {
 		const mediaError = el.error;
-		setState("error");
+		if (!isAdState()) {
+			setState("error");
+		}
 		emit("error", {
 			code: mediaError?.code ?? 0,
 			message: mediaError?.message ?? "Unknown error",
@@ -173,6 +175,7 @@ export function createPlayer(el: HTMLVideoElement): Player {
 		"ad:start",
 		"ad:end",
 		"ad:skip",
+		"ad:click",
 		"ad:error",
 		"destroy",
 	]);

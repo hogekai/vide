@@ -92,7 +92,6 @@ export function vast(options: VastPluginOptions): Plugin {
 
 					// Play ad using the same video element
 					const originalTime = player.el.currentTime;
-					const originalPaused = player.el.paused;
 					const prevSrc = player.el.src;
 
 					// Set up quartile tracking
@@ -115,65 +114,46 @@ export function vast(options: VastPluginOptions): Plugin {
 						adPluginCleanups.length = 0;
 					}
 
+					function endAd(): void {
+						player.emit("ad:end", { adId });
+						setState("playing");
+						restoreContent();
+					}
+
 					function restoreContent(): void {
 						player.el.src = prevSrc;
+						player.el.addEventListener(
+							"canplay",
+							function onContentReady() {
+								player.el.removeEventListener("canplay", onContentReady);
+								player.el.currentTime = originalTime;
+								player.el.play().catch(() => {
+									player.el.muted = true;
+									player.el.play().catch(() => {});
+								});
+							},
+						);
 						player.el.load();
-						player.el.currentTime = originalTime;
-						if (!originalPaused) {
-							player.el.play().catch(() => {
-								player.el.muted = true;
-								player.el.play().catch(() => {});
-							});
-						}
 					}
 
-					// --- Click overlay ---
-					const overlay = document.createElement("div");
-					overlay.style.cssText =
-						"position:absolute;inset:0;cursor:pointer;z-index:1;";
-					const parent = player.el.parentElement;
-					if (parent) {
-						const pos = getComputedStyle(parent).position;
-						if (pos === "static" || pos === "") {
-							parent.style.position = "relative";
-						}
-						parent.appendChild(overlay);
-					}
-
-					function onOverlayClick(): void {
-						if (!linear) return;
+					// --- ad:click: fire tracking, emit event ---
+					function onAdClick(): void {
+						if (!linear || adEnding) return;
 						track(linear.clickTracking);
-						if (linear.clickThrough) {
-							window.open(linear.clickThrough, "_blank");
-						}
-						player.el.pause();
+						player.emit("ad:click", {
+							clickThrough: linear.clickThrough,
+							clickTracking: linear.clickTracking,
+						});
 					}
-					overlay.addEventListener("click", onOverlayClick);
 
-					// --- Skip button ---
-					let skipButton: HTMLButtonElement | null = null;
-					const skipOffset = linear.skipOffset;
-
-					if (skipOffset !== undefined && parent) {
-						skipButton = document.createElement("button");
-						skipButton.disabled = true;
-						skipButton.style.cssText =
-							"position:absolute;bottom:1rem;right:1rem;z-index:2;padding:0.4rem 1rem;cursor:pointer;background:rgba(0,0,0,0.7);color:#fff;border:1px solid rgba(255,255,255,0.5);border-radius:4px;font-size:14px;";
-						const remaining = Math.ceil(skipOffset);
-						skipButton.textContent = `Skip in ${remaining}s`;
-						parent.appendChild(skipButton);
-
-						function onSkipClick(): void {
-							if (!linear) return;
-							track(linear.trackingEvents.skip);
-							player.emit("ad:skip", { adId });
-							adEnding = true;
-							cleanup();
-							cleanupAdPlugins();
-							player.emit("ad:end", { adId });
-							restoreContent();
-						}
-						skipButton.addEventListener("click", onSkipClick);
+					// --- ad:skip: fire tracking, end ad ---
+					function onAdSkip(): void {
+						if (!linear || adEnding) return;
+						track(linear.trackingEvents.skip);
+						adEnding = true;
+						cleanup();
+						cleanupAdPlugins();
+						endAd();
 					}
 
 					// --- Pause / Resume tracking ---
@@ -193,30 +173,30 @@ export function vast(options: VastPluginOptions): Plugin {
 						}
 					}
 
-					// --- Time update: quartiles + skip countdown ---
+					// --- Time update: quartiles ---
 					function onAdTimeUpdate(): void {
 						quartileTracker(player.el.currentTime);
+					}
 
-						// Update skip button countdown
-						if (skipButton && skipOffset !== undefined) {
-							const remaining = Math.ceil(skipOffset - player.el.currentTime);
-							if (remaining <= 0) {
-								skipButton.disabled = false;
-								skipButton.textContent = "Skip ad";
-							} else {
-								skipButton.textContent = `Skip in ${remaining}s`;
-							}
-						}
+					function onAdError(): void {
+						if (adEnding) return;
+						adEnding = true;
+						cleanup();
+						cleanupAdPlugins();
+						player.emit("ad:error", {
+							error: new Error("Ad media playback failed"),
+						});
+						endAd();
 					}
 
 					function onAdEnded(): void {
+						if (adEnding) return;
 						adEnding = true;
 						cleanup();
 						cleanupAdPlugins();
 						if (!linear) return;
 						track(linear.trackingEvents.complete);
-						player.emit("ad:end", { adId });
-						restoreContent();
+						endAd();
 					}
 
 					function onAdCanPlay(): void {
@@ -233,21 +213,22 @@ export function vast(options: VastPluginOptions): Plugin {
 					function cleanup(): void {
 						player.el.removeEventListener("timeupdate", onAdTimeUpdate);
 						player.el.removeEventListener("ended", onAdEnded);
+						player.el.removeEventListener("error", onAdError);
 						player.el.removeEventListener("canplay", onAdCanPlay);
 						player.el.removeEventListener("pause", onAdPause);
 						player.el.removeEventListener("play", onAdPlay);
-						overlay.removeEventListener("click", onOverlayClick);
-						overlay.remove();
-						if (skipButton) {
-							skipButton.remove();
-						}
+						player.el.removeEventListener("click", onAdClick);
+						player.off("ad:skip", onAdSkip);
 					}
 
 					player.el.addEventListener("canplay", onAdCanPlay);
 					player.el.addEventListener("timeupdate", onAdTimeUpdate);
 					player.el.addEventListener("ended", onAdEnded);
+					player.el.addEventListener("error", onAdError);
 					player.el.addEventListener("pause", onAdPause);
 					player.el.addEventListener("play", onAdPlay);
+					player.el.addEventListener("click", onAdClick);
+					player.on("ad:skip", onAdSkip);
 					adCleanup = cleanup;
 
 					player.el.src = mediaFile.url;
@@ -279,8 +260,6 @@ export function vast(options: VastPluginOptions): Plugin {
 			) {
 				loadAndPlayAd();
 			} else {
-				// TODO: This listener is cleaned up in the returned cleanup function,
-				// but leaks if destroy() is never called by the consumer.
 				player.on("statechange", onStateChange);
 			}
 
