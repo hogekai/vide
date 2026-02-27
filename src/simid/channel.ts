@@ -14,7 +14,7 @@ export function createSimidChannel(
 	container: HTMLElement,
 ): SimidChannel {
 	const iframe = document.createElement("iframe");
-	iframe.sandbox.add("allow-scripts");
+	iframe.sandbox.add("allow-scripts", "allow-same-origin");
 	iframe.style.cssText =
 		"position:absolute;top:0;left:0;width:100%;height:100%;border:none;display:none;pointer-events:auto;";
 	iframe.src = creativeUrl;

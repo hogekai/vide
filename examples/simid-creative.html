@@ -89,7 +89,7 @@
 
       if (msg.type === "SIMID:Player:startCreative") {
         statusEl.textContent = "Creative started!";
-        overlayEl.style.display = "";
+        overlayEl.style.display = "block";
         sendResolve(msg.messageId);
         return;
       }

@@ -298,6 +298,7 @@ export function createSimidHost(
 			sendResolve(msg.messageId);
 			send("SIMID:Player:adStopped", { code: 4 });
 			destroy();
+			player.emit("ad:skip", { adId: ad.id });
 			return;
 		}
 
