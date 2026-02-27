@@ -94,7 +94,7 @@ export function vast(options: VastPluginOptions): Plugin {
 
 					// Play ad using the same video element
 					const originalTime = player.el.currentTime;
-					const prevSrc = player.el.src;
+					const prevSrc = player.src;
 
 					// Set up quartile tracking
 					const quartileTracker = createQuartileTracker(
@@ -141,7 +141,7 @@ export function vast(options: VastPluginOptions): Plugin {
 					}
 
 					function restoreContent(): void {
-						player.el.src = prevSrc;
+						player.src = prevSrc;
 						player.el.addEventListener(
 							"canplay",
 							function onContentReady() {
@@ -153,7 +153,6 @@ export function vast(options: VastPluginOptions): Plugin {
 								});
 							},
 						);
-						player.el.load();
 					}
 
 					// --- ad:click: fire tracking, emit event ---

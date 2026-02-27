@@ -77,15 +77,25 @@ player.use(vmap({ vmapUrl: "https://example.com/vmap.xml" }));
 ### OMID Viewability
 
 ```ts
+import { vast } from "vide/vast";
 import { omid } from "vide/omid";
-player.use(omid());
+
+player.use(vast({
+  tagUrl: "https://example.com/vast.xml",
+  adPlugins: () => [omid({ partner: { name: "your-company", version: "1.0.0" } })],
+}));
 ```
 
 ### SIMID Interactive Ads
 
 ```ts
+import { vast } from "vide/vast";
 import { simid } from "vide/simid";
-player.use(simid());
+
+player.use(vast({
+  tagUrl: "https://example.com/vast.xml",
+  adPlugins: () => [simid({ container: document.getElementById("ad-container")! })],
+}));
 ```
 
 ## API
