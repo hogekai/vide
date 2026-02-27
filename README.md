@@ -1,17 +1,42 @@
 # vide
 
-Lightweight video player library. Web standards first, zero config, explicit plugin opt-in.
+Modular video player library. Use only what you need.
+
+```ts
+import { createPlayer } from "videts";
+import { vast } from "videts/vast";
+import { hls } from "videts/hls";
+
+const player = createPlayer(document.querySelector("video")!);
+player.use(hls());
+player.use(vast({ tagUrl: "https://example.com/vast.xml" }));
+```
+
+| Plugin | What | gzip |
+|--------|------|-----:|
+| `videts` | Core player | 1.4 KB |
+| `videts/vast` | VAST 4.2 ads | 1.5 KB |
+| `videts/vmap` | VMAP scheduling | 2.6 KB |
+| `videts/hls` | HLS (+ hls.js) | 0.6 KB |
+| `videts/dash` | DASH (+ dashjs) | 0.5 KB |
+| `videts/omid` | Open Measurement | 1.7 KB |
+| `videts/simid` | Interactive ads | 2.3 KB |
+| `videts/ui` | Headless UI | 4.6 KB |
+| `videts/ui/theme.css` | Default theme | 1.9 KB |
+
+Zero config. No data attributes. No class scanning. No side effects.
+Web standards first — if the browser can do it, we don't reinvent it.
 
 ## Install
 
 ```sh
-npm install vide
+npm install videts
 ```
 
 ## Quick Start
 
 ```ts
-import { createPlayer } from "vide";
+import { createPlayer } from "videts";
 
 const player = createPlayer(document.querySelector("video")!);
 
@@ -30,8 +55,8 @@ npm install hls.js
 ```
 
 ```ts
-import { createPlayer } from "vide";
-import { hls } from "vide/hls";
+import { createPlayer } from "videts";
+import { hls } from "videts/hls";
 
 const player = createPlayer(document.querySelector("video")!);
 player.use(hls());
@@ -39,25 +64,9 @@ player.use(hls());
 player.src = "https://example.com/stream.m3u8";
 ```
 
-- Safari/iOS uses native HLS (no hls.js needed)
-- Non-Safari uses hls.js via dynamic import
-- `hlsConfig` option passes config directly to hls.js constructor
-
 ```ts
+// Pass config directly to hls.js constructor
 player.use(hls({ hlsConfig: { maxBufferLength: 60 } }));
-```
-
-`<source>` elements are auto-detected:
-
-```html
-<video>
-  <source src="stream.m3u8" type="application/vnd.apple.mpegurl">
-</video>
-```
-
-```ts
-const player = createPlayer(document.querySelector("video")!);
-player.use(hls()); // auto-loads from <source>
 ```
 
 ### DASH Streaming
@@ -67,8 +76,8 @@ npm install dashjs
 ```
 
 ```ts
-import { createPlayer } from "vide";
-import { dash } from "vide/dash";
+import { createPlayer } from "videts";
+import { dash } from "videts/dash";
 
 const player = createPlayer(document.querySelector("video")!);
 player.use(dash());
@@ -76,32 +85,17 @@ player.use(dash());
 player.src = "https://example.com/stream.mpd";
 ```
 
-- Uses dash.js via dynamic import
-- `dashConfig` option passes settings directly to `dashjs.updateSettings()`
-
 ```ts
+// Pass settings directly to dashjs.updateSettings()
 player.use(dash({ dashConfig: { streaming: { buffer: { bufferTimeDefault: 20 } } } }));
-```
-
-`<source>` elements are auto-detected:
-
-```html
-<video>
-  <source src="stream.mpd" type="application/dash+xml">
-</video>
-```
-
-```ts
-const player = createPlayer(document.querySelector("video")!);
-player.use(dash()); // auto-loads from <source>
 ```
 
 ### UI
 
 ```ts
-import { createPlayer } from "vide";
-import { ui } from "vide/ui";
-import "vide/ui/theme.css"; // optional — default theme
+import { createPlayer } from "videts";
+import { ui } from "videts/ui";
+import "videts/ui/theme.css"; // optional — default theme
 
 const player = createPlayer(document.querySelector("video")!);
 player.use(ui({ container: document.getElementById("player-container")! }));
@@ -123,7 +117,7 @@ player.use(ui({
 Individual components can be used standalone:
 
 ```ts
-import { createPlayButton, createProgress, connectStateClasses } from "vide/ui";
+import { createPlayButton, createProgress, connectStateClasses } from "videts/ui";
 
 const play = createPlayButton();
 play.mount(controls);
@@ -133,8 +127,8 @@ play.connect(player);
 #### UI + VAST Ads
 
 ```ts
-import { ui } from "vide/ui";
-import { vast } from "vide/vast";
+import { ui } from "videts/ui";
+import { vast } from "videts/vast";
 
 const uiPlugin = ui({ container: el });
 player.use(uiPlugin);
@@ -147,22 +141,22 @@ player.use(vast({
 ### VAST Ads
 
 ```ts
-import { vast } from "vide/vast";
+import { vast } from "videts/vast";
 player.use(vast({ tagUrl: "https://example.com/vast.xml" }));
 ```
 
 ### VMAP Ad Scheduling
 
 ```ts
-import { vmap } from "vide/vmap";
+import { vmap } from "videts/vmap";
 player.use(vmap({ vmapUrl: "https://example.com/vmap.xml" }));
 ```
 
 ### OMID Viewability
 
 ```ts
-import { vast } from "vide/vast";
-import { omid } from "vide/omid";
+import { vast } from "videts/vast";
+import { omid } from "videts/omid";
 
 player.use(vast({
   tagUrl: "https://example.com/vast.xml",
@@ -173,29 +167,14 @@ player.use(vast({
 ### SIMID Interactive Ads
 
 ```ts
-import { vast } from "vide/vast";
-import { simid } from "vide/simid";
+import { vast } from "videts/vast";
+import { simid } from "videts/simid";
 
 player.use(vast({
   tagUrl: "https://example.com/vast.xml",
   adPlugins: () => [simid({ container: document.getElementById("ad-container")! })],
 }));
 ```
-
-## Entry Points
-
-| Import | Description | gzip |
-|---|---|---:|
-| `vide` | Core player | 1.4 KB |
-| `vide/ui` | UI plugin (13 components) | 3.0 KB |
-| `vide/ui/theme.css` | Default theme (optional) | 1.7 KB |
-| `vide/hls` | HLS streaming (hls.js) | 0.6 KB |
-| `vide/dash` | DASH streaming (dashjs) | 0.6 KB |
-| `vide/vast` | VAST 4.1 linear ads | 1.6 KB |
-| `vide/vmap` | VMAP ad scheduling | 2.7 KB |
-| `vide/omid` | OMID viewability | 1.7 KB |
-| `vide/simid` | SIMID interactive ads | 2.5 KB |
-| **Total** | **All entry points** | **~16 KB** |
 
 ## License
 
