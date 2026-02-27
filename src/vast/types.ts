@@ -14,6 +14,20 @@ export interface VastAd {
 	impressions: string[];
 	creatives: VastCreative[];
 	errors: string[];
+	adVerifications?: AdVerification[] | undefined;
+	categories?: AdCategory[] | undefined;
+}
+
+export interface AdVerification {
+	vendor: string;
+	resourceUrl: string;
+	apiFramework?: string | undefined;
+	parameters?: string | undefined;
+}
+
+export interface AdCategory {
+	authority: string;
+	value: string;
 }
 
 export interface VastCreative {
@@ -56,4 +70,10 @@ export interface VastPluginOptions {
 	tagUrl: string;
 	timeout?: number | undefined;
 	allowSkip?: boolean | undefined;
+}
+
+// === Resolve Options ===
+export interface ResolveOptions {
+	timeout?: number | undefined;
+	maxDepth?: number | undefined;
 }

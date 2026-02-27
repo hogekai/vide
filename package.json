@@ -1,6 +1,6 @@
 {
   "name": "vide",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Zero-config, web-standard-first lightweight video player library",
   "type": "module",
   "exports": {
@@ -11,6 +11,10 @@
     "./vast": {
       "types": "./dist/vast/index.d.ts",
       "import": "./dist/vast/index.mjs"
+    },
+    "./vmap": {
+      "types": "./dist/vmap/index.d.ts",
+      "import": "./dist/vmap/index.mjs"
     }
   },
   "files": [

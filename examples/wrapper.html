@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>vide — Wrapper Ad Test</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
+    video { width: 100%; background: #000; }
+    #log { font-family: monospace; font-size: 13px; background: #1a1a1a; color: #0f0; padding: 1rem; max-height: 400px; overflow-y: auto; border-radius: 4px; }
+    .log-entry { margin: 2px 0; }
+    .controls { margin: 1rem 0; display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    button { padding: 0.4rem 1rem; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>vide Wrapper Ad test</h1>
+  <p>Tests <code>resolveVast()</code> with Google IMA sample tags (typically Wrapper &rarr; InLine).</p>
+
+  <video id="player" controls
+    src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4">
+  </video>
+
+  <div class="controls">
+    <button onclick="testResolve()">Debug: resolveVast()</button>
+    <button onclick="playWithResolve()">Play with resolveVast</button>
+  </div>
+
+  <h3>State: <span id="state">-</span></h3>
+  <div id="log"></div>
+
+  <script type="module">
+    import { createPlayer } from "../dist/index.mjs";
+    import { resolveVast, fetchVast, parseVast, track } from "../dist/vast/index.mjs";
+
+    const el = document.getElementById("player");
+    const stateEl = document.getElementById("state");
+    const logEl = document.getElementById("log");
+
+    function log(msg) {
+      const entry = document.createElement("div");
+      entry.className = "log-entry";
+      entry.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+      logEl.prepend(entry);
+      console.log(msg);
+    }
+
+    const player = createPlayer(el);
+    window.player = player;
+
+    player.on("statechange", ({ from, to }) => {
+      stateEl.textContent = to;
+      log(`state: ${from} → ${to}`);
+    });
+    player.on("ad:start", ({ adId }) => log(`ad:start id=${adId}`));
+    player.on("ad:end", ({ adId }) => log(`ad:end id=${adId}`));
+    player.on("ad:error", ({ error }) => log(`ad:error: ${error.message}`));
+
+    log("Player created. State: " + player.state);
+
+    // Google IMA sample tag — often returns a Wrapper that redirects to InLine
+    function vastTag() {
+      return "https://pubads.g.doubleclick.net/gampad/ads?"
+        + "iu=/21775744923/external/single_preroll_skippable"
+        + "&sz=640x480&gdfp_req=1&output=vast&unviewed_position_start=1"
+        + "&env=vp&impl=s&correlator=" + Date.now();
+    }
+
+    // --- Debug: resolveVast chain ---
+    window.testResolve = async function() {
+      const url = vastTag();
+      log("=== resolveVast debug ===");
+      log("Tag URL: " + url.substring(0, 80) + "...");
+
+      // First, raw fetch to inspect the XML
+      try {
+        const rawXml = await fetchVast(url, { timeout: 10000 });
+        log(`Raw XML: ${rawXml.length} bytes`);
+
+        const rawParsed = parseVast(rawXml);
+        log(`parseVast: ads=${rawParsed.ads.length} (0 = likely Wrapper)`);
+
+        if (rawParsed.ads.length === 0) {
+          // Check if it's a Wrapper by looking for VASTAdTagURI
+          if (rawXml.includes("VASTAdTagURI")) {
+            log("Wrapper detected in raw XML");
+          }
+        }
+      } catch (err) {
+        log(`Raw fetch error: ${err.message}`);
+        log("(CORS issue? This is expected with some ad servers)");
+      }
+
+      // Now use resolveVast to follow the chain
+      log("--- Calling resolveVast() ---");
+      try {
+        const t0 = performance.now();
+        const response = await resolveVast(url, {
+          timeout: 10000,
+          maxDepth: 5,
+        });
+        const elapsed = Math.round(performance.now() - t0);
+        log(`resolveVast: ${elapsed}ms, ads=${response.ads.length}, errors=${response.errors.length}`);
+
+        if (response.errors.length > 0) {
+          for (const e of response.errors) {
+            log(`  error: ${e}`);
+          }
+        }
+
+        for (const ad of response.ads) {
+          log(`  Ad: id=${ad.id}, system=${ad.adSystem}`);
+          log(`    impressions=${ad.impressions.length}, errors=${ad.errors.length}`);
+          if (ad.adVerifications) {
+            log(`    verifications=${ad.adVerifications.length}`);
+          }
+          if (ad.categories) {
+            log(`    categories=${ad.categories.map(c => c.value).join(", ")}`);
+          }
+          for (const c of ad.creatives) {
+            if (!c.linear) continue;
+            const l = c.linear;
+            log(`    Linear: ${l.duration}s, skip=${l.skipOffset ?? "none"}, files=${l.mediaFiles.length}`);
+            log(`    Tracking: start=${l.trackingEvents.start.length}, complete=${l.trackingEvents.complete.length}`);
+          }
+        }
+      } catch (err) {
+        log(`resolveVast error: ${err.message}`);
+      }
+    };
+
+    // --- Play with resolveVast (manual flow, not using vast() plugin) ---
+    window.playWithResolve = async function() {
+      log("=== Playing ad via resolveVast ===");
+      const url = vastTag();
+
+      try {
+        const response = await resolveVast(url, { timeout: 10000 });
+
+        if (response.ads.length === 0) {
+          log("No ads returned");
+          return;
+        }
+
+        // Find first linear
+        let linear = null;
+        let adId = "";
+        for (const ad of response.ads) {
+          for (const creative of ad.creatives) {
+            if (creative.linear && creative.linear.mediaFiles.length > 0) {
+              linear = creative.linear;
+              adId = ad.id;
+              break;
+            }
+          }
+          if (linear) break;
+        }
+
+        if (!linear) {
+          log("No linear creative found");
+          return;
+        }
+
+        // Fire impressions
+        for (const ad of response.ads) {
+          track(ad.impressions);
+          log(`Fired ${ad.impressions.length} impressions`);
+        }
+
+        // Select mp4
+        const mp4 = linear.mediaFiles.filter(f => f.mimeType === "video/mp4");
+        const file = (mp4.length > 0 ? mp4 : linear.mediaFiles)
+          .sort((a, b) => (b.bitrate || 0) - (a.bitrate || 0))[0];
+        log(`Playing: ${file.url.substring(0, 80)}...`);
+
+        const origSrc = el.src;
+        const origTime = el.currentTime;
+
+        el.src = file.url;
+        el.load();
+        el.play();
+
+        el.addEventListener("ended", function onAdEnd() {
+          el.removeEventListener("ended", onAdEnd);
+          log("Ad ended, restoring content");
+          el.src = origSrc;
+          el.load();
+          el.currentTime = origTime;
+          el.play();
+        }, { once: true });
+
+      } catch (err) {
+        log(`Error: ${err.message}`);
+      }
+    };
+  </script>
+</body>
+</html>

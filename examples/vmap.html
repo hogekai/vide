@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>vide — VMAP Test</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
+    video { width: 100%; background: #000; }
+    #log { font-family: monospace; font-size: 13px; background: #1a1a1a; color: #0f0; padding: 1rem; max-height: 400px; overflow-y: auto; border-radius: 4px; }
+    .log-entry { margin: 2px 0; }
+    .controls { margin: 1rem 0; display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    button { padding: 0.4rem 1rem; cursor: pointer; }
+    h3 span { font-weight: normal; }
+  </style>
+</head>
+<body>
+  <h1>vide VMAP test</h1>
+  <p>Tests preroll &rarr; content &rarr; midroll (5s) &rarr; content &rarr; postroll flow using local sample VMAP/VAST XML.</p>
+
+  <video id="player" controls
+    src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4">
+  </video>
+
+  <div class="controls">
+    <button onclick="startVmap()">Start VMAP</button>
+    <button onclick="player.currentTime = 0">Restart</button>
+    <button onclick="player.currentTime = 10">Seek to 10s (skip midroll)</button>
+    <button onclick="player.destroy(); log('Player destroyed')">Destroy</button>
+  </div>
+
+  <h3>State: <span id="state">-</span></h3>
+  <div id="log"></div>
+
+  <script type="module">
+    import { createPlayer } from "../dist/index.mjs";
+    import { vmap, parseVmap } from "../dist/vmap/index.mjs";
+
+    const el = document.getElementById("player");
+    const stateEl = document.getElementById("state");
+    const logEl = document.getElementById("log");
+
+    function log(msg) {
+      const entry = document.createElement("div");
+      entry.className = "log-entry";
+      entry.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+      logEl.prepend(entry);
+      console.log(msg);
+    }
+
+    const player = createPlayer(el);
+    window.player = player;
+
+    player.on("statechange", ({ from, to }) => {
+      stateEl.textContent = to;
+      log(`state: ${from} → ${to}`);
+    });
+    player.on("play", () => log("event: play"));
+    player.on("pause", () => log("event: pause"));
+    player.on("ended", () => log("event: ended"));
+    player.on("timeupdate", ({ currentTime }) => {
+      if (Math.floor(currentTime) !== Math.floor(currentTime - 0.3)) {
+        // log every ~1s to avoid spam
+      }
+    });
+    player.on("error", ({ code, message }) => log(`error: [${code}] ${message}`));
+    player.on("ad:start", ({ adId }) => log(`*** ad:start id=${adId}`));
+    player.on("ad:end", ({ adId }) => log(`*** ad:end id=${adId}`));
+    player.on("ad:error", ({ error }) => log(`*** ad:error: ${error.message}`));
+
+    log("Player created. State: " + player.state);
+
+    // Google IMA sample VAST tags
+    function prerollTag() {
+      return "https://pubads.g.doubleclick.net/gampad/ads?"
+        + "iu=/21775744923/external/single_preroll_skippable"
+        + "&sz=640x480&gdfp_req=1&output=vast&unviewed_position_start=1"
+        + "&env=vp&impl=s&correlator=" + Date.now();
+    }
+
+    function midrollTag() {
+      return "https://pubads.g.doubleclick.net/gampad/ads?"
+        + "iu=/21775744923/external/single_ad_samples"
+        + "&sz=640x480&gdfp_req=1&output=vast&unviewed_position_start=1"
+        + "&env=vp&impl=s&cust_params=sample_ct%3Dlinear"
+        + "&correlator=" + Date.now();
+    }
+
+    // Serve a VMAP XML via a Blob URL so we don't need a server
+    function createVmapUrl() {
+      const vmapXml = `<?xml version="1.0" encoding="UTF-8"?>
+<VMAP xmlns:vmap="http://www.iab.net/videosuite/vmap" version="1.0">
+  <vmap:AdBreak timeOffset="start" breakType="linear" breakId="preroll">
+    <vmap:AdSource id="preroll-src" allowMultipleAds="false">
+      <vmap:AdTagURI><![CDATA[${prerollTag()}]]></vmap:AdTagURI>
+    </vmap:AdSource>
+  </vmap:AdBreak>
+  <vmap:AdBreak timeOffset="00:00:05" breakType="linear" breakId="midroll-5s">
+    <vmap:AdSource id="midroll-src" allowMultipleAds="false">
+      <vmap:AdTagURI><![CDATA[${midrollTag()}]]></vmap:AdTagURI>
+    </vmap:AdSource>
+  </vmap:AdBreak>
+  <vmap:AdBreak timeOffset="end" breakType="linear" breakId="postroll">
+    <vmap:AdSource id="postroll-src" allowMultipleAds="false">
+      <vmap:AdTagURI><![CDATA[${midrollTag()}]]></vmap:AdTagURI>
+    </vmap:AdSource>
+  </vmap:AdBreak>
+</VMAP>`;
+
+      log("VMAP XML generated:");
+      const parsed = parseVmap(vmapXml);
+      log(`  version=${parsed.version}, breaks=${parsed.adBreaks.length}`);
+      for (const b of parsed.adBreaks) {
+        const offset = b.timeOffset.type === "time"
+          ? `${b.timeOffset.seconds}s`
+          : b.timeOffset.type;
+        log(`  break: ${b.breakId} @ ${offset} (${b.breakType})`);
+      }
+
+      const blob = new Blob([vmapXml], { type: "application/xml" });
+      return URL.createObjectURL(blob);
+    }
+
+    window.startVmap = function() {
+      log("=== Starting VMAP flow ===");
+      const vmapUrl = createVmapUrl();
+
+      player.use(vmap({
+        url: vmapUrl,
+        timeout: 15000,
+        vastOptions: {
+          timeout: 10000,
+          maxDepth: 5,
+        },
+      }));
+
+      log("VMAP plugin loaded. Waiting for player ready...");
+    };
+  </script>
+</body>
+</html>

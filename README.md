@@ -43,6 +43,19 @@ player.use(vast({
 }));
 ```
 
+## VMAP (Multi-Ad Breaks)
+
+```ts
+import { createPlayer } from "vide";
+import { vmap } from "vide/vmap";
+
+const player = createPlayer(document.querySelector("video")!);
+
+player.use(vmap({
+  url: "https://example.com/vmap.xml",
+}));
+```
+
 ## Custom Plugin
 
 ```ts
@@ -65,7 +78,8 @@ export function myPlugin(): Plugin {
 |-------|------|
 | Core | ~1 KB |
 | VAST plugin | ~2 KB |
-| All | ~3 KB |
+| VMAP plugin | ~2 KB |
+| All | ~5 KB |
 
 ## License
 
