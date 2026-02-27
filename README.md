@@ -17,13 +17,15 @@ player.use(vast({ tagUrl: "https://example.com/vast.xml" }));
 | `videts` | Core player | 1.4 KB |
 | `videts/vast` | VAST 4.2 ads | 1.5 KB |
 | `videts/vmap` | VMAP scheduling | 2.6 KB |
-| `videts/hls` | HLS (+ hls.js) | 0.6 KB |
-| `videts/dash` | DASH (+ dashjs) | 0.5 KB |
+| `videts/hls` | HLS streaming | 0.6 KB |
+| `videts/dash` | DASH streaming | 0.5 KB |
 | `videts/drm` | DRM (Widevine + FairPlay) | 0.8 KB |
 | `videts/omid` | Open Measurement | 1.7 KB |
 | `videts/simid` | Interactive ads | 2.3 KB |
-| `videts/ui` | Headless UI | 4.6 KB |
-| `videts/ui/theme.css` | Default theme | 1.9 KB |
+| `videts/ui` | Headless UI | 4.7 KB |
+| `videts/ui/theme.css` | Default theme | 3.4 KB |
+
+> HLS and DASH plugins require `hls.js` and `dashjs` as peer dependencies.
 
 Zero config. No data attributes. No class scanning. No side effects.
 Web standards first — if the browser can do it, we don't reinvent it.

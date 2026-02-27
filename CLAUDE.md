@@ -38,5 +38,6 @@ Single package, multiple entry points via `exports` field:
 - `vide/vmap` — VMAP plugin (depends on vast internally)
 - `vide/hls` — HLS streaming plugin (wraps hls.js, optional peer dep)
 - `vide/dash` — DASH streaming plugin (wraps dashjs, optional peer dep)
+- `vide/drm` — DRM plugin (Widevine + FairPlay, configures hls.js/dashjs via pluginData)
 - `vide/omid` — OM SDK (Open Measurement) viewability plugin
 - `vide/simid` — SIMID (Secure Interactive Media Interface) plugin
