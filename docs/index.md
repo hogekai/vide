@@ -28,14 +28,14 @@ features:
 
 | Plugin | What | gzip |
 |--------|------|-----:|
-| `@videts/vide` | Core player | 1.7 KB |
-| `@videts/vide/vast` | VAST 4.2 ads | 1.5 KB |
+| `@videts/vide` | Core player | 1.8 KB |
+| `@videts/vide/vast` | VAST 4.2 ads | 1.6 KB |
 | `@videts/vide/vmap` | VMAP scheduling | 2.6 KB |
-| `@videts/vide/hls` | HLS streaming | 0.6 KB |
+| `@videts/vide/hls` | HLS streaming | 0.7 KB |
 | `@videts/vide/dash` | DASH streaming | 0.6 KB |
-| `@videts/vide/drm` | DRM (Widevine + FairPlay) | 0.8 KB |
-| `@videts/vide/ssai` | SSAI (server-side ads) | 1.4 KB |
+| `@videts/vide/drm` | DRM (Widevine + FairPlay) | 1.7 KB |
+| `@videts/vide/ssai` | SSAI (server-side ads) | 1.5 KB |
 | `@videts/vide/omid` | Open Measurement | 1.7 KB |
 | `@videts/vide/simid` | Interactive ads | 2.4 KB |
-| `@videts/vide/ui` | Headless UI | 4.7 KB |
+| `@videts/vide/ui` | Headless UI | 4.8 KB |
 | `@videts/vide/ui/theme.css` | Default theme | 3.4 KB |
