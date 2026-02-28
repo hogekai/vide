@@ -113,14 +113,14 @@ export function createPlayer(el: HTMLVideoElement): Player {
 		if (!isAdState()) {
 			setState("playing");
 		}
-		emit("play", undefined as void);
+		emit("play", undefined as undefined);
 	}
 
 	function onPause(): void {
 		if (!isAdState()) {
 			setState("paused");
 		}
-		emit("pause", undefined as void);
+		emit("pause", undefined as undefined);
 	}
 
 	function onWaiting(): void {
@@ -139,7 +139,7 @@ export function createPlayer(el: HTMLVideoElement): Player {
 		if (!isAdState()) {
 			setState("ended");
 		}
-		emit("ended", undefined as void);
+		emit("ended", undefined as undefined);
 	}
 
 	function onTimeUpdate(): void {
@@ -465,7 +465,7 @@ export function createPlayer(el: HTMLVideoElement): Player {
 				}
 			}
 			cleanups.length = 0;
-			emit("destroy", undefined as void);
+			emit("destroy", undefined as undefined);
 			removeVideoListeners();
 			handlers.clear();
 			pluginData.clear();

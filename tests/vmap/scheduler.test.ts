@@ -26,7 +26,7 @@ function createMockPlayer() {
 			if (!listeners.has(event)) {
 				listeners.set(event, new Set());
 			}
-			listeners.get(event)!.add(handler);
+			listeners.get(event)?.add(handler);
 		},
 		off(event: string, handler: Handler): void {
 			listeners.get(event)?.delete(handler);

@@ -179,7 +179,7 @@ describe("resolveVast", () => {
 		const result = await resolveVast("http://example.com/w1");
 		expect(result.ads).toHaveLength(1);
 
-		const startEvents = result.ads[0].creatives[0].linear!.trackingEvents.start;
+		const startEvents = result.ads[0].creatives[0].linear?.trackingEvents.start;
 		expect(startEvents).toEqual([
 			"http://w1.com/start",
 			"http://w2.com/start",
@@ -243,7 +243,7 @@ describe("resolveVast", () => {
 			.mockReturnValueOnce(mockFetchResponse(inlineXml));
 
 		const result = await resolveVast("http://example.com/wrapper");
-		const events = result.ads[0].creatives[0].linear!.trackingEvents;
+		const events = result.ads[0].creatives[0].linear?.trackingEvents;
 
 		expect(events.start).toEqual([
 			"http://wrapper.com/start",
@@ -326,7 +326,7 @@ describe("resolveVast", () => {
 			.mockReturnValueOnce(mockFetchResponse(inlineXml));
 
 		const result = await resolveVast("http://example.com/wrapper");
-		expect(result.ads[0].creatives[0].linear!.clickTracking).toEqual([
+		expect(result.ads[0].creatives[0].linear?.clickTracking).toEqual([
 			"http://wrapper.com/click",
 			"http://inline.com/click",
 		]);

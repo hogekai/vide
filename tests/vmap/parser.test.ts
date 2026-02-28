@@ -44,10 +44,10 @@ describe("parseVmap", () => {
 		const result = parseVmap(SAMPLE_VMAP);
 		const adSource = result.adBreaks[0].adSource;
 		expect(adSource).not.toBeNull();
-		expect(adSource!.vastUrl).toBe("http://example.com/vast/preroll");
-		expect(adSource!.id).toBe("pre-ad");
-		expect(adSource!.allowMultipleAds).toBe(false);
-		expect(adSource!.followRedirects).toBe(true);
+		expect(adSource?.vastUrl).toBe("http://example.com/vast/preroll");
+		expect(adSource?.id).toBe("pre-ad");
+		expect(adSource?.allowMultipleAds).toBe(false);
+		expect(adSource?.followRedirects).toBe(true);
 	});
 
 	it("parses AdSource with VASTAdData as vastData", () => {
@@ -84,9 +84,9 @@ describe("parseVmap", () => {
 		const result = parseVmap(xml);
 		const adSource = result.adBreaks[0].adSource;
 		expect(adSource).not.toBeNull();
-		expect(adSource!.vastData).toBeDefined();
-		expect(adSource!.vastData).toContain("VAST");
-		expect(adSource!.vastData).toContain("ad-001");
+		expect(adSource?.vastData).toBeDefined();
+		expect(adSource?.vastData).toContain("VAST");
+		expect(adSource?.vastData).toContain("ad-001");
 	});
 
 	it("handles empty VMAP (no breaks)", () => {

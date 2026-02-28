@@ -22,9 +22,9 @@ export type AdQuartile =
 
 export interface PlayerEventMap {
 	statechange: { from: PlayerState; to: PlayerState };
-	play: void;
-	pause: void;
-	ended: void;
+	play: undefined;
+	pause: undefined;
+	ended: undefined;
 	timeupdate: { currentTime: number; duration: number };
 	error: { code: number; message: string };
 	"ad:start": { adId: string };
@@ -41,7 +41,7 @@ export interface PlayerEventMap {
 	"ad:fullscreen": { adId: string; fullscreen: boolean };
 	"ad:breakStart": { breakId: string | undefined };
 	"ad:breakEnd": { breakId: string | undefined };
-	destroy: void;
+	destroy: undefined;
 }
 
 export type PlayerEvent = keyof PlayerEventMap;
@@ -105,7 +105,7 @@ export interface SourceHandler {
 // === Plugin ===
 export interface Plugin {
 	name: string;
-	setup(player: Player): (() => void) | void;
+	setup(player: Player): (() => void) | undefined;
 }
 
 // === Player ===
