@@ -10,7 +10,9 @@
         "--context",
         "claude-code",
         "--project",
-        "/home/kaiho/projects/vide"
+        "/home/kaiho/projects/vide",
+        "--open-web-dashboard",
+        "false"
       ]
     }
   }
