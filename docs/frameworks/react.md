@@ -12,10 +12,10 @@ npm install @videts/vide react react-dom
 import { useVidePlayer, useHls, Vide } from "@videts/vide/react";
 
 function Player() {
-  const { player, ref } = useVidePlayer();
-  useHls(player);
+  const handle = useVidePlayer();
+  useHls(handle.player);
 
-  return <Vide.Video ref={ref} player={player} src="stream.m3u8" />;
+  return <Vide.Video player={handle} src="stream.m3u8" />;
 }
 ```
 
@@ -26,11 +26,11 @@ function Player() {
 Creates and manages a player instance.
 
 ```tsx
-const { player, ref } = useVidePlayer();
+const handle = useVidePlayer();
 ```
 
-- `player` — `Player | null`. `null` until the video element mounts.
-- `ref` — Callback ref to pass to `<Vide.Video>`.
+- `handle.player` — `Player | null`. `null` until the video element mounts.
+- Pass `handle` directly to `<Vide.Video player={handle}>`. Ref wiring is automatic.
 - Calls `player.destroy()` automatically on unmount.
 
 ### useHls / useDash / useDrm / useVast / useVmap / useSsai / useUi
@@ -38,18 +38,18 @@ const { player, ref } = useVidePlayer();
 Plugin hooks. Call `plugin.setup()` when player becomes available, clean up on unmount.
 
 ```tsx
-useHls(player);
-useHls(player, { hlsConfig: { maxBufferLength: 30 } });
+useHls(handle.player);
+useHls(handle.player, { hlsConfig: { maxBufferLength: 30 } });
 
-useDash(player);
-useDrm(player, { widevine: { licenseUrl: "..." } });
-useVast(player, { tagUrl: "https://..." });
-useVmap(player, { url: "https://..." });
-useSsai(player);
-useUi(player, { container: containerRef.current! });
+useDash(handle.player);
+useDrm(handle.player, { widevine: { licenseUrl: "..." } });
+useVast(handle.player, { tagUrl: "https://..." });
+useVmap(handle.player, { url: "https://..." });
+useSsai(handle.player);
+useUi(handle.player, { container: containerRef.current! });
 ```
 
-All hooks are safe to call with `player: null` (initial render).
+All hooks are safe to call with `null` (initial render before video mounts).
 
 ### useVideEvent(player, event, handler)
 
@@ -72,23 +72,25 @@ useVideEvent(player, "ad:start", ({ adId }) => {
 
 ### Vide.Video
 
-Renders a `<video>` element and provides the player via React context.
+Renders a `<video>` element, binds the player to it, and provides the player via React context.
 
 ```tsx
-<Vide.Video ref={ref} player={player} src="video.mp4" className="rounded-lg">
+<Vide.Video player={handle} src="video.mp4" className="rounded-lg">
   <Vide.PlayButton />
   <Vide.Progress />
 </Vide.Video>
 ```
 
-All standard `<video>` HTML attributes (`src`, `poster`, `muted`, `autoPlay`, etc.) are passed through.
+- `player` — the handle returned by `useVidePlayer()`.
+- Children are rendered only after the player is ready.
+- All standard `<video>` HTML attributes (`src`, `poster`, `muted`, `autoPlay`, etc.) are passed through.
 
 ### Plugin Components
 
 Render nothing (`null`). Use for conditional plugin activation.
 
 ```tsx
-<Vide.Video ref={ref} player={player} src="stream.m3u8">
+<Vide.Video player={handle} src="stream.m3u8">
   <Vide.HlsPlugin />
   {showAds && <Vide.VastPlugin tagUrl="https://..." />}
   {premium && <Vide.SsaiPlugin />}
@@ -102,7 +104,7 @@ Available: `HlsPlugin`, `DashPlugin`, `DrmPlugin`, `VastPlugin`, `VmapPlugin`, `
 Interactive controls that subscribe to player events via context.
 
 ```tsx
-<Vide.Video ref={ref} player={player} src="video.mp4">
+<Vide.Video player={handle} src="video.mp4">
   <Vide.PlayButton className="rounded-full bg-white/80" />
   <Vide.Progress className="h-1" />
   <Vide.Volume className="w-24" />
@@ -146,16 +148,16 @@ Use hooks when the plugin is always needed. Use components when you need conditi
 
 ### Direct Player Access
 
-`player` is returned from `useVidePlayer()`, so you can control it directly:
+`handle.player` gives you direct access to the player instance:
 
 ```tsx
-const { player, ref } = useVidePlayer();
+const handle = useVidePlayer();
 
 return (
   <>
-    <Vide.Video ref={ref} player={player} src="video.mp4" />
-    <button onClick={() => player?.pause()}>Pause</button>
-    <button onClick={() => { if (player) player.currentTime = 0; }}>
+    <Vide.Video player={handle} src="video.mp4" />
+    <button onClick={() => handle.player?.pause()}>Pause</button>
+    <button onClick={() => { if (handle.player) handle.player.currentTime = 0; }}>
       Restart
     </button>
   </>
@@ -170,7 +172,7 @@ return (
 import { omid } from "@videts/vide/omid";
 import { simid } from "@videts/vide/simid";
 
-useVast(player, {
+useVast(handle.player, {
   tagUrl: "https://...",
   adPlugins: (ad) => [
     omid({ partner: { name: "myapp", version: "1.0" } }),
@@ -184,11 +186,11 @@ useVast(player, {
 ```tsx
 // Namespace style
 import { Vide, useVidePlayer, useHls } from "@videts/vide/react";
-<Vide.Video ref={ref} player={player} />
+<Vide.Video player={handle} />
 
 // Individual imports
 import { VideVideo, PlayButton, useVidePlayer, useHls } from "@videts/vide/react";
-<VideVideo ref={ref} player={player} />
+<VideVideo player={handle} />
 ```
 
 ## Full Example
@@ -197,16 +199,16 @@ import { VideVideo, PlayButton, useVidePlayer, useHls } from "@videts/vide/react
 import { useVidePlayer, useHls, useVideEvent, Vide } from "@videts/vide/react";
 
 function VideoPlayer({ src, adTag }: { src: string; adTag?: string }) {
-  const { player, ref } = useVidePlayer();
-  useHls(player);
+  const handle = useVidePlayer();
+  useHls(handle.player);
 
-  useVideEvent(player, "statechange", ({ from, to }) => {
+  useVideEvent(handle.player, "statechange", ({ from, to }) => {
     console.log(`${from} → ${to}`);
   });
 
   return (
     <div className="relative aspect-video">
-      <Vide.Video ref={ref} player={player} src={src} className="w-full">
+      <Vide.Video player={handle} src={src} className="w-full">
         {adTag && <Vide.VastPlugin tagUrl={adTag} />}
         <Vide.PlayButton className="absolute inset-0 flex items-center justify-center">
           ▶
