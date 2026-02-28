@@ -4,6 +4,44 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.7.3] - 2026-02-28
+
+### Added
+- `idle → playing` and `loading → playing` state transitions for early play calls
+- UI styling reference, HTML attributes guide, and CDN usage docs
+- Testing, docs, and bundle size sections to CONTRIBUTING.md
+
+### Fixed
+- E2E UI tests: focus correct element and use correct class name
+- API reference 404 by moving TypeDoc output to `docs/api-reference/`
+
+## [0.7.2] - 2026-02-28
+
+### Added
+- DRM standalone EME support (encrypted MP4 without HLS/DASH)
+- Error code constants (`ERR_DRM_*`, `ERR_HLS_*`, `ERR_DASH_*`, `ERR_MEDIA`)
+- iOS Safari DRM patches
+- E2E test suite (Playwright) for core playback, HLS, UI controls, and keyboard shortcuts
+- TypeDoc API reference generation
+- Performance tests (setup timing budgets, event listener cleanup, create/destroy cycle stability)
+- HTML markup examples to docs and README
+
+### Fixed
+- Bigplay button staying visible during playback (race condition)
+- API reference link to point to TypeDoc-generated index
+
+## [0.7.1] - 2026-02-28
+
+### Added
+- CI workflow (GitHub Actions)
+- VitePress documentation site
+- CHANGELOG.md
+- `packageManager` field for pnpm version detection in CI
+
+### Fixed
+- Bigplay button not hiding during playback
+- Biome lint errors
+
 ## [0.7.0] - 2026-02-28
 
 ### Added
