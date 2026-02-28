@@ -1,12 +1,20 @@
 import {
+	fetchVast,
+	getQuartile,
+	parseVast,
+	resolveVast,
+	track,
+	vast,
+} from "../vast/index.js";
+
+// biome-ignore lint/suspicious/noExplicitAny: global namespace access
+// biome-ignore lint/suspicious/noAssignInExpressions: intentional ??= for global namespace init
+const ns = ((globalThis as any).Vide ??= {});
+Object.assign(ns, {
 	vast,
 	parseVast,
 	fetchVast,
 	resolveVast,
 	track,
 	getQuartile,
-} from "../vast/index.js";
-
-// biome-ignore lint/suspicious/noExplicitAny: global namespace access
-const ns = ((globalThis as any).Vide ??= {});
-Object.assign(ns, { vast, parseVast, fetchVast, resolveVast, track, getQuartile });
+});

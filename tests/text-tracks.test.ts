@@ -41,9 +41,7 @@ function mockTextTracks(
 	return ttl;
 }
 
-function makeTrack(
-	overrides: Partial<MockTextTrack> = {},
-): MockTextTrack {
+function makeTrack(overrides: Partial<MockTextTrack> = {}): MockTextTrack {
 	return {
 		label: "English",
 		language: "en",
@@ -120,9 +118,7 @@ describe("text track API", () => {
 
 	it("getActiveTextTrack() returns null when no track is showing", () => {
 		const el = makeVideo();
-		mockTextTracks(el, [
-			makeTrack({ mode: "disabled" }),
-		]);
+		mockTextTracks(el, [makeTrack({ mode: "disabled" })]);
 		const player = createPlayer(el);
 		expect(player.getActiveTextTrack()).toBeNull();
 	});
