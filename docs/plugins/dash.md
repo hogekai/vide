@@ -27,6 +27,7 @@ player.src = "https://example.com/stream.mpd";
 | Option | Type | Description |
 |--------|------|-------------|
 | `dashConfig` | `Record<string, unknown>` | Settings passed to `dashjs.updateSettings()` |
+| `recovery` | `Partial<RecoveryConfig> \| false` | Error recovery settings. Defaults to enabled |
 
 ```ts
 player.use(dash({
@@ -34,6 +35,38 @@ player.use(dash({
     streaming: { buffer: { bufferTimeDefault: 20 } }
   }
 }));
+```
+
+## Error Recovery
+
+Fatal dash.js errors trigger automatic retry with exponential backoff. Recovery is enabled by default.
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `maxRetries` | `3` | Maximum retry attempts before giving up |
+| `retryDelay` | `3000` | Initial delay in milliseconds |
+| `backoffMultiplier` | `2` | Multiplier per retry (3s → 6s → 12s) |
+
+Recovery uses `mediaPlayer.reset()` followed by `mediaPlayer.initialize()` to reinitialize the player.
+
+```ts
+// Custom config
+player.use(dash({ recovery: { maxRetries: 5, retryDelay: 1000 } }));
+
+// Disable recovery
+player.use(dash({ recovery: false }));
+```
+
+The `error` event includes `recoverable` and `retryCount` fields during recovery:
+
+```ts
+player.on("error", (e) => {
+  if (e.recoverable) {
+    console.log(`Retrying... (${e.retryCount})`);
+  } else {
+    console.error("Fatal error:", e.message);
+  }
+});
 ```
 
 ## Events
