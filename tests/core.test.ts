@@ -154,6 +154,17 @@ describe("state transitions", () => {
 		expect(player.state).toBe("ended");
 	});
 
+	it("loading → playing on play before canplay", () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		el.dispatchEvent(new Event("loadstart"));
+		expect(player.state).toBe("loading");
+
+		// User clicks play before video is ready
+		el.dispatchEvent(new Event("play"));
+		expect(player.state).toBe("playing");
+	});
+
 	it("ignores loadstart while video is playing (race condition)", () => {
 		const el = makeVideo();
 		const player = createPlayer(el);

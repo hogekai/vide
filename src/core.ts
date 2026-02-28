@@ -13,7 +13,7 @@ import type {
 
 const transitions: Record<PlayerState, PlayerState[]> = {
 	idle: ["loading", "error"],
-	loading: ["ready", "error"],
+	loading: ["ready", "playing", "error"],
 	ready: ["playing", "loading", "ad:loading", "error"],
 	playing: ["paused", "buffering", "loading", "ad:loading", "ended", "error"],
 	paused: ["playing", "loading", "ad:loading", "ended", "error"],
