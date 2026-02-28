@@ -485,3 +485,409 @@ describe("ssai plugin — tolerance", () => {
 		expect(adStartHandler).toHaveBeenCalledTimes(1);
 	});
 });
+
+describe("ssai plugin — structured tracking", () => {
+	function setupWithTracking(tracking: Record<string, string[]>) {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		const mockHls = createMockHls();
+		player.setPluginData("hls", mockHls);
+		player.use(
+			ssai({
+				parser: () => [
+					{
+						id: "ad-1",
+						startTime: 100,
+						duration: 40,
+						tracking,
+					},
+				],
+			}),
+		);
+		// Trigger metadata ingestion
+		mockHls._fire("hlsLevelUpdated", "hlsLevelUpdated", {
+			details: { dateRanges: { dr: { attr: { ID: "dr" } } } },
+		});
+		return player;
+	}
+
+	it("fires tracking.impression at ad:start", () => {
+		const player = setupWithTracking({
+			impression: ["https://example.com/imp"],
+		});
+		emitTimeUpdate(player, 100);
+		expect(mockSendBeacon).toHaveBeenCalledWith("https://example.com/imp");
+	});
+
+	it("fires tracking.start at ad:start via quartile tracker", () => {
+		const player = setupWithTracking({
+			start: ["https://example.com/start"],
+		});
+		emitTimeUpdate(player, 100);
+		expect(mockSendBeacon).toHaveBeenCalledWith("https://example.com/start");
+	});
+
+	it("fires tracking.firstQuartile at 25% of ad duration", () => {
+		const player = setupWithTracking({
+			firstQuartile: ["https://example.com/q1"],
+		});
+		emitTimeUpdate(player, 100); // ad:start
+		mockSendBeacon.mockClear();
+		emitTimeUpdate(player, 110); // 25% of 40s
+		expect(mockSendBeacon).toHaveBeenCalledWith("https://example.com/q1");
+	});
+
+	it("fires tracking.midpoint at 50% of ad duration", () => {
+		const player = setupWithTracking({
+			midpoint: ["https://example.com/mid"],
+		});
+		emitTimeUpdate(player, 100);
+		mockSendBeacon.mockClear();
+		emitTimeUpdate(player, 120); // 50% of 40s
+		expect(mockSendBeacon).toHaveBeenCalledWith("https://example.com/mid");
+	});
+
+	it("fires tracking.thirdQuartile at 75% of ad duration", () => {
+		const player = setupWithTracking({
+			thirdQuartile: ["https://example.com/q3"],
+		});
+		emitTimeUpdate(player, 100);
+		mockSendBeacon.mockClear();
+		emitTimeUpdate(player, 130); // 75% of 40s
+		expect(mockSendBeacon).toHaveBeenCalledWith("https://example.com/q3");
+	});
+
+	it("fires tracking.complete at 100% of ad duration", () => {
+		const player = setupWithTracking({
+			complete: ["https://example.com/complete"],
+		});
+		emitTimeUpdate(player, 100);
+		mockSendBeacon.mockClear();
+		emitTimeUpdate(player, 140); // 100% of 40s
+		expect(mockSendBeacon).toHaveBeenCalledWith("https://example.com/complete");
+	});
+
+	it("emits ad:quartile events at each quartile", () => {
+		const player = setupWithTracking({});
+		const handler = vi.fn();
+		player.on("ad:quartile", handler);
+
+		emitTimeUpdate(player, 100); // start
+		emitTimeUpdate(player, 110); // firstQuartile
+		emitTimeUpdate(player, 120); // midpoint
+		emitTimeUpdate(player, 130); // thirdQuartile
+		emitTimeUpdate(player, 140); // complete
+
+		expect(handler).toHaveBeenCalledWith({
+			adId: "ad-1",
+			quartile: "start",
+		});
+		expect(handler).toHaveBeenCalledWith({
+			adId: "ad-1",
+			quartile: "firstQuartile",
+		});
+		expect(handler).toHaveBeenCalledWith({
+			adId: "ad-1",
+			quartile: "midpoint",
+		});
+		expect(handler).toHaveBeenCalledWith({
+			adId: "ad-1",
+			quartile: "thirdQuartile",
+		});
+		expect(handler).toHaveBeenCalledWith({
+			adId: "ad-1",
+			quartile: "complete",
+		});
+	});
+
+	it("each quartile fires only once", () => {
+		const player = setupWithTracking({
+			firstQuartile: ["https://example.com/q1"],
+		});
+		emitTimeUpdate(player, 100);
+		mockSendBeacon.mockClear();
+		emitTimeUpdate(player, 110);
+		emitTimeUpdate(player, 111);
+		emitTimeUpdate(player, 112);
+		expect(mockSendBeacon).toHaveBeenCalledTimes(1);
+	});
+
+	it("does not error when tracking is not set", () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		const mockHls = createMockHls();
+		player.setPluginData("hls", mockHls);
+		player.use(
+			ssai({
+				parser: () => [{ id: "ad-1", startTime: 100, duration: 30 }],
+			}),
+		);
+		mockHls._fire("hlsLevelUpdated", "hlsLevelUpdated", {
+			details: { dateRanges: { dr: { attr: { ID: "dr" } } } },
+		});
+
+		// Should not throw
+		emitTimeUpdate(player, 100);
+		emitTimeUpdate(player, 130);
+		expect(mockSendBeacon).not.toHaveBeenCalled();
+	});
+});
+
+describe("ssai plugin — backward compatibility", () => {
+	it("trackingUrls fires as impression tracking", () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		const mockHls = createMockHls();
+		player.setPluginData("hls", mockHls);
+		player.use(
+			ssai({
+				parser: () => [
+					{
+						id: "ad-1",
+						startTime: 100,
+						duration: 30,
+						trackingUrls: ["https://example.com/legacy"],
+					},
+				],
+			}),
+		);
+		mockHls._fire("hlsLevelUpdated", "hlsLevelUpdated", {
+			details: { dateRanges: { dr: { attr: { ID: "dr" } } } },
+		});
+
+		emitTimeUpdate(player, 100);
+		expect(mockSendBeacon).toHaveBeenCalledWith("https://example.com/legacy");
+	});
+
+	it("merges trackingUrls with tracking.impression", () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		const mockHls = createMockHls();
+		player.setPluginData("hls", mockHls);
+		player.use(
+			ssai({
+				parser: () => [
+					{
+						id: "ad-1",
+						startTime: 100,
+						duration: 30,
+						trackingUrls: ["https://example.com/legacy"],
+						tracking: {
+							impression: ["https://example.com/new"],
+						},
+					},
+				],
+			}),
+		);
+		mockHls._fire("hlsLevelUpdated", "hlsLevelUpdated", {
+			details: { dateRanges: { dr: { attr: { ID: "dr" } } } },
+		});
+
+		emitTimeUpdate(player, 100);
+		expect(mockSendBeacon).toHaveBeenCalledWith("https://example.com/new");
+		expect(mockSendBeacon).toHaveBeenCalledWith("https://example.com/legacy");
+	});
+});
+
+describe("ssai plugin — pause/resume tracking", () => {
+	function setupWithTracking(tracking: Record<string, string[]>) {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		const mockHls = createMockHls();
+		player.setPluginData("hls", mockHls);
+		player.use(
+			ssai({
+				parser: () => [
+					{
+						id: "ad-1",
+						startTime: 100,
+						duration: 40,
+						tracking,
+					},
+				],
+			}),
+		);
+		mockHls._fire("hlsLevelUpdated", "hlsLevelUpdated", {
+			details: { dateRanges: { dr: { attr: { ID: "dr" } } } },
+		});
+		return player;
+	}
+
+	it("fires pause tracking URLs when paused during ad", () => {
+		const player = setupWithTracking({
+			pause: ["https://example.com/pause"],
+		});
+		emitTimeUpdate(player, 100); // start ad
+		mockSendBeacon.mockClear();
+		player.emit("pause", undefined);
+		expect(mockSendBeacon).toHaveBeenCalledWith("https://example.com/pause");
+	});
+
+	it("fires resume tracking URLs when resumed during ad", () => {
+		const player = setupWithTracking({
+			resume: ["https://example.com/resume"],
+		});
+		emitTimeUpdate(player, 100); // start ad
+		mockSendBeacon.mockClear();
+		player.emit("play", undefined);
+		expect(mockSendBeacon).toHaveBeenCalledWith("https://example.com/resume");
+	});
+
+	it("does not fire pause/resume when not in ad break", () => {
+		const player = setupWithTracking({
+			pause: ["https://example.com/pause"],
+			resume: ["https://example.com/resume"],
+		});
+		// No ad started yet
+		player.emit("pause", undefined);
+		player.emit("play", undefined);
+		expect(mockSendBeacon).not.toHaveBeenCalled();
+	});
+
+	it("does not fire pause/resume after ad ends", () => {
+		const player = setupWithTracking({
+			pause: ["https://example.com/pause"],
+		});
+		emitTimeUpdate(player, 100); // start ad
+		emitTimeUpdate(player, 140); // end ad
+		mockSendBeacon.mockClear();
+		player.emit("pause", undefined);
+		expect(mockSendBeacon).not.toHaveBeenCalled();
+	});
+});
+
+describe("ssai plugin — skip tracking", () => {
+	it("fires skip tracking URLs on ad:skip", () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		const mockHls = createMockHls();
+		player.setPluginData("hls", mockHls);
+		player.use(
+			ssai({
+				parser: () => [
+					{
+						id: "ad-1",
+						startTime: 100,
+						duration: 40,
+						tracking: {
+							skip: ["https://example.com/skip"],
+							complete: ["https://example.com/complete"],
+						},
+					},
+				],
+			}),
+		);
+		mockHls._fire("hlsLevelUpdated", "hlsLevelUpdated", {
+			details: { dateRanges: { dr: { attr: { ID: "dr" } } } },
+		});
+
+		emitTimeUpdate(player, 100); // start ad
+		mockSendBeacon.mockClear();
+		player.emit("ad:skip", { adId: "ad-1" });
+
+		expect(mockSendBeacon).toHaveBeenCalledWith("https://example.com/skip");
+	});
+
+	it("does not fire complete on skip", () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		const mockHls = createMockHls();
+		player.setPluginData("hls", mockHls);
+		player.use(
+			ssai({
+				parser: () => [
+					{
+						id: "ad-1",
+						startTime: 100,
+						duration: 40,
+						tracking: {
+							skip: ["https://example.com/skip"],
+							complete: ["https://example.com/complete"],
+						},
+					},
+				],
+			}),
+		);
+		mockHls._fire("hlsLevelUpdated", "hlsLevelUpdated", {
+			details: { dateRanges: { dr: { attr: { ID: "dr" } } } },
+		});
+
+		emitTimeUpdate(player, 100); // start ad
+		emitTimeUpdate(player, 120); // midpoint
+		mockSendBeacon.mockClear();
+		player.emit("ad:skip", { adId: "ad-1" });
+		emitTimeUpdate(player, 140); // would be complete
+
+		expect(mockSendBeacon).toHaveBeenCalledWith("https://example.com/skip");
+		expect(mockSendBeacon).not.toHaveBeenCalledWith(
+			"https://example.com/complete",
+		);
+	});
+
+	it("emits ad:end and ad:breakEnd on skip", () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		const mockHls = createMockHls();
+		player.setPluginData("hls", mockHls);
+		player.use(
+			ssai({
+				parser: () => [
+					{
+						id: "ad-1",
+						startTime: 100,
+						duration: 40,
+						tracking: {},
+					},
+				],
+			}),
+		);
+		mockHls._fire("hlsLevelUpdated", "hlsLevelUpdated", {
+			details: { dateRanges: { dr: { attr: { ID: "dr" } } } },
+		});
+
+		const adEndHandler = vi.fn();
+		const breakEndHandler = vi.fn();
+		player.on("ad:end", adEndHandler);
+		player.on("ad:breakEnd", breakEndHandler);
+
+		emitTimeUpdate(player, 100);
+		player.emit("ad:skip", { adId: "ad-1" });
+
+		expect(adEndHandler).toHaveBeenCalledWith({ adId: "ad-1" });
+		expect(breakEndHandler).toHaveBeenCalledWith({ breakId: "ad-1" });
+	});
+});
+
+describe("ssai plugin — enhanced cleanup", () => {
+	it("does not fire tracking after destroy", () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		const mockHls = createMockHls();
+		player.setPluginData("hls", mockHls);
+
+		const cleanup = ssai({
+			parser: () => [
+				{
+					id: "ad-1",
+					startTime: 100,
+					duration: 40,
+					tracking: {
+						impression: ["https://example.com/imp"],
+						pause: ["https://example.com/pause"],
+					},
+				},
+			],
+		}).setup(player) as () => void;
+
+		mockHls._fire("hlsLevelUpdated", "hlsLevelUpdated", {
+			details: { dateRanges: { dr: { attr: { ID: "dr" } } } },
+		});
+
+		cleanup();
+
+		emitTimeUpdate(player, 100);
+		player.emit("pause", undefined);
+		player.emit("ad:skip", { adId: "ad-1" });
+		expect(mockSendBeacon).not.toHaveBeenCalled();
+	});
+});

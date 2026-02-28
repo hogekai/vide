@@ -1,3 +1,16 @@
+/** VAST-equivalent tracking URL map for SSAI ad breaks. */
+export interface AdTrackingMap {
+	impression?: string[];
+	start?: string[];
+	firstQuartile?: string[];
+	midpoint?: string[];
+	thirdQuartile?: string[];
+	complete?: string[];
+	pause?: string[];
+	resume?: string[];
+	skip?: string[];
+}
+
 /** Parsed ad break metadata from stream signals. */
 export interface AdBreakMetadata {
 	id: string;
@@ -5,7 +18,10 @@ export interface AdBreakMetadata {
 	startTime: number;
 	/** Duration of the ad break in seconds. */
 	duration: number;
+	/** @deprecated Use `tracking.impression` instead. */
 	trackingUrls?: string[];
+	/** Timing-specific tracking URLs. */
+	tracking?: AdTrackingMap;
 	clickThrough?: string;
 	customData?: Record<string, string>;
 }

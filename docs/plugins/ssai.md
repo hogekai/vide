@@ -40,7 +40,14 @@ player.use(ssai({
         id: raw.attributes.ID,
         startTime: new Date(raw.attributes["START-DATE"]).getTime() / 1000,
         duration: Number(raw.attributes.DURATION || 0),
-        trackingUrls: [raw.attributes["X-TRACKING-URL"]].filter(Boolean),
+        tracking: {
+          impression: [raw.attributes["X-IMPRESSION"]].filter(Boolean),
+          firstQuartile: [raw.attributes["X-FIRST-QUARTILE"]].filter(Boolean),
+          midpoint: [raw.attributes["X-MIDPOINT"]].filter(Boolean),
+          thirdQuartile: [raw.attributes["X-THIRD-QUARTILE"]].filter(Boolean),
+          complete: [raw.attributes["X-COMPLETE"]].filter(Boolean),
+        },
+        clickThrough: raw.attributes["X-CLICK-THROUGH"],
       }];
     }
     return [];
@@ -70,6 +77,38 @@ The parser receives a discriminated union depending on the source:
 }
 ```
 
+## Tracking
+
+The `tracking` field on `AdBreakMetadata` provides VAST-equivalent tracking with timing-specific URL firing.
+
+### AdTrackingMap
+
+```ts
+interface AdTrackingMap {
+  impression?: string[];  // Fired at ad:start
+  start?: string[];       // Fired at ad:start (0%)
+  firstQuartile?: string[];  // Fired at 25%
+  midpoint?: string[];       // Fired at 50%
+  thirdQuartile?: string[];  // Fired at 75%
+  complete?: string[];       // Fired at 100%
+  pause?: string[];    // Fired on player pause during ad
+  resume?: string[];   // Fired on player play during ad
+  skip?: string[];     // Fired on ad:skip
+}
+```
+
+Each quartile fires exactly once per ad break. If the viewer seeks past a quartile, all skipped quartiles fire in order.
+
+### Backward Compatibility
+
+The legacy `trackingUrls` field is still supported. When set, its URLs are merged into `tracking.impression`.
+
+```ts
+// These are equivalent:
+{ trackingUrls: ["https://example.com/imp"] }
+{ tracking: { impression: ["https://example.com/imp"] } }
+```
+
 ## Events
 
 | Event | Payload | Description |
@@ -77,6 +116,7 @@ The parser receives a discriminated union depending on the source:
 | `ad:start` | `{ adId }` | Ad playback started |
 | `ad:end` | `{ adId }` | Ad playback ended |
 | `ad:impression` | `{ adId }` | Ad impression tracked |
+| `ad:quartile` | `{ adId, quartile }` | Quartile reached (start, firstQuartile, midpoint, thirdQuartile, complete) |
 | `ad:breakStart` | `{ breakId }` | Ad break started |
 | `ad:breakEnd` | `{ breakId }` | Ad break ended |
 
@@ -85,4 +125,5 @@ The parser receives a discriminated union depending on the source:
 - Default parser auto-detects SCTE-35 markers in HLS DATERANGE tags.
 - The plugin reads the hls.js or dash.js instance via `getPluginData()`.
 - Tracking pixels are fired via the same beacon mechanism as VAST.
-- Size: **1.4 KB** gzip.
+- Quartile calculation reuses the same logic as the VAST plugin.
+- Size: **~1.6 KB** gzip.
