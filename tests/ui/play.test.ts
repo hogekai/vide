@@ -120,6 +120,27 @@ describe("createPlayButton", () => {
 		comp.destroy();
 	});
 
+	it("click calls pause when ad:playing", () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		driveToPlaying(el);
+		(player as any)._setState("ad:loading");
+		(player as any)._setState("ad:playing");
+
+		const container = document.createElement("div");
+		const comp = createPlayButton();
+		comp.mount(container);
+		comp.connect(player);
+
+		const spy = vi.spyOn(player, "pause");
+		const btn = container.querySelector<HTMLButtonElement>(
+			".vide-play",
+		) as HTMLButtonElement;
+		btn.click();
+		expect(spy).toHaveBeenCalled();
+		comp.destroy();
+	});
+
 	it("toggles to paused class on ad:paused", () => {
 		const el = makeVideo();
 		const player = createPlayer(el);

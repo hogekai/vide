@@ -17,7 +17,7 @@ export function createPlayButton(): UIComponent {
 
 	function onClick(): void {
 		if (!player) return;
-		if (player.state === "playing") {
+		if (player.state === "playing" || player.state === "ad:playing") {
 			player.pause();
 		} else {
 			player.play().catch(() => {});
