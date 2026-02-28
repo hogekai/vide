@@ -20,13 +20,8 @@ export { parseEventStream } from "./dash-monitor.js";
 
 const DEFAULT_TOLERANCE = 0.5;
 
-/** Merge legacy `trackingUrls` into structured `tracking`. */
-function normalizeTracking(ab: AdBreakMetadata): AdTrackingMap {
-	const t: AdTrackingMap = ab.tracking ? { ...ab.tracking } : {};
-	if (ab.trackingUrls?.length) {
-		t.impression = [...(t.impression ?? []), ...ab.trackingUrls];
-	}
-	return t;
+function getTracking(ab: AdBreakMetadata): AdTrackingMap {
+	return ab.tracking ?? {};
 }
 
 /** Create an SSAI (Server-Side Ad Insertion) plugin for vide. */
@@ -93,7 +88,7 @@ export function ssai(options: SsaiPluginOptions = {}): Plugin {
 					if (currentTime >= ab.startTime - tolerance) {
 						started.add(id);
 
-						const tracking = normalizeTracking(ab);
+						const tracking = getTracking(ab);
 						activeTracking.set(id, tracking);
 
 						player.emit("ad:breakStart", { breakId: ab.id });

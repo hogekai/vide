@@ -18,8 +18,6 @@ export interface AdBreakMetadata {
 	startTime: number;
 	/** Duration of the ad break in seconds. */
 	duration: number;
-	/** @deprecated Use `tracking.impression` instead. */
-	trackingUrls?: string[];
 	/** Timing-specific tracking URLs. */
 	tracking?: AdTrackingMap;
 	clickThrough?: string;

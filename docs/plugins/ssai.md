@@ -99,16 +99,6 @@ interface AdTrackingMap {
 
 Each quartile fires exactly once per ad break. If the viewer seeks past a quartile, all skipped quartiles fire in order.
 
-### Backward Compatibility
-
-The legacy `trackingUrls` field is still supported. When set, its URLs are merged into `tracking.impression`.
-
-```ts
-// These are equivalent:
-{ trackingUrls: ["https://example.com/imp"] }
-{ tracking: { impression: ["https://example.com/imp"] } }
-```
-
 ## Events
 
 | Event | Payload | Description |

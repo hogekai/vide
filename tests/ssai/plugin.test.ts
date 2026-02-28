@@ -133,14 +133,7 @@ describe("ssai plugin — HLS integration", () => {
 		expect(breakEndHandler).toHaveBeenCalledWith({ breakId: "ad-1" });
 	});
 
-	it("fires tracking URLs via track()", () => {
-		const el = makeVideo();
-		const player = createPlayer(el);
-		const mockHls = createMockHls();
-		player.setPluginData("hls", mockHls);
-		player.use(ssai());
-
-		// Use custom parser that returns tracking URLs
+	it("fires tracking impression URLs via track()", () => {
 		const playerWithTracking = createPlayer(makeVideo());
 		const mockHls2 = createMockHls();
 		playerWithTracking.setPluginData("hls", mockHls2);
@@ -151,10 +144,12 @@ describe("ssai plugin — HLS integration", () => {
 						id: "tracked-ad",
 						startTime: 100,
 						duration: 30,
-						trackingUrls: [
-							"https://example.com/track1",
-							"https://example.com/track2",
-						],
+						tracking: {
+							impression: [
+								"https://example.com/track1",
+								"https://example.com/track2",
+							],
+						},
 					},
 				],
 			}),
@@ -630,62 +625,6 @@ describe("ssai plugin — structured tracking", () => {
 		emitTimeUpdate(player, 100);
 		emitTimeUpdate(player, 130);
 		expect(mockSendBeacon).not.toHaveBeenCalled();
-	});
-});
-
-describe("ssai plugin — backward compatibility", () => {
-	it("trackingUrls fires as impression tracking", () => {
-		const el = makeVideo();
-		const player = createPlayer(el);
-		const mockHls = createMockHls();
-		player.setPluginData("hls", mockHls);
-		player.use(
-			ssai({
-				parser: () => [
-					{
-						id: "ad-1",
-						startTime: 100,
-						duration: 30,
-						trackingUrls: ["https://example.com/legacy"],
-					},
-				],
-			}),
-		);
-		mockHls._fire("hlsLevelUpdated", "hlsLevelUpdated", {
-			details: { dateRanges: { dr: { attr: { ID: "dr" } } } },
-		});
-
-		emitTimeUpdate(player, 100);
-		expect(mockSendBeacon).toHaveBeenCalledWith("https://example.com/legacy");
-	});
-
-	it("merges trackingUrls with tracking.impression", () => {
-		const el = makeVideo();
-		const player = createPlayer(el);
-		const mockHls = createMockHls();
-		player.setPluginData("hls", mockHls);
-		player.use(
-			ssai({
-				parser: () => [
-					{
-						id: "ad-1",
-						startTime: 100,
-						duration: 30,
-						trackingUrls: ["https://example.com/legacy"],
-						tracking: {
-							impression: ["https://example.com/new"],
-						},
-					},
-				],
-			}),
-		);
-		mockHls._fire("hlsLevelUpdated", "hlsLevelUpdated", {
-			details: { dateRanges: { dr: { attr: { ID: "dr" } } } },
-		});
-
-		emitTimeUpdate(player, 100);
-		expect(mockSendBeacon).toHaveBeenCalledWith("https://example.com/new");
-		expect(mockSendBeacon).toHaveBeenCalledWith("https://example.com/legacy");
 	});
 });
 
