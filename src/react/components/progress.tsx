@@ -77,7 +77,7 @@ export function Progress({ className }: ProgressProps) {
 	return (
 		<div
 			ref={rootRef}
-			className={className}
+			className={["vide-progress", className].filter(Boolean).join(" ")}
 			role="slider"
 			tabIndex={0}
 			aria-label="Seek"
@@ -94,6 +94,10 @@ export function Progress({ className }: ProgressProps) {
 			onPointerDown={onPointerDown}
 			onPointerMove={onPointerMove}
 			onPointerUp={onPointerUp}
-		/>
+		>
+			<div className="vide-progress__buffered" />
+			<div className="vide-progress__bar" />
+			<div className="vide-progress__handle" />
+		</div>
 	);
 }

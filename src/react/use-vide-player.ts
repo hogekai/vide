@@ -5,7 +5,7 @@ import type { Player } from "../types.js";
 export interface VidePlayerHandle {
 	/** Player instance. `null` before `<Vide.Video>` mounts. */
 	readonly current: Player | null;
-	/** @internal Used by Vide.Video to bind the media element. */
+	/** @internal Used by Vide.Root/Vide.Video to bind the media element. */
 	_registerEl: (el: HTMLVideoElement) => void;
 }
 

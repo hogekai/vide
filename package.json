@@ -67,7 +67,7 @@
   "sideEffects": false,
   "scripts": {
     "build": "tsup && pnpm build:svelte",
-    "build:svelte": "svelte-package -i src/svelte -o dist/svelte",
+    "build:svelte": "svelte-package -i src/svelte -o dist/svelte && find src -name '*.d.ts' -o -name '*.d.ts.map' | xargs rm -f",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",

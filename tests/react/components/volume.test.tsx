@@ -14,7 +14,7 @@ describe("Volume", () => {
 	it("renders mute button and slider", () => {
 		const { player } = setup();
 		render(
-			<VideContext.Provider value={player}>
+			<VideContext.Provider value={{ player, registerEl: () => {} }}>
 				<Volume />
 			</VideContext.Provider>,
 		);
@@ -26,18 +26,18 @@ describe("Volume", () => {
 	it("applies className prop", () => {
 		const { player } = setup();
 		const { container } = render(
-			<VideContext.Provider value={player}>
+			<VideContext.Provider value={{ player, registerEl: () => {} }}>
 				<Volume className="my-volume" />
 			</VideContext.Provider>,
 		);
-		expect(container.firstElementChild!.className).toBe("my-volume");
+		expect(container.firstElementChild!.className).toBe("vide-volume my-volume");
 		player.destroy();
 	});
 
 	it("sets CSS custom property for volume", () => {
 		const { player } = setup();
 		const { container } = render(
-			<VideContext.Provider value={player}>
+			<VideContext.Provider value={{ player, registerEl: () => {} }}>
 				<Volume />
 			</VideContext.Provider>,
 		);
@@ -49,7 +49,7 @@ describe("Volume", () => {
 	it("renders children in mute button", () => {
 		const { player } = setup();
 		render(
-			<VideContext.Provider value={player}>
+			<VideContext.Provider value={{ player, registerEl: () => {} }}>
 				<Volume>
 					<span data-testid="icon">🔊</span>
 				</Volume>

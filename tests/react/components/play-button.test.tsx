@@ -22,7 +22,7 @@ describe("PlayButton", () => {
 	it("renders with Play label initially", () => {
 		const { player } = setup();
 		render(
-			<VideContext.Provider value={player}>
+			<VideContext.Provider value={{ player, registerEl: () => {} }}>
 				<PlayButton />
 			</VideContext.Provider>,
 		);
@@ -33,18 +33,18 @@ describe("PlayButton", () => {
 	it("applies className prop", () => {
 		const { player } = setup();
 		render(
-			<VideContext.Provider value={player}>
+			<VideContext.Provider value={{ player, registerEl: () => {} }}>
 				<PlayButton className="my-btn" />
 			</VideContext.Provider>,
 		);
-		expect(screen.getByRole("button").className).toBe("my-btn");
+		expect(screen.getByRole("button").className).toBe("vide-play my-btn");
 		player.destroy();
 	});
 
 	it("renders children", () => {
 		const { player } = setup();
 		render(
-			<VideContext.Provider value={player}>
+			<VideContext.Provider value={{ player, registerEl: () => {} }}>
 				<PlayButton>
 					<span data-testid="icon">▶</span>
 				</PlayButton>
@@ -57,7 +57,7 @@ describe("PlayButton", () => {
 	it("switches to Pause label when playing", () => {
 		const { player, video } = setup();
 		render(
-			<VideContext.Provider value={player}>
+			<VideContext.Provider value={{ player, registerEl: () => {} }}>
 				<PlayButton />
 			</VideContext.Provider>,
 		);
@@ -73,7 +73,7 @@ describe("PlayButton", () => {
 		const pauseSpy = vi.spyOn(player, "pause");
 
 		render(
-			<VideContext.Provider value={player}>
+			<VideContext.Provider value={{ player, registerEl: () => {} }}>
 				<PlayButton />
 			</VideContext.Provider>,
 		);
@@ -90,7 +90,7 @@ describe("PlayButton", () => {
 		const playSpy = vi.spyOn(player, "play");
 
 		render(
-			<VideContext.Provider value={player}>
+			<VideContext.Provider value={{ player, registerEl: () => {} }}>
 				<PlayButton />
 			</VideContext.Provider>,
 		);
@@ -104,7 +104,7 @@ describe("PlayButton", () => {
 	it("sets data-playing attribute when playing", () => {
 		const { player, video } = setup();
 		render(
-			<VideContext.Provider value={player}>
+			<VideContext.Provider value={{ player, registerEl: () => {} }}>
 				<PlayButton />
 			</VideContext.Provider>,
 		);

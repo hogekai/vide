@@ -10,7 +10,7 @@ describe("Plugin components", () => {
 		const player = createPlayer(video);
 
 		const { container } = render(
-			<VideContext.Provider value={player}>
+			<VideContext.Provider value={{ player, registerEl: () => {} }}>
 				<HlsPlugin />
 			</VideContext.Provider>,
 		);
@@ -30,7 +30,7 @@ describe("Plugin components", () => {
 		const spy = vi.spyOn(player, "registerSourceHandler");
 
 		render(
-			<VideContext.Provider value={player}>
+			<VideContext.Provider value={{ player, registerEl: () => {} }}>
 				<HlsPlugin />
 			</VideContext.Provider>,
 		);
@@ -46,7 +46,7 @@ describe("Plugin components", () => {
 		const player = createPlayer(video);
 
 		const { unmount } = render(
-			<VideContext.Provider value={player}>
+			<VideContext.Provider value={{ player, registerEl: () => {} }}>
 				<HlsPlugin />
 			</VideContext.Provider>,
 		);
@@ -57,14 +57,13 @@ describe("Plugin components", () => {
 		player.destroy();
 	});
 
-	it("throws when used outside context", () => {
-		// Suppress React error boundary noise
-		const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+	it("renders null when player is not yet available", () => {
+		const { container } = render(
+			<VideContext.Provider value={{ player: null, registerEl: () => {} }}>
+				<HlsPlugin />
+			</VideContext.Provider>,
+		);
 
-		expect(() => {
-			render(<HlsPlugin />);
-		}).toThrow("useVideContext must be used within <Vide.Video>");
-
-		consoleSpy.mockRestore();
+		expect(container.innerHTML).toBe("");
 	});
 });

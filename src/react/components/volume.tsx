@@ -7,6 +7,7 @@ import {
 	useState,
 } from "react";
 import { useVideContext } from "../context.js";
+import { IconVolumeHigh, IconVolumeLow, IconVolumeMute } from "../icons.js";
 
 export interface VolumeProps {
 	className?: string;
@@ -81,19 +82,28 @@ export function Volume({ className, children }: VolumeProps) {
 
 	return (
 		<div
-			className={className}
+			className={["vide-volume", className].filter(Boolean).join(" ")}
 			data-muted={muted || undefined}
 			style={{ "--vide-volume": volume } as React.CSSProperties}
 		>
 			<button
 				type="button"
+				className="vide-volume__button"
 				aria-label={muted ? "Unmute" : "Mute"}
 				onClick={onMuteClick}
 			>
-				{children}
+				{children ??
+					(muted ? (
+						<IconVolumeMute />
+					) : volume < 0.5 ? (
+						<IconVolumeLow />
+					) : (
+						<IconVolumeHigh />
+					))}
 			</button>
 			<div
 				ref={sliderRef}
+				className="vide-volume__slider"
 				role="slider"
 				tabIndex={0}
 				aria-label="Volume"
@@ -103,7 +113,10 @@ export function Volume({ className, children }: VolumeProps) {
 				onPointerDown={onPointerDown}
 				onPointerMove={onPointerMove}
 				onPointerUp={onPointerUp}
-			/>
+			>
+				<div className="vide-volume__track" />
+				<div className="vide-volume__filled" />
+			</div>
 		</div>
 	);
 }

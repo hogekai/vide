@@ -14,7 +14,7 @@ describe("MuteButton", () => {
 	it("renders with Mute label initially", () => {
 		const { player } = setup();
 		render(
-			<VideContext.Provider value={player}>
+			<VideContext.Provider value={{ player, registerEl: () => {} }}>
 				<MuteButton />
 			</VideContext.Provider>,
 		);
@@ -25,18 +25,18 @@ describe("MuteButton", () => {
 	it("applies className prop", () => {
 		const { player } = setup();
 		render(
-			<VideContext.Provider value={player}>
+			<VideContext.Provider value={{ player, registerEl: () => {} }}>
 				<MuteButton className="mute-btn" />
 			</VideContext.Provider>,
 		);
-		expect(screen.getByRole("button").className).toBe("mute-btn");
+		expect(screen.getByRole("button").className).toBe("vide-mute mute-btn");
 		player.destroy();
 	});
 
 	it("toggles mute on click", () => {
 		const { player } = setup();
 		render(
-			<VideContext.Provider value={player}>
+			<VideContext.Provider value={{ player, registerEl: () => {} }}>
 				<MuteButton />
 			</VideContext.Provider>,
 		);
@@ -55,7 +55,7 @@ describe("MuteButton", () => {
 	it("renders children", () => {
 		const { player } = setup();
 		render(
-			<VideContext.Provider value={player}>
+			<VideContext.Provider value={{ player, registerEl: () => {} }}>
 				<MuteButton>
 					<span data-testid="icon">🔊</span>
 				</MuteButton>

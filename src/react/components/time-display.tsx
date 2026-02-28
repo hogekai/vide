@@ -19,10 +19,13 @@ export function TimeDisplay({ className, separator = "/" }: TimeDisplayProps) {
 	});
 
 	return (
-		<div className={className} aria-label="Time">
-			<span>{formatTime(currentTime)}</span>
-			<span>{separator}</span>
-			<span>{formatTime(duration)}</span>
+		<div
+			className={["vide-time", className].filter(Boolean).join(" ")}
+			aria-label="Time"
+		>
+			<span className="vide-time__current">{formatTime(currentTime)}</span>
+			<span className="vide-time__separator">{separator}</span>
+			<span className="vide-time__duration">{formatTime(duration)}</span>
 		</div>
 	);
 }

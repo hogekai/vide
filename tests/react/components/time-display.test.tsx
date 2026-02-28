@@ -14,7 +14,7 @@ describe("TimeDisplay", () => {
 	it("renders initial time as 0:00/0:00", () => {
 		const { player } = setup();
 		render(
-			<VideContext.Provider value={player}>
+			<VideContext.Provider value={{ player, registerEl: () => {} }}>
 				<TimeDisplay />
 			</VideContext.Provider>,
 		);
@@ -26,18 +26,18 @@ describe("TimeDisplay", () => {
 	it("applies className prop", () => {
 		const { player } = setup();
 		render(
-			<VideContext.Provider value={player}>
+			<VideContext.Provider value={{ player, registerEl: () => {} }}>
 				<TimeDisplay className="my-time" />
 			</VideContext.Provider>,
 		);
-		expect(screen.getByLabelText("Time").className).toBe("my-time");
+		expect(screen.getByLabelText("Time").className).toBe("vide-time my-time");
 		player.destroy();
 	});
 
 	it("uses custom separator", () => {
 		const { player } = setup();
 		render(
-			<VideContext.Provider value={player}>
+			<VideContext.Provider value={{ player, registerEl: () => {} }}>
 				<TimeDisplay separator=" - " />
 			</VideContext.Provider>,
 		);
@@ -48,7 +48,7 @@ describe("TimeDisplay", () => {
 	it("updates on timeupdate event", () => {
 		const { player, video } = setup();
 		render(
-			<VideContext.Provider value={player}>
+			<VideContext.Provider value={{ player, registerEl: () => {} }}>
 				<TimeDisplay />
 			</VideContext.Provider>,
 		);

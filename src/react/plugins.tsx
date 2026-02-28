@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useContext, useEffect, useRef } from "react";
 import { dash } from "../dash/index.js";
 import type { DashPluginOptions } from "../dash/types.js";
 import { drm } from "../drm/index.js";
@@ -12,15 +12,17 @@ import { vast } from "../vast/index.js";
 import type { VastPluginOptions } from "../vast/types.js";
 import { vmap } from "../vmap/index.js";
 import type { VmapPluginOptions } from "../vmap/types.js";
-import { useVideContext } from "./context.js";
+import { VideContext } from "./context.js";
 
 function createPluginComponent<O>(name: string, factory: (opts: O) => Plugin) {
 	function Component(props: O): null {
-		const player = useVideContext();
+		const ctx = useContext(VideContext);
+		const player = ctx?.player ?? null;
 		const optionsRef = useRef(props);
 		optionsRef.current = props;
 
 		useEffect(() => {
+			if (!player) return;
 			const plugin = factory(optionsRef.current);
 			const cleanup = plugin.setup(player);
 			return () => {

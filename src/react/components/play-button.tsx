@@ -1,6 +1,7 @@
 import { type ReactNode, useCallback, useState } from "react";
 import type { PlayerState } from "../../types.js";
 import { useVideContext } from "../context.js";
+import { IconPause, IconPlay } from "../icons.js";
 import { useVideEvent } from "../use-vide-event.js";
 
 export interface PlayButtonProps {
@@ -41,12 +42,12 @@ export function PlayButton({ className, children }: PlayButtonProps) {
 	return (
 		<button
 			type="button"
-			className={className}
+			className={["vide-play", className].filter(Boolean).join(" ")}
 			aria-label={playing ? "Pause" : "Play"}
 			onClick={onClick}
 			data-playing={playing || undefined}
 		>
-			{children}
+			{children ?? (playing ? <IconPause /> : <IconPlay />)}
 		</button>
 	);
 }

@@ -14,7 +14,7 @@ describe("FullscreenButton", () => {
 	it("renders with Fullscreen label", () => {
 		const { player } = setup();
 		render(
-			<VideContext.Provider value={player}>
+			<VideContext.Provider value={{ player, registerEl: () => {} }}>
 				<FullscreenButton />
 			</VideContext.Provider>,
 		);
@@ -25,18 +25,18 @@ describe("FullscreenButton", () => {
 	it("applies className prop", () => {
 		const { player } = setup();
 		render(
-			<VideContext.Provider value={player}>
+			<VideContext.Provider value={{ player, registerEl: () => {} }}>
 				<FullscreenButton className="fs-btn" />
 			</VideContext.Provider>,
 		);
-		expect(screen.getByRole("button").className).toBe("fs-btn");
+		expect(screen.getByRole("button").className).toBe("vide-fullscreen fs-btn");
 		player.destroy();
 	});
 
 	it("renders children", () => {
 		const { player } = setup();
 		render(
-			<VideContext.Provider value={player}>
+			<VideContext.Provider value={{ player, registerEl: () => {} }}>
 				<FullscreenButton>
 					<span data-testid="icon">⛶</span>
 				</FullscreenButton>
@@ -49,7 +49,7 @@ describe("FullscreenButton", () => {
 	it("has data-fullscreen attribute set to undefined when not fullscreen", () => {
 		const { player } = setup();
 		render(
-			<VideContext.Provider value={player}>
+			<VideContext.Provider value={{ player, registerEl: () => {} }}>
 				<FullscreenButton />
 			</VideContext.Provider>,
 		);

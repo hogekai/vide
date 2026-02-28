@@ -14,7 +14,7 @@ describe("Progress", () => {
 	it("renders with slider role", () => {
 		const { player } = setup();
 		render(
-			<VideContext.Provider value={player}>
+			<VideContext.Provider value={{ player, registerEl: () => {} }}>
 				<Progress />
 			</VideContext.Provider>,
 		);
@@ -25,18 +25,18 @@ describe("Progress", () => {
 	it("applies className prop", () => {
 		const { player } = setup();
 		render(
-			<VideContext.Provider value={player}>
+			<VideContext.Provider value={{ player, registerEl: () => {} }}>
 				<Progress className="my-progress" />
 			</VideContext.Provider>,
 		);
-		expect(screen.getByRole("slider").className).toBe("my-progress");
+		expect(screen.getByRole("slider").className).toBe("vide-progress my-progress");
 		player.destroy();
 	});
 
 	it("has correct ARIA attributes", () => {
 		const { player } = setup();
 		render(
-			<VideContext.Provider value={player}>
+			<VideContext.Provider value={{ player, registerEl: () => {} }}>
 				<Progress />
 			</VideContext.Provider>,
 		);
@@ -50,7 +50,7 @@ describe("Progress", () => {
 	it("sets CSS custom properties", () => {
 		const { player } = setup();
 		render(
-			<VideContext.Provider value={player}>
+			<VideContext.Provider value={{ player, registerEl: () => {} }}>
 				<Progress />
 			</VideContext.Provider>,
 		);

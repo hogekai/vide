@@ -10,12 +10,23 @@ npm install @videts/vide react react-dom
 
 ```tsx
 import { useVidePlayer, useHls, Vide } from "@videts/vide/react";
+import "@videts/vide/ui/theme.css";
 
 function Player() {
   const player = useVidePlayer();
   useHls(player);
 
-  return <Vide.Video player={player} src="stream.m3u8" />;
+  return (
+    <Vide.Root player={player}>
+      <Vide.UI>
+        <Vide.Video src="stream.m3u8" />
+        <Vide.Controls>
+          <Vide.PlayButton />
+          <Vide.Progress />
+        </Vide.Controls>
+      </Vide.UI>
+    </Vide.Root>
+  );
 }
 ```
 
@@ -30,7 +41,7 @@ const player = useVidePlayer();
 ```
 
 - `player.current` — `Player | null`. `null` until the video element mounts.
-- Pass `player` directly to hooks and `<Vide.Video player={player}>`. Ref wiring is automatic.
+- Pass `player` to `<Vide.Root player={player}>`. Ref wiring is automatic.
 - Calls `player.destroy()` automatically on unmount.
 
 ### useHls / useDash / useDrm / useVast / useVmap / useSsai / useUi
@@ -70,62 +81,111 @@ useVideEvent(player, "ad:start", ({ adId }) => {
 
 ## Components
 
-### Vide.Video
+### Vide.Root
 
-Renders a `<video>` element, binds the player to it, and provides the player via React context.
+Context provider. All vide components must be children of `Vide.Root`.
 
 ```tsx
-<Vide.Video player={player} src="video.mp4" className="rounded-lg">
-  <Vide.PlayButton />
-  <Vide.Progress />
-</Vide.Video>
+<Vide.Root player={player}>
+  <Vide.UI>
+    <Vide.Video src="video.mp4" />
+    <Vide.Controls>
+      <Vide.PlayButton />
+    </Vide.Controls>
+  </Vide.UI>
+</Vide.Root>
 ```
 
 - `player` — the handle returned by `useVidePlayer()`.
-- Children are rendered only after the player is ready.
+
+### Vide.UI
+
+Container `<div>` with class `vide-ui`. Wraps both the video element and controls. Always renders (so `<Vide.Video>` can mount). Manages player state classes (`vide-ui--playing`, `vide-ui--paused`, etc.) for theme.css integration.
+
+```tsx
+<Vide.UI>
+  <Vide.Video src="video.mp4" />
+  <Vide.Controls>...</Vide.Controls>
+</Vide.UI>
+```
+
+- All standard `<div>` HTML attributes are passed through.
+- `className` is appended after `vide-ui`.
+
+### Vide.Video
+
+Renders a `<video>` element and binds the player to it. Must be inside `<Vide.Root>`.
+
+```tsx
+<Vide.Video src="video.mp4" poster="thumb.jpg" />
+```
+
 - All standard `<video>` HTML attributes (`src`, `poster`, `muted`, `autoPlay`, etc.) are passed through.
+
+### Vide.Controls
+
+Container `<div>` with class `vide-controls`. Renders only after the player is ready. Place UI components inside.
+
+```tsx
+<Vide.Controls>
+  <Vide.PlayButton />
+  <Vide.Progress />
+  <Vide.TimeDisplay />
+  <Vide.Volume />
+  <Vide.FullscreenButton />
+</Vide.Controls>
+```
+
+- All standard `<div>` HTML attributes are passed through.
+- `className` is appended after `vide-controls`.
 
 ### Plugin Components
 
-Render nothing (`null`). Use for conditional plugin activation.
+Render nothing (`null`). Use for conditional plugin activation. Place as children of `<Vide.Root>`.
 
 ```tsx
-<Vide.Video player={player} src="stream.m3u8">
+<Vide.Root player={player}>
   <Vide.HlsPlugin />
   {showAds && <Vide.VastPlugin tagUrl="https://..." />}
-  {premium && <Vide.SsaiPlugin />}
-</Vide.Video>
+  <Vide.UI>
+    <Vide.Video src="stream.m3u8" />
+    <Vide.Controls>...</Vide.Controls>
+  </Vide.UI>
+</Vide.Root>
 ```
 
 Available: `HlsPlugin`, `DashPlugin`, `DrmPlugin`, `VastPlugin`, `VmapPlugin`, `SsaiPlugin`.
 
 ### UI Components
 
-Interactive controls that subscribe to player events via context.
+Interactive controls that subscribe to player events via context. Place inside `<Vide.Controls>`.
+
+Each component has a default CSS class matching the vanilla UI plugin (`vide-play`, `vide-progress`, etc.), so `theme.css` styles apply automatically.
 
 ```tsx
-<Vide.Video player={player} src="video.mp4">
-  <Vide.PlayButton className="rounded-full bg-white/80" />
-  <Vide.Progress className="h-1" />
-  <Vide.Volume className="w-24" />
+<Vide.Controls>
+  <Vide.PlayButton />
+  <Vide.Progress />
+  <Vide.Volume />
   <Vide.TimeDisplay />
   <Vide.FullscreenButton />
   <Vide.MuteButton />
-</Vide.Video>
+</Vide.Controls>
 ```
 
-| Component | Props | State Attributes |
-|-----------|-------|-----------------|
-| `PlayButton` | `className`, `children` | `data-playing` |
-| `MuteButton` | `className`, `children` | `data-muted` |
-| `Progress` | `className` | `data-disabled`, `--vide-progress`, `--vide-progress-buffered` |
-| `Volume` | `className`, `children` | `data-muted`, `--vide-volume` |
-| `FullscreenButton` | `className`, `children`, `target` | `data-fullscreen` |
-| `TimeDisplay` | `className`, `separator` | — |
+| Component | Default Class | Props | State Attributes |
+|-----------|--------------|-------|-----------------|
+| `PlayButton` | `vide-play` | `className`, `children` | `data-playing` |
+| `MuteButton` | `vide-mute` | `className`, `children` | `data-muted` |
+| `Progress` | `vide-progress` | `className` | `data-disabled`, `--vide-progress`, `--vide-progress-buffered` |
+| `Volume` | `vide-volume` | `className`, `children` | `data-muted`, `--vide-volume` |
+| `FullscreenButton` | `vide-fullscreen` | `className`, `children`, `target` | `data-fullscreen` |
+| `TimeDisplay` | `vide-time` | `className`, `separator` | — |
 
 - `children` — custom icons or content (button components).
 - CSS custom properties — use for styling sliders (same as vide UI plugin theme).
 - `data-*` attributes — use for state-based CSS selectors.
+- `className` is appended after the default class, not replacing it.
 
 ## Patterns
 
@@ -146,6 +206,16 @@ useVast(player, { tagUrl: "..." });
 
 Use hooks when the plugin is always needed. Use components when you need conditional rendering.
 
+### Headless (no UI)
+
+```tsx
+<Vide.Root player={player}>
+  <Vide.UI>
+    <Vide.Video src="video.mp4" />
+  </Vide.UI>
+</Vide.Root>
+```
+
 ### Direct Player Access
 
 `player.current` gives you direct access to the player instance:
@@ -153,18 +223,18 @@ Use hooks when the plugin is always needed. Use components when you need conditi
 ```tsx
 const player = useVidePlayer();
 
-// Direct player access
 player.current?.play();
 player.current?.pause();
 player.current?.currentTime;
 
 return (
   <>
-    <Vide.Video player={player} src="video.mp4" />
+    <Vide.Root player={player}>
+      <Vide.UI>
+        <Vide.Video src="video.mp4" />
+      </Vide.UI>
+    </Vide.Root>
     <button onClick={() => player.current?.pause()}>Pause</button>
-    <button onClick={() => { if (player.current) player.current.currentTime = 0; }}>
-      Restart
-    </button>
   </>
 );
 ```
@@ -191,17 +261,26 @@ useVast(player, {
 ```tsx
 // Namespace style
 import { Vide, useVidePlayer, useHls } from "@videts/vide/react";
-<Vide.Video player={player} />
+<Vide.Root player={player}>
+  <Vide.UI>
+    <Vide.Video />
+  </Vide.UI>
+</Vide.Root>
 
 // Individual imports
-import { VideVideo, PlayButton, useVidePlayer, useHls } from "@videts/vide/react";
-<VideVideo player={player} />
+import { VideRoot, VideUI, VideVideo, VideControls, PlayButton } from "@videts/vide/react";
+<VideRoot player={player}>
+  <VideUI>
+    <VideVideo />
+  </VideUI>
+</VideRoot>
 ```
 
 ## Full Example
 
 ```tsx
 import { useVidePlayer, useHls, useVideEvent, Vide } from "@videts/vide/react";
+import "@videts/vide/ui/theme.css";
 
 function VideoPlayer({ src, adTag }: { src: string; adTag?: string }) {
   const player = useVidePlayer();
@@ -212,21 +291,19 @@ function VideoPlayer({ src, adTag }: { src: string; adTag?: string }) {
   });
 
   return (
-    <div className="relative aspect-video">
-      <Vide.Video player={player} src={src} className="w-full">
-        {adTag && <Vide.VastPlugin tagUrl={adTag} />}
-        <Vide.PlayButton className="absolute inset-0 flex items-center justify-center">
-          ▶
-        </Vide.PlayButton>
-        <div className="absolute bottom-0 left-0 right-0 flex items-center gap-2 p-2">
-          <Vide.Progress className="flex-1 h-1" />
-          <Vide.TimeDisplay className="text-sm text-white" />
-          <Vide.Volume className="w-20">🔊</Vide.Volume>
-          <Vide.MuteButton>🔇</Vide.MuteButton>
-          <Vide.FullscreenButton>⛶</Vide.FullscreenButton>
-        </div>
-      </Vide.Video>
-    </div>
+    <Vide.Root player={player}>
+      {adTag && <Vide.VastPlugin tagUrl={adTag} />}
+      <Vide.UI>
+        <Vide.Video src={src} />
+        <Vide.Controls>
+          <Vide.PlayButton />
+          <Vide.Progress />
+          <Vide.TimeDisplay />
+          <Vide.Volume />
+          <Vide.FullscreenButton />
+        </Vide.Controls>
+      </Vide.UI>
+    </Vide.Root>
   );
 }
 ```
