@@ -20,7 +20,7 @@ const esmConfig: Options = {
 	},
 	onSuccess:
 		"mkdir -p dist/ui && cp src/ui/theme.css dist/ui/theme.css && cp src/ui/theme.css dist/vide.ui.css",
-	external: ["hls.js", "dashjs", "react", "react-dom", "react/jsx-runtime", "vue"],
+	external: ["hls.js", "dashjs", "react", "react-dom", "react/jsx-runtime", "vue", "svelte"],
 	esbuildOptions(options) {
 		options.jsx = "automatic";
 	},

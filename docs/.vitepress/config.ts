@@ -28,6 +28,7 @@ export default defineConfig({
 				items: [
 					{ text: "React", link: "/frameworks/react" },
 					{ text: "Vue", link: "/frameworks/vue" },
+					{ text: "Svelte", link: "/frameworks/svelte" },
 				],
 			},
 			{
