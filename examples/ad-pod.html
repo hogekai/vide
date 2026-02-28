@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>vide — Ad Pod + Waterfall</title>
+  <link rel="stylesheet" href="../dist/ui/theme.css">
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
+    #player-container { position: relative; width: 100%; background: #000; aspect-ratio: 16/9; }
+    #player-container video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+    .controls { margin: 1rem 0; display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    button { padding: 0.4rem 1rem; cursor: pointer; }
+    h3 span { font-weight: normal; }
+    #log { font-family: monospace; font-size: 13px; background: #1a1a1a; color: #0f0; padding: 1rem; max-height: 400px; overflow-y: auto; border-radius: 4px; margin-top: 1rem; }
+    .log-entry { margin: 2px 0; }
+    .log-entry.pod { color: #ff0; }
+    .log-entry.ad { color: #0ff; }
+    .log-entry.error { color: #f55; }
+    .pod-stats { margin-top: 1rem; padding: 0.5rem 1rem; background: #222; border-radius: 4px; font-family: monospace; font-size: 13px; color: #ccc; }
+  </style>
+</head>
+<body>
+  <h1>vide — Ad Pod + Waterfall</h1>
+  <p>Demonstrates Ad Pod (sequential ads) and Waterfall (fallback ads) using inline VAST XML.</p>
+
+  <div id="player-container">
+    <video id="player"
+      src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4">
+    </video>
+  </div>
+
+  <div class="controls">
+    <button onclick="playPodVast()">Play Ad Pod (3 ads)</button>
+    <button onclick="playWaterfallVast()">Play Waterfall (1st fails)</button>
+    <button onclick="playPodWithStandalone()">Pod + Stand-alone Substitution</button>
+  </div>
+
+  <h3>State: <span id="state">-</span></h3>
+  <div id="pod-stats" class="pod-stats" style="display:none"></div>
+  <div id="log"></div>
+
+  <script type="module">
+    import { createPlayer } from "../dist/index.mjs";
+    import { vast } from "../dist/vast/index.mjs";
+    import { ui } from "../dist/ui/index.mjs";
+
+    const el = document.getElementById("player");
+    const container = document.getElementById("player-container");
+    const stateEl = document.getElementById("state");
+    const logEl = document.getElementById("log");
+    const podStatsEl = document.getElementById("pod-stats");
+
+    // Sample ad video URLs (short, public domain clips)
+    const adVideos = [
+      "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+      "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
+      "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4",
+    ];
+
+    function log(msg, cls = "") {
+      const entry = document.createElement("div");
+      entry.className = "log-entry" + (cls ? ` ${cls}` : "");
+      entry.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+      logEl.prepend(entry);
+      console.log(msg);
+    }
+
+    let player = null;
+    let uiPlugin = null;
+
+    function resetPlayer() {
+      if (player) player.destroy();
+      player = createPlayer(el);
+      uiPlugin = ui({ container });
+      player.use(uiPlugin);
+      attachEvents(player);
+    }
+
+    function attachEvents(p) {
+      p.on("statechange", ({ from, to }) => {
+        stateEl.textContent = to;
+        log(`state: ${from} → ${to}`);
+      });
+
+      // Per-ad events
+      p.on("ad:start", ({ adId }) => log(`ad:start id=${adId}`, "ad"));
+      p.on("ad:end", ({ adId }) => log(`ad:end id=${adId}`, "ad"));
+      p.on("ad:impression", ({ adId }) => log(`ad:impression id=${adId}`, "ad"));
+      p.on("ad:loaded", ({ adId }) => log(`ad:loaded id=${adId}`, "ad"));
+      p.on("ad:skip", ({ adId }) => log(`ad:skip id=${adId}`, "ad"));
+      p.on("ad:error", ({ error, source }) => log(`ad:error [${source}]: ${error.message}`, "error"));
+      p.on("ad:quartile", ({ adId, quartile }) => log(`ad:quartile id=${adId} ${quartile}`, "ad"));
+
+      // Pod events
+      p.on("ad:pod:start", ({ ads, total }) => {
+        log(`★ ad:pod:start — ${total} ads: [${ads.map(a => a.id).join(", ")}]`, "pod");
+        podStatsEl.style.display = "block";
+        podStatsEl.textContent = `Pod: ${total} ads — playing...`;
+      });
+      p.on("ad:pod:end", ({ completed, skipped, failed }) => {
+        log(`★ ad:pod:end — completed=${completed} skipped=${skipped} failed=${failed}`, "pod");
+        podStatsEl.textContent = `Pod done: ${completed} completed, ${skipped} skipped, ${failed} failed`;
+      });
+      p.on("ad:pod:adstart", ({ ad, index, total }) => {
+        log(`★ ad:pod:adstart — [${index + 1}/${total}] id=${ad.id}`, "pod");
+        podStatsEl.textContent = `Pod: playing ad ${index + 1} of ${total} (${ad.id})`;
+      });
+      p.on("ad:pod:adend", ({ ad, index, total }) => {
+        log(`★ ad:pod:adend — [${index + 1}/${total}] id=${ad.id}`, "pod");
+      });
+    }
+
+    // --- Build InLine VAST XML with multiple <Ad> elements ---
+
+    function inlineAdElement(id, sequence, videoUrl) {
+      const seqAttr = sequence != null ? ` sequence="${sequence}"` : "";
+      return `
+  <Ad id="${id}"${seqAttr}>
+    <InLine>
+      <AdSystem>vide-example</AdSystem>
+      <AdTitle>${id}</AdTitle>
+      <Impression><![CDATA[https://example.com/imp/${id}]]></Impression>
+      <Creatives>
+        <Creative>
+          <Linear>
+            <Duration>00:00:15</Duration>
+            <MediaFiles>
+              <MediaFile delivery="progressive" type="video/mp4" width="640" height="360">
+                <![CDATA[${videoUrl}]]>
+              </MediaFile>
+            </MediaFiles>
+          </Linear>
+        </Creative>
+      </Creatives>
+    </InLine>
+  </Ad>`;
+    }
+
+    function brokenAdElement(id, sequence) {
+      const seqAttr = sequence != null ? ` sequence="${sequence}"` : "";
+      return `
+  <Ad id="${id}"${seqAttr}>
+    <InLine>
+      <AdSystem>vide-example</AdSystem>
+      <AdTitle>${id}</AdTitle>
+      <Impression><![CDATA[https://example.com/imp/${id}]]></Impression>
+      <Creatives>
+        <Creative>
+          <Linear>
+            <Duration>00:00:15</Duration>
+            <MediaFiles>
+              <MediaFile delivery="progressive" type="video/mp4" width="640" height="360">
+                <![CDATA[https://example.invalid/does-not-exist.mp4]]>
+              </MediaFile>
+            </MediaFiles>
+          </Linear>
+        </Creative>
+      </Creatives>
+    </InLine>
+  </Ad>`;
+    }
+
+    function buildVastXml(ads) {
+      return `<?xml version="1.0" encoding="UTF-8"?>
+<VAST version="4.2">${ads.join("")}
+</VAST>`;
+    }
+
+    function vastBlobUrl(xml) {
+      const blob = new Blob([xml], { type: "application/xml" });
+      return URL.createObjectURL(blob);
+    }
+
+    // --- Scenarios ---
+
+    // 1) Ad Pod: 3 ads with sequence attributes, played in order
+    window.playPodVast = function() {
+      logEl.innerHTML = "";
+      podStatsEl.style.display = "none";
+      resetPlayer();
+      log("=== Ad Pod: 3 sequential ads ===", "pod");
+
+      const xml = buildVastXml([
+        inlineAdElement("pod-ad-1", 1, adVideos[0]),
+        inlineAdElement("pod-ad-2", 2, adVideos[1]),
+        inlineAdElement("pod-ad-3", 3, adVideos[2]),
+      ]);
+
+      player.use(vast({
+        tagUrl: vastBlobUrl(xml),
+        timeout: 15000,
+        adPlugins: uiPlugin.getAdPlugin(),
+      }));
+    };
+
+    // 2) Waterfall: 2 ads without sequence. First has broken media URL, second is real.
+    window.playWaterfallVast = function() {
+      logEl.innerHTML = "";
+      podStatsEl.style.display = "none";
+      resetPlayer();
+      log("=== Waterfall: 1st ad has broken media, 2nd should play ===", "pod");
+
+      const xml = buildVastXml([
+        brokenAdElement("wf-ad-1", null),
+        inlineAdElement("wf-ad-2", null, adVideos[1]),
+      ]);
+
+      player.use(vast({
+        tagUrl: vastBlobUrl(xml),
+        timeout: 15000,
+        adPlugins: uiPlugin.getAdPlugin(),
+      }));
+    };
+
+    // 3) Pod with stand-alone substitution: 2 sequenced + 1 standalone.
+    //    Second pod ad has broken media → standalone should substitute.
+    window.playPodWithStandalone = function() {
+      logEl.innerHTML = "";
+      podStatsEl.style.display = "none";
+      resetPlayer();
+      log("=== Pod + Stand-alone Substitution ===", "pod");
+      log("  pod-ad-1 (seq=1): valid video", "pod");
+      log("  pod-ad-2 (seq=2): broken media → should be substituted", "pod");
+      log("  standalone-ad (no seq): substitute for failed pod ad", "pod");
+
+      const xml = buildVastXml([
+        inlineAdElement("pod-ad-1", 1, adVideos[0]),
+        brokenAdElement("pod-ad-2", 2),
+        inlineAdElement("standalone-ad", null, adVideos[2]),
+      ]);
+
+      player.use(vast({
+        tagUrl: vastBlobUrl(xml),
+        timeout: 15000,
+        adPlugins: uiPlugin.getAdPlugin(),
+      }));
+    };
+
+    log("Player ready. Click a button above to test.");
+  </script>
+</body>
+</html>
