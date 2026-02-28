@@ -2,6 +2,8 @@
 import { getContext, onDestroy, onMount } from "svelte";
 import type { Snippet } from "svelte";
 import { type PlayerGetter, VIDE_PLAYER_KEY } from "../context.js";
+import IconFullscreenEnter from "../icons/IconFullscreenEnter.svelte";
+import IconFullscreenExit from "../icons/IconFullscreenExit.svelte";
 
 interface Props {
 	class?: string;
@@ -33,7 +35,7 @@ onDestroy(() => {
 
 function onClick() {
 	const p = getPlayer();
-	const fsTarget = target ?? p?.el.parentElement;
+	const fsTarget = target ?? (p?.el.closest(".vide-ui") as HTMLElement | null) ?? p?.el.parentElement;
 	if (!fsTarget) return;
 	if (document.fullscreenElement) {
 		document.exitFullscreen().catch(() => {});
@@ -52,5 +54,9 @@ function onClick() {
 >
 	{#if children}
 		{@render children()}
+	{:else if active}
+		<IconFullscreenExit />
+	{:else}
+		<IconFullscreenEnter />
 	{/if}
 </button>

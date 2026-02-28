@@ -93,6 +93,13 @@
 	box-sizing: border-box;
 }
 
+.vide-ui:fullscreen {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	background: #000;
+}
+
 .vide-ui *,
 .vide-ui *::before,
 .vide-ui *::after {

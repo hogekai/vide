@@ -1,5 +1,6 @@
 import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { useVideContext } from "../context.js";
+import { IconFullscreenEnter, IconFullscreenExit } from "../icons.js";
 
 export interface FullscreenButtonProps {
 	className?: string;
@@ -32,7 +33,10 @@ export function FullscreenButton({
 	}, []);
 
 	const onClick = useCallback(() => {
-		const fsTarget = target ?? player?.el.parentElement;
+		const fsTarget =
+			target ??
+			(player?.el.closest(".vide-ui") as HTMLElement | null) ??
+			player?.el.parentElement;
 		if (!fsTarget) return;
 		if (document.fullscreenElement) {
 			document.exitFullscreen().catch(() => {});
@@ -44,12 +48,12 @@ export function FullscreenButton({
 	return (
 		<button
 			type="button"
-			className={className}
+			className={["vide-fullscreen", className].filter(Boolean).join(" ")}
 			aria-label={active ? "Exit fullscreen" : "Fullscreen"}
 			onClick={onClick}
 			data-fullscreen={active || undefined}
 		>
-			{children}
+			{children ?? (active ? <IconFullscreenExit /> : <IconFullscreenEnter />)}
 		</button>
 	);
 }
