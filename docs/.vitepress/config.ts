@@ -10,7 +10,7 @@ export default defineConfig({
 		nav: [
 			{ text: "Guide", link: "/getting-started" },
 			{ text: "Plugins", link: "/plugins/hls" },
-			{ text: "API", link: "/api/" },
+			{ text: "API", link: "/api-reference/" },
 		],
 
 		sidebar: [
@@ -48,7 +48,7 @@ export default defineConfig({
 			},
 			{
 				text: "API",
-				items: [{ text: "Reference", link: "/api/" }],
+				items: [{ text: "Reference", link: "/api-reference/" }],
 			},
 		],
 

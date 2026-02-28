@@ -12,9 +12,10 @@
 		"src/simid/index.ts",
 		"src/ui/index.ts"
 	],
-	"out": "docs/api",
+	"out": "docs/api-reference",
 	"plugin": ["typedoc-plugin-markdown"],
 	"excludePrivate": true,
 	"excludeInternal": true,
-	"readme": "none"
+	"readme": "none",
+	"entryFileName": "index"
 }

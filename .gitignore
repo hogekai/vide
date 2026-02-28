@@ -5,6 +5,6 @@ dist/
 *.local.json
 temp/
 docs/.vitepress/cache/
-docs/api/
+docs/api-reference/
 test-results/
 playwright-report/
