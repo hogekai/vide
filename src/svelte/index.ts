@@ -24,9 +24,29 @@ export { default as VastPlugin } from "./VastPlugin.svelte";
 export { default as VmapPlugin } from "./VmapPlugin.svelte";
 export { default as SsaiPlugin } from "./SsaiPlugin.svelte";
 
+export { default as VideUI } from "./VideUI.svelte";
+export { default as VideControls } from "./VideControls.svelte";
+
 export { default as PlayButton } from "./components/PlayButton.svelte";
 export { default as MuteButton } from "./components/MuteButton.svelte";
 export { default as Progress } from "./components/Progress.svelte";
 export { default as Volume } from "./components/Volume.svelte";
 export { default as FullscreenButton } from "./components/FullscreenButton.svelte";
 export { default as TimeDisplay } from "./components/TimeDisplay.svelte";
+export { default as Loader } from "./components/Loader.svelte";
+export { default as Poster } from "./components/Poster.svelte";
+export { default as ErrorDisplay } from "./components/ErrorDisplay.svelte";
+export { default as BigPlayButton } from "./components/BigPlayButton.svelte";
+export { default as ClickPlay } from "./components/ClickPlay.svelte";
+
+export { default as IconPlay } from "./icons/IconPlay.svelte";
+export { default as IconPause } from "./icons/IconPause.svelte";
+export { default as IconVolumeHigh } from "./icons/IconVolumeHigh.svelte";
+export { default as IconVolumeLow } from "./icons/IconVolumeLow.svelte";
+export { default as IconVolumeMute } from "./icons/IconVolumeMute.svelte";
+export { default as IconFullscreenEnter } from "./icons/IconFullscreenEnter.svelte";
+export { default as IconFullscreenExit } from "./icons/IconFullscreenExit.svelte";
+
+export { useAutohide } from "./use-autohide.svelte.js";
+export { useKeyboard } from "./use-keyboard.svelte.js";
+export type { UseKeyboardOptions } from "./use-keyboard.svelte.js";
