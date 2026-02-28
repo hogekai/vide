@@ -15,10 +15,14 @@ const esmConfig: Options = {
 		"drm/index": "src/drm/index.ts",
 		"ssai/index": "src/ssai/index.ts",
 		"ui/index": "src/ui/index.ts",
+		"react/index": "src/react/index.ts",
 	},
 	onSuccess:
 		"mkdir -p dist/ui && cp src/ui/theme.css dist/ui/theme.css && cp src/ui/theme.css dist/vide.ui.css",
-	external: ["hls.js", "dashjs"],
+	external: ["hls.js", "dashjs", "react", "react-dom", "react/jsx-runtime"],
+	esbuildOptions(options) {
+		options.jsx = "automatic";
+	},
 	format: ["esm"],
 	dts: true,
 	clean: true,

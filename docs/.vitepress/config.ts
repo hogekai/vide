@@ -50,6 +50,10 @@ export default defineConfig({
 				],
 			},
 			{
+				text: "Frameworks",
+				items: [{ text: "React", link: "/frameworks/react" }],
+			},
+			{
 				text: "API",
 				items: [{ text: "Reference", link: "/api-reference/" }],
 			},
