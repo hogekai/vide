@@ -910,3 +910,150 @@ describe("<source> element auto-processing", () => {
 		expect(load2).not.toHaveBeenCalled();
 	});
 });
+
+describe("Quality Level API", () => {
+	it("qualities returns empty array by default", () => {
+		const player = createPlayer(makeVideo());
+		expect(player.qualities).toEqual([]);
+	});
+
+	it("currentQuality returns null by default", () => {
+		const player = createPlayer(makeVideo());
+		expect(player.currentQuality).toBeNull();
+	});
+
+	it("isAutoQuality returns true by default", () => {
+		const player = createPlayer(makeVideo());
+		expect(player.isAutoQuality).toBe(true);
+	});
+
+	it("qualities reflects pluginData", () => {
+		const player = createPlayer(makeVideo());
+		const levels = [
+			{ id: 0, width: 1280, height: 720, bitrate: 2_000_000, label: "720p" },
+		];
+		player.setPluginData("qualities", levels);
+		expect(player.qualities).toEqual(levels);
+	});
+
+	it("currentQuality reflects pluginData", () => {
+		const player = createPlayer(makeVideo());
+		const quality = {
+			id: 0,
+			width: 1280,
+			height: 720,
+			bitrate: 2_000_000,
+			label: "720p",
+		};
+		player.setPluginData("currentQuality", quality);
+		expect(player.currentQuality).toEqual(quality);
+	});
+
+	it("emits qualitiesavailable when qualities pluginData is set", () => {
+		const player = createPlayer(makeVideo());
+		const handler = vi.fn();
+		player.on("qualitiesavailable", handler);
+		const levels = [
+			{ id: 0, width: 1280, height: 720, bitrate: 2_000_000, label: "720p" },
+		];
+		player.setPluginData("qualities", levels);
+		expect(handler).toHaveBeenCalledWith({ qualities: levels });
+	});
+
+	it("emits qualitychange when currentQuality pluginData is set", () => {
+		const player = createPlayer(makeVideo());
+		const handler = vi.fn();
+		player.on("qualitychange", handler);
+		const quality = {
+			id: 0,
+			width: 1280,
+			height: 720,
+			bitrate: 2_000_000,
+			label: "720p",
+		};
+		player.setPluginData("currentQuality", quality);
+		expect(handler).toHaveBeenCalledWith({ from: null, to: quality });
+	});
+
+	it("qualitychange tracks previous quality", () => {
+		const player = createPlayer(makeVideo());
+		const handler = vi.fn();
+		player.on("qualitychange", handler);
+		const q1 = {
+			id: 0,
+			width: 1280,
+			height: 720,
+			bitrate: 2_000_000,
+			label: "720p",
+		};
+		const q2 = {
+			id: 1,
+			width: 1920,
+			height: 1080,
+			bitrate: 5_000_000,
+			label: "1080p",
+		};
+		player.setPluginData("currentQuality", q1);
+		player.setPluginData("currentQuality", q2);
+		expect(handler).toHaveBeenCalledTimes(2);
+		expect(handler).toHaveBeenLastCalledWith({ from: q1, to: q2 });
+	});
+
+	it("setQuality calls registered qualitySetter callback", () => {
+		const player = createPlayer(makeVideo());
+		const setter = vi.fn();
+		player.setPluginData("qualitySetter", setter);
+		player.setQuality(2);
+		expect(setter).toHaveBeenCalledWith(2);
+	});
+
+	it("setQuality(-1) passes -1 to qualitySetter", () => {
+		const player = createPlayer(makeVideo());
+		const setter = vi.fn();
+		player.setPluginData("qualitySetter", setter);
+		player.setQuality(-1);
+		expect(setter).toHaveBeenCalledWith(-1);
+	});
+
+	it("setQuality is no-op when no qualitySetter is registered", () => {
+		const player = createPlayer(makeVideo());
+		expect(() => player.setQuality(0)).not.toThrow();
+	});
+
+	it("quality state clears on destroy", () => {
+		const player = createPlayer(makeVideo());
+		player.setPluginData("qualities", [
+			{ id: 0, width: 1280, height: 720, bitrate: 2_000_000, label: "720p" },
+		]);
+		player.setPluginData("currentQuality", {
+			id: 0,
+			width: 1280,
+			height: 720,
+			bitrate: 2_000_000,
+			label: "720p",
+		});
+		player.destroy();
+		expect(player.qualities).toEqual([]);
+		expect(player.currentQuality).toBeNull();
+		expect(player.isAutoQuality).toBe(true);
+	});
+
+	it("quality state clears on source change", () => {
+		const player = createPlayer(makeVideo());
+		player.setPluginData("qualities", [
+			{ id: 0, width: 1280, height: 720, bitrate: 2_000_000, label: "720p" },
+		]);
+		player.setPluginData("currentQuality", {
+			id: 0,
+			width: 1280,
+			height: 720,
+			bitrate: 2_000_000,
+			label: "720p",
+		});
+		player.setPluginData("autoQuality", false);
+		player.src = "https://example.com/new.mp4";
+		expect(player.qualities).toEqual([]);
+		expect(player.currentQuality).toBeNull();
+		expect(player.isAutoQuality).toBe(true);
+	});
+});

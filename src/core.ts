@@ -6,6 +6,7 @@ import type {
 	PlayerEventMap,
 	PlayerState,
 	Plugin,
+	QualityLevel,
 	SeekableRange,
 	SourceHandler,
 } from "./types.js";
@@ -57,6 +58,7 @@ export function createPlayer(el: HTMLVideoElement): Player {
 	let srcExplicitlySet = false;
 	const pluginData = new Map<string, unknown>();
 	let prevIsLive = el.duration === Number.POSITIVE_INFINITY;
+	let previousQuality: QualityLevel | null = null;
 
 	function getHandlers(event: string): Set<EventHandler<unknown>> {
 		let set = handlers.get(event);
@@ -207,6 +209,8 @@ export function createPlayer(el: HTMLVideoElement): Player {
 		"ad:fullscreen",
 		"ad:breakStart",
 		"ad:breakEnd",
+		"qualitiesavailable",
+		"qualitychange",
 		"destroy",
 	]);
 
@@ -346,6 +350,24 @@ export function createPlayer(el: HTMLVideoElement): Player {
 			if (el.seekable.length === 0) return null;
 			return { start: el.seekable.start(0), end: el.seekable.end(0) };
 		},
+		get qualities(): QualityLevel[] {
+			return (pluginData.get("qualities") as QualityLevel[]) ?? [];
+		},
+		get currentQuality(): QualityLevel | null {
+			return (pluginData.get("currentQuality") as QualityLevel | null) ?? null;
+		},
+		get isAutoQuality(): boolean {
+			return (pluginData.get("autoQuality") as boolean) ?? true;
+		},
+		setQuality(id: number): void {
+			const setter = pluginData.get("qualitySetter") as
+				| ((id: number) => void)
+				| undefined;
+			if (setter) {
+				setter(id);
+			}
+		},
+
 		get videoWidth() {
 			return el.videoWidth;
 		},
@@ -413,6 +435,11 @@ export function createPlayer(el: HTMLVideoElement): Player {
 				activeHandler.unload(el);
 				activeHandler = null;
 			}
+			pluginData.delete("qualities");
+			pluginData.delete("currentQuality");
+			pluginData.delete("autoQuality");
+			pluginData.delete("qualitySetter");
+			previousQuality = null;
 			srcExplicitlySet = true;
 			currentSrc = url;
 			if (!url) {
@@ -470,6 +497,15 @@ export function createPlayer(el: HTMLVideoElement): Player {
 
 		setPluginData(key: string, data: unknown): void {
 			pluginData.set(key, data);
+			if (key === "qualities") {
+				emit("qualitiesavailable", {
+					qualities: data as QualityLevel[],
+				});
+			} else if (key === "currentQuality") {
+				const next = data as QualityLevel;
+				emit("qualitychange", { from: previousQuality, to: next });
+				previousQuality = next;
+			}
 		},
 		getPluginData(key: string): unknown {
 			return pluginData.get(key);

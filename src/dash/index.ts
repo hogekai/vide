@@ -1,5 +1,6 @@
 import { ERR_DASH_IMPORT, ERR_DASH_PLAYBACK } from "../errors.js";
-import type { Player, Plugin, SourceHandler } from "../types.js";
+import { qualityLabel } from "../quality.js";
+import type { Player, Plugin, QualityLevel, SourceHandler } from "../types.js";
 import type { DashPluginOptions } from "./types.js";
 
 export type { DashPluginOptions } from "./types.js";
@@ -23,8 +24,19 @@ function isDashType(type: string): boolean {
 interface DashMediaPlayerLike {
 	initialize(view: HTMLMediaElement, source: string, autoPlay: boolean): void;
 	updateSettings(settings: Record<string, unknown>): void;
-	on(type: string, listener: (e: DashErrorEvent) => void): void;
+	// biome-ignore lint/suspicious/noExplicitAny: dashjs event data varies by event type
+	on(type: string, listener: (e: any) => void): void;
 	destroy(): void;
+	getBitrateInfoListFor(type: string): DashBitrateInfo[];
+	setQualityFor(type: string, value: number, replace?: boolean): void;
+	getSettings(): Record<string, unknown>;
+}
+
+interface DashBitrateInfo {
+	qualityIndex: number;
+	width: number;
+	height: number;
+	bitrate: number;
 }
 
 interface DashErrorEvent {
@@ -69,7 +81,7 @@ export function dash(options: DashPluginOptions = {}): Plugin {
 						const djsNamespace = dashjsModule.default;
 						const instance = djsNamespace
 							.MediaPlayer()
-							.create() as DashMediaPlayerLike;
+							.create() as unknown as DashMediaPlayerLike;
 						dashInstance = instance;
 						player.setPluginData("dash", instance);
 
@@ -98,6 +110,71 @@ export function dash(options: DashPluginOptions = {}): Plugin {
 										message: `DASH error: ${String(e.error)}`,
 										source: "dash",
 									});
+								}
+							},
+						);
+
+						instance.on(
+							djsNamespace.MediaPlayer.events.STREAM_INITIALIZED,
+							() => {
+								const bitrateList = instance.getBitrateInfoListFor("video");
+								const qualities: QualityLevel[] = bitrateList.map(
+									(info: DashBitrateInfo) => ({
+										id: info.qualityIndex,
+										width: info.width,
+										height: info.height,
+										bitrate: info.bitrate,
+										label: qualityLabel(info.height),
+									}),
+								);
+								player.setPluginData("qualities", qualities);
+								player.setPluginData("qualitySetter", (id: number) => {
+									if (id === -1) {
+										instance.updateSettings({
+											streaming: {
+												abr: {
+													autoSwitchBitrate: { video: true },
+												},
+											},
+										});
+									} else {
+										instance.updateSettings({
+											streaming: {
+												abr: {
+													autoSwitchBitrate: { video: false },
+												},
+											},
+										});
+										instance.setQualityFor("video", id, true);
+									}
+									player.setPluginData("autoQuality", id === -1);
+								});
+							},
+						);
+
+						instance.on(
+							djsNamespace.MediaPlayer.events.QUALITY_CHANGE_RENDERED,
+							(e: {
+								mediaType: string;
+								oldQuality: number;
+								newQuality: number;
+							}) => {
+								if (e.mediaType !== "video") return;
+								const qualities = player.qualities;
+								const quality = qualities.find((q) => q.id === e.newQuality);
+								if (quality) {
+									player.setPluginData("currentQuality", quality);
+									const settings = instance.getSettings() as {
+										streaming?: {
+											abr?: {
+												autoSwitchBitrate?: { video?: boolean };
+											};
+										};
+									};
+									player.setPluginData(
+										"autoQuality",
+										settings?.streaming?.abr?.autoSwitchBitrate?.video ?? true,
+									);
 								}
 							},
 						);

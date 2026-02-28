@@ -42,6 +42,8 @@ export interface PlayerEventMap {
 	"ad:fullscreen": { adId: string; fullscreen: boolean };
 	"ad:breakStart": { breakId: string | undefined };
 	"ad:breakEnd": { breakId: string | undefined };
+	qualitiesavailable: { qualities: QualityLevel[] };
+	qualitychange: { from: QualityLevel | null; to: QualityLevel };
 	destroy: undefined;
 }
 
@@ -99,6 +101,15 @@ export interface SeekableRange {
 	end: number;
 }
 
+// === Quality Level ===
+export interface QualityLevel {
+	id: number;
+	width: number;
+	height: number;
+	bitrate: number;
+	label: string;
+}
+
 // === Source Handler ===
 export interface SourceHandler {
 	/** Whether this handler can process the given URL/type. */
@@ -135,6 +146,10 @@ export interface Player extends EventBus {
 	readonly seeking: boolean;
 	readonly isLive: boolean;
 	readonly seekableRange: SeekableRange | null;
+	readonly qualities: QualityLevel[];
+	readonly currentQuality: QualityLevel | null;
+	setQuality(id: number): void;
+	readonly isAutoQuality: boolean;
 	readonly videoWidth: number;
 	readonly videoHeight: number;
 	readonly networkState: number;

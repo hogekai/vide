@@ -10,16 +10,20 @@ const mockInstance = {
 	loadSource: vi.fn(),
 	destroy: vi.fn(),
 	on: vi.fn(),
+	levels: [] as Array<{ width: number; height: number; bitrate: number }>,
+	currentLevel: -1,
+	autoLevelEnabled: true,
 };
 
 const MockHls = vi.fn(() => mockInstance) as ReturnType<typeof vi.fn> & {
 	isSupported: ReturnType<typeof vi.fn>;
-	Events: { ERROR: string; MANIFEST_PARSED: string };
+	Events: { ERROR: string; MANIFEST_PARSED: string; LEVEL_SWITCHED: string };
 };
 MockHls.isSupported = vi.fn(() => true);
 MockHls.Events = {
 	ERROR: "hlsError",
 	MANIFEST_PARSED: "hlsManifestParsed",
+	LEVEL_SWITCHED: "hlsLevelSwitched",
 };
 
 vi.mock("hls.js", () => ({ default: MockHls }));
@@ -58,6 +62,9 @@ beforeEach(() => {
 	mockInstance.loadSource.mockClear();
 	mockInstance.destroy.mockClear();
 	mockInstance.on.mockClear();
+	mockInstance.levels = [];
+	mockInstance.currentLevel = -1;
+	mockInstance.autoLevelEnabled = true;
 	MockHls.mockClear();
 	MockHls.isSupported.mockReturnValue(true);
 });
@@ -332,5 +339,184 @@ describe("hls plugin — lifecycle", () => {
 		player.destroy();
 		await flushImport();
 		expect(mockInstance.attachMedia).not.toHaveBeenCalled();
+	});
+});
+
+describe("hls plugin — quality levels", () => {
+	/** Extract the MANIFEST_PARSED callback from mock calls. */
+	function getManifestCallback(): () => void {
+		const call = mockInstance.on.mock.calls.find(
+			(c: unknown[]) => c[0] === "hlsManifestParsed",
+		);
+		return call[1] as () => void;
+	}
+
+	/** Extract the LEVEL_SWITCHED callback from mock calls. */
+	function getLevelSwitchedCallback(): (
+		event: string,
+		data: { level: number },
+	) => void {
+		const call = mockInstance.on.mock.calls.find(
+			(c: unknown[]) => c[0] === "hlsLevelSwitched",
+		);
+		return call[1] as (event: string, data: { level: number }) => void;
+	}
+
+	it("sets qualities on MANIFEST_PARSED", async () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		player.use(hls());
+		player.src = "https://example.com/stream.m3u8";
+		await flushImport();
+
+		mockInstance.levels = [
+			{ width: 1280, height: 720, bitrate: 2_000_000 },
+			{ width: 1920, height: 1080, bitrate: 5_000_000 },
+		];
+		getManifestCallback()();
+
+		expect(player.qualities).toEqual([
+			{ id: 0, width: 1280, height: 720, bitrate: 2_000_000, label: "720p" },
+			{
+				id: 1,
+				width: 1920,
+				height: 1080,
+				bitrate: 5_000_000,
+				label: "1080p",
+			},
+		]);
+	});
+
+	it("emits qualitiesavailable on MANIFEST_PARSED", async () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		const handler = vi.fn();
+		player.on("qualitiesavailable", handler);
+		player.use(hls());
+		player.src = "https://example.com/stream.m3u8";
+		await flushImport();
+
+		mockInstance.levels = [{ width: 1280, height: 720, bitrate: 2_000_000 }];
+		getManifestCallback()();
+
+		expect(handler).toHaveBeenCalledWith({
+			qualities: [
+				{
+					id: 0,
+					width: 1280,
+					height: 720,
+					bitrate: 2_000_000,
+					label: "720p",
+				},
+			],
+		});
+	});
+
+	it("sets currentQuality on LEVEL_SWITCHED", async () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		player.use(hls());
+		player.src = "https://example.com/stream.m3u8";
+		await flushImport();
+
+		mockInstance.levels = [
+			{ width: 1280, height: 720, bitrate: 2_000_000 },
+			{ width: 1920, height: 1080, bitrate: 5_000_000 },
+		];
+		getManifestCallback()();
+
+		getLevelSwitchedCallback()("hlsLevelSwitched", { level: 1 });
+
+		expect(player.currentQuality).toEqual({
+			id: 1,
+			width: 1920,
+			height: 1080,
+			bitrate: 5_000_000,
+			label: "1080p",
+		});
+	});
+
+	it("emits qualitychange on LEVEL_SWITCHED", async () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		const handler = vi.fn();
+		player.on("qualitychange", handler);
+		player.use(hls());
+		player.src = "https://example.com/stream.m3u8";
+		await flushImport();
+
+		mockInstance.levels = [
+			{ width: 1280, height: 720, bitrate: 2_000_000 },
+			{ width: 1920, height: 1080, bitrate: 5_000_000 },
+		];
+		getManifestCallback()();
+
+		getLevelSwitchedCallback()("hlsLevelSwitched", { level: 0 });
+
+		expect(handler).toHaveBeenCalledWith({
+			from: null,
+			to: {
+				id: 0,
+				width: 1280,
+				height: 720,
+				bitrate: 2_000_000,
+				label: "720p",
+			},
+		});
+	});
+
+	it("setQuality locks to specific level", async () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		player.use(hls());
+		player.src = "https://example.com/stream.m3u8";
+		await flushImport();
+
+		mockInstance.levels = [
+			{ width: 1280, height: 720, bitrate: 2_000_000 },
+			{ width: 1920, height: 1080, bitrate: 5_000_000 },
+		];
+		getManifestCallback()();
+
+		player.setQuality(1);
+		expect(mockInstance.currentLevel).toBe(1);
+		expect(player.isAutoQuality).toBe(false);
+	});
+
+	it("setQuality(-1) restores ABR", async () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		player.use(hls());
+		player.src = "https://example.com/stream.m3u8";
+		await flushImport();
+
+		mockInstance.levels = [{ width: 1280, height: 720, bitrate: 2_000_000 }];
+		getManifestCallback()();
+
+		player.setQuality(0);
+		expect(player.isAutoQuality).toBe(false);
+
+		player.setQuality(-1);
+		expect(mockInstance.currentLevel).toBe(-1);
+		expect(player.isAutoQuality).toBe(true);
+	});
+
+	it("updates autoQuality from hls.js on LEVEL_SWITCHED", async () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		player.use(hls());
+		player.src = "https://example.com/stream.m3u8";
+		await flushImport();
+
+		mockInstance.levels = [{ width: 1280, height: 720, bitrate: 2_000_000 }];
+		getManifestCallback()();
+
+		mockInstance.autoLevelEnabled = false;
+		getLevelSwitchedCallback()("hlsLevelSwitched", { level: 0 });
+		expect(player.isAutoQuality).toBe(false);
+
+		mockInstance.autoLevelEnabled = true;
+		getLevelSwitchedCallback()("hlsLevelSwitched", { level: 0 });
+		expect(player.isAutoQuality).toBe(true);
 	});
 });

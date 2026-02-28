@@ -10,6 +10,9 @@ const mockInstance = {
 	updateSettings: vi.fn(),
 	on: vi.fn(),
 	destroy: vi.fn(),
+	getBitrateInfoListFor: vi.fn().mockReturnValue([]),
+	setQualityFor: vi.fn(),
+	getSettings: vi.fn().mockReturnValue({}),
 };
 
 const MockMediaPlayer = Object.assign(
@@ -60,6 +63,9 @@ beforeEach(() => {
 	mockInstance.updateSettings.mockClear();
 	mockInstance.on.mockClear();
 	mockInstance.destroy.mockClear();
+	mockInstance.getBitrateInfoListFor.mockReset().mockReturnValue([]);
+	mockInstance.setQualityFor.mockClear();
+	mockInstance.getSettings.mockReset().mockReturnValue({});
 	MockMediaPlayer.mockClear();
 });
 
@@ -350,5 +356,179 @@ describe("dash plugin — lifecycle", () => {
 		player.destroy();
 		await flushImport();
 		expect(mockInstance.initialize).not.toHaveBeenCalled();
+	});
+});
+
+describe("dash plugin — quality levels", () => {
+	/** Extract the STREAM_INITIALIZED callback from mock calls. */
+	function getStreamInitCallback(): () => void {
+		const call = mockInstance.on.mock.calls.find(
+			(c: unknown[]) => c[0] === "streamInitialized",
+		);
+		return call[1] as () => void;
+	}
+
+	/** Extract the QUALITY_CHANGE_RENDERED callback from mock calls. */
+	function getQualityChangeCallback(): (e: {
+		mediaType: string;
+		oldQuality: number;
+		newQuality: number;
+	}) => void {
+		const call = mockInstance.on.mock.calls.find(
+			(c: unknown[]) => c[0] === "qualityChangeRendered",
+		);
+		return call[1] as (e: {
+			mediaType: string;
+			oldQuality: number;
+			newQuality: number;
+		}) => void;
+	}
+
+	it("sets qualities on STREAM_INITIALIZED", async () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		player.use(dash());
+		player.src = "https://example.com/stream.mpd";
+		await flushImport();
+
+		mockInstance.getBitrateInfoListFor.mockReturnValue([
+			{ qualityIndex: 0, width: 1280, height: 720, bitrate: 2_000_000 },
+			{ qualityIndex: 1, width: 1920, height: 1080, bitrate: 5_000_000 },
+		]);
+		getStreamInitCallback()();
+
+		expect(player.qualities).toEqual([
+			{ id: 0, width: 1280, height: 720, bitrate: 2_000_000, label: "720p" },
+			{
+				id: 1,
+				width: 1920,
+				height: 1080,
+				bitrate: 5_000_000,
+				label: "1080p",
+			},
+		]);
+	});
+
+	it("emits qualitiesavailable on STREAM_INITIALIZED", async () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		const handler = vi.fn();
+		player.on("qualitiesavailable", handler);
+		player.use(dash());
+		player.src = "https://example.com/stream.mpd";
+		await flushImport();
+
+		mockInstance.getBitrateInfoListFor.mockReturnValue([
+			{ qualityIndex: 0, width: 1280, height: 720, bitrate: 2_000_000 },
+		]);
+		getStreamInitCallback()();
+
+		expect(handler).toHaveBeenCalledWith({
+			qualities: [
+				{
+					id: 0,
+					width: 1280,
+					height: 720,
+					bitrate: 2_000_000,
+					label: "720p",
+				},
+			],
+		});
+	});
+
+	it("sets currentQuality on QUALITY_CHANGE_RENDERED", async () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		player.use(dash());
+		player.src = "https://example.com/stream.mpd";
+		await flushImport();
+
+		mockInstance.getBitrateInfoListFor.mockReturnValue([
+			{ qualityIndex: 0, width: 1280, height: 720, bitrate: 2_000_000 },
+			{ qualityIndex: 1, width: 1920, height: 1080, bitrate: 5_000_000 },
+		]);
+		getStreamInitCallback()();
+
+		mockInstance.getSettings.mockReturnValue({
+			streaming: { abr: { autoSwitchBitrate: { video: true } } },
+		});
+		getQualityChangeCallback()({
+			mediaType: "video",
+			oldQuality: 0,
+			newQuality: 1,
+		});
+
+		expect(player.currentQuality).toEqual({
+			id: 1,
+			width: 1920,
+			height: 1080,
+			bitrate: 5_000_000,
+			label: "1080p",
+		});
+	});
+
+	it("ignores QUALITY_CHANGE_RENDERED for audio", async () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		player.use(dash());
+		player.src = "https://example.com/stream.mpd";
+		await flushImport();
+
+		mockInstance.getBitrateInfoListFor.mockReturnValue([
+			{ qualityIndex: 0, width: 1280, height: 720, bitrate: 2_000_000 },
+		]);
+		getStreamInitCallback()();
+
+		getQualityChangeCallback()({
+			mediaType: "audio",
+			oldQuality: 0,
+			newQuality: 1,
+		});
+
+		expect(player.currentQuality).toBeNull();
+	});
+
+	it("setQuality locks to specific level", async () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		player.use(dash());
+		player.src = "https://example.com/stream.mpd";
+		await flushImport();
+
+		mockInstance.getBitrateInfoListFor.mockReturnValue([
+			{ qualityIndex: 0, width: 1280, height: 720, bitrate: 2_000_000 },
+			{ qualityIndex: 1, width: 1920, height: 1080, bitrate: 5_000_000 },
+		]);
+		getStreamInitCallback()();
+
+		player.setQuality(1);
+		expect(mockInstance.setQualityFor).toHaveBeenCalledWith("video", 1, true);
+		expect(mockInstance.updateSettings).toHaveBeenCalledWith({
+			streaming: { abr: { autoSwitchBitrate: { video: false } } },
+		});
+		expect(player.isAutoQuality).toBe(false);
+	});
+
+	it("setQuality(-1) restores ABR", async () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		player.use(dash());
+		player.src = "https://example.com/stream.mpd";
+		await flushImport();
+
+		mockInstance.getBitrateInfoListFor.mockReturnValue([
+			{ qualityIndex: 0, width: 1280, height: 720, bitrate: 2_000_000 },
+		]);
+		getStreamInitCallback()();
+
+		player.setQuality(0);
+		expect(player.isAutoQuality).toBe(false);
+
+		mockInstance.updateSettings.mockClear();
+		player.setQuality(-1);
+		expect(mockInstance.updateSettings).toHaveBeenCalledWith({
+			streaming: { abr: { autoSwitchBitrate: { video: true } } },
+		});
+		expect(player.isAutoQuality).toBe(true);
 	});
 });

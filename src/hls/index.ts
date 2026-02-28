@@ -3,7 +3,8 @@ import {
 	ERR_HLS_IMPORT,
 	ERR_HLS_UNSUPPORTED,
 } from "../errors.js";
-import type { Player, Plugin, SourceHandler } from "../types.js";
+import { qualityLabel } from "../quality.js";
+import type { Player, Plugin, QualityLevel, SourceHandler } from "../types.js";
 import type { HlsPluginOptions } from "./types.js";
 
 export type { HlsPluginOptions } from "./types.js";
@@ -39,6 +40,15 @@ function isHlsType(type: string): boolean {
 /** Minimal interface to avoid importing hls.js types at compile time. */
 interface HlsLike {
 	destroy(): void;
+	readonly levels: HlsLevel[];
+	currentLevel: number;
+	readonly autoLevelEnabled: boolean;
+}
+
+interface HlsLevel {
+	height: number;
+	width: number;
+	bitrate: number;
 }
 
 interface HlsErrorData {
@@ -119,6 +129,38 @@ export function hls(options: HlsPluginOptions = {}): Plugin {
 										message: `HLS fatal error: ${data.type} - ${data.details}`,
 										source: "hls",
 									});
+								}
+							},
+						);
+
+						instance.on(Hls.Events.MANIFEST_PARSED, () => {
+							const qualities: QualityLevel[] = instance.levels.map(
+								(level: HlsLevel, index: number) => ({
+									id: index,
+									width: level.width,
+									height: level.height,
+									bitrate: level.bitrate,
+									label: qualityLabel(level.height),
+								}),
+							);
+							player.setPluginData("qualities", qualities);
+							player.setPluginData("qualitySetter", (id: number) => {
+								instance.currentLevel = id;
+								player.setPluginData("autoQuality", id === -1);
+							});
+						});
+
+						instance.on(
+							Hls.Events.LEVEL_SWITCHED,
+							(_event: string, data: { level: number }) => {
+								const qualities = player.qualities;
+								const quality = qualities[data.level];
+								if (quality) {
+									player.setPluginData("currentQuality", quality);
+									player.setPluginData(
+										"autoQuality",
+										instance.autoLevelEnabled,
+									);
 								}
 							},
 						);
