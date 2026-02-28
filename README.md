@@ -6,6 +6,10 @@
 
 Modular video player library. Use only what you need.
 
+```html
+<video src="video.mp4"></video>
+```
+
 ```ts
 import { createPlayer } from "@videts/vide";
 import { vast } from "@videts/vide/vast";
@@ -44,6 +48,10 @@ npm install @videts/vide
 > Package is published as **@videts/vide** on npm. The project name is **vide**.
 
 ## Quick Start
+
+```html
+<video src="video.mp4"></video>
+```
 
 ```ts
 import { createPlayer } from "@videts/vide";
@@ -191,6 +199,12 @@ player.use(ssai({
 Headless by default — JS creates DOM and wires behavior, styling is yours.
 Import `theme.css` for a ready-made look, or target the BEM classes (`vide-play`, `vide-progress__bar`, …) yourself.
 
+```html
+<div id="player-container">
+  <video src="video.mp4"></video>
+</div>
+```
+
 ```ts
 import { createPlayer } from "@videts/vide";
 import { ui } from "@videts/vide/ui";
@@ -264,6 +278,13 @@ player.use(vast({
 ```
 
 ### SIMID Interactive Ads
+
+```html
+<div id="player-container">
+  <video src="video.mp4"></video>
+  <div id="ad-container"></div>
+</div>
+```
 
 ```ts
 import { vast } from "@videts/vide/vast";

@@ -8,6 +8,10 @@ npm install @videts/vide
 
 ## Basic Usage
 
+```html
+<video src="video.mp4"></video>
+```
+
 ```ts
 import { createPlayer } from "@videts/vide";
 
@@ -20,6 +24,12 @@ That's it. `createPlayer` wraps a `<video>` element with a typed event bus and s
 ## Adding Plugins
 
 Plugins are explicit opt-in. Import and `use()` only what you need.
+
+```html
+<div id="player-container">
+  <video src="https://example.com/stream.m3u8"></video>
+</div>
+```
 
 ```ts
 import { createPlayer } from "@videts/vide";

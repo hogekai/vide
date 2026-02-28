@@ -6,6 +6,11 @@ SIMID 1.2 (Secure Interactive Media Interface Definition) for interactive ad cre
 
 SIMID is used as an AdPlugin within VAST:
 
+```html
+<video src="video.mp4"></video>
+<div id="ad-container"></div>
+```
+
 ```ts
 import { createPlayer } from "@videts/vide";
 import { vast } from "@videts/vide/vast";

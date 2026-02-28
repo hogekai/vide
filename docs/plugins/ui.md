@@ -4,6 +4,12 @@ Headless UI plugin with 13 components. JS creates DOM and wires behavior — sty
 
 ## Usage
 
+```html
+<div id="player-container">
+  <video src="video.mp4"></video>
+</div>
+```
+
 ```ts
 import { createPlayer } from "@videts/vide";
 import { ui } from "@videts/vide/ui";
@@ -80,11 +86,17 @@ interface UIComponent {
 
 The UI plugin provides ad components that integrate with VAST via `getAdPlugin()`:
 
+```html
+<div id="player-container">
+  <video src="video.mp4"></video>
+</div>
+```
+
 ```ts
 import { ui } from "@videts/vide/ui";
 import { vast } from "@videts/vide/vast";
 
-const uiPlugin = ui({ container: el });
+const uiPlugin = ui({ container: document.getElementById("player-container")! });
 player.use(uiPlugin);
 player.use(vast({
   tagUrl: "https://example.com/vast.xml",
