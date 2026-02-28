@@ -34,9 +34,9 @@
   useHls(() => player);
   useVast(() => player, { tagUrl: VAST_TAG });
 
-  let uiEl: HTMLDivElement | undefined = $state();
-  useAutohide(() => uiEl ?? null, () => player);
-  useKeyboard(() => uiEl ?? null, () => player);
+  let uiEl: HTMLDivElement | null = $state(null);
+  useAutohide(() => uiEl, () => player);
+  useKeyboard(() => uiEl, () => player);
 
   let state = $state("idle");
 
@@ -53,7 +53,7 @@
   <h1>vide — Svelte</h1>
   <p>State: <code>{state}</code></p>
 
-  <VideUI bind:el={uiEl}>
+  <VideUI onmount={(el) => uiEl = el}>
     <VideVideo
       src={HLS_SRC}
       style="width: 100%; background: #000; display: block"

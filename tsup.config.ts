@@ -19,7 +19,7 @@ const esmConfig: Options = {
 		"vue/index": "src/vue/index.ts",
 	},
 	onSuccess:
-		"mkdir -p dist/ui && cp src/ui/theme.css dist/ui/theme.css && cp src/ui/theme.css dist/vide.ui.css",
+		"mkdir -p dist/ui && cp src/ui/theme.css dist/ui/theme.css && cp src/ui/theme.css dist/vide.ui.css && for f in dist/*/index.mjs; do d=$(dirname $f); cp $f $d/index.js; done",
 	external: ["hls.js", "dashjs", "react", "react-dom", "react/jsx-runtime", "vue", "svelte"],
 	esbuildOptions(options) {
 		options.jsx = "automatic";

@@ -8,10 +8,16 @@ import { type PlayerGetter, VIDE_PLAYER_KEY } from "./context.js";
 interface Props {
 	class?: string;
 	children?: Snippet;
-	el?: HTMLDivElement;
+	onmount?: (el: HTMLDivElement) => void;
 }
 
-const { class: className, children, el = $bindable() }: Props = $props();
+const { class: className, children, onmount }: Props = $props();
+
+let rootEl: HTMLDivElement | undefined = $state();
+
+$effect(() => {
+	if (rootEl && onmount) onmount(rootEl);
+});
 
 const getPlayer = getContext<PlayerGetter>(VIDE_PLAYER_KEY);
 let stateClass = $state("");
@@ -32,7 +38,7 @@ $effect(() => {
 </script>
 
 <div
-	bind:this={el}
+	bind:this={rootEl}
 	class={["vide-ui", stateClass, className].filter(Boolean).join(" ")}
 	role="region"
 	aria-label="Video player"
