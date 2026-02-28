@@ -4,7 +4,7 @@
 [![npm](https://img.shields.io/npm/v/@videts/vide)](https://www.npmjs.com/package/@videts/vide)
 [![gzip](https://img.shields.io/badge/core-1.8KB-blue)](https://bundlephobia.com/package/@videts/vide)
 
-Modular video player library. Use only what you need.
+Modular video player library. Use only what you need. Also works with `<audio>`.
 
 **[Documentation](https://hogekai.github.io/vide/)** · **[Getting Started](https://hogekai.github.io/vide/getting-started)** · **[Demo](https://hogekai.github.io/vide/demo)**
 

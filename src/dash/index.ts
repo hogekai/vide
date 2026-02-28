@@ -1,6 +1,7 @@
 import { ERR_DASH_IMPORT, ERR_DASH_PLAYBACK } from "../errors.js";
 import { qualityLabel } from "../quality.js";
 import type {
+	MediaElement,
 	Player,
 	Plugin,
 	QualityLevel,
@@ -71,7 +72,7 @@ export function dash(options: DashPluginOptions = {}): Plugin {
 			let retryCount = 0;
 			let recoveryTimer: ReturnType<typeof setTimeout> | null = null;
 			let currentUrl = "";
-			let currentVideoElement: HTMLVideoElement | null = null;
+			let currentVideoElement: MediaElement | null = null;
 
 			function clearRecoveryTimer(): void {
 				if (recoveryTimer !== null) {
@@ -110,12 +111,12 @@ export function dash(options: DashPluginOptions = {}): Plugin {
 					return isDashUrl(url);
 				},
 
-				load(url: string, videoElement: HTMLVideoElement): void {
+				load(url: string, videoElement: MediaElement): void {
 					this.unload(videoElement);
 					loadWithDashJs(url, videoElement);
 				},
 
-				unload(_videoElement: HTMLVideoElement): void {
+				unload(_videoElement: MediaElement): void {
 					clearRecoveryTimer();
 					retryCount = 0;
 					currentUrl = "";
@@ -127,10 +128,7 @@ export function dash(options: DashPluginOptions = {}): Plugin {
 				},
 			};
 
-			function loadWithDashJs(
-				url: string,
-				videoElement: HTMLVideoElement,
-			): void {
+			function loadWithDashJs(url: string, videoElement: MediaElement): void {
 				currentUrl = url;
 				currentVideoElement = videoElement;
 

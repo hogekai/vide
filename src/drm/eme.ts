@@ -1,3 +1,4 @@
+import type { MediaElement } from "../types.js";
 import type { KeySystem } from "./types.js";
 
 export interface EmeOptions {
@@ -36,7 +37,7 @@ const FAIRPLAY_PROBE_CONFIG: MediaKeySystemConfiguration[] = [
  * Returns a cleanup function that removes listeners and closes sessions.
  */
 export function setupEme(
-	videoElement: HTMLVideoElement,
+	videoElement: MediaElement,
 	options: EmeOptions,
 	onError: (err: Error) => void,
 ): () => void {
@@ -115,7 +116,10 @@ export function setupEme(
 				videoElement.setMediaKeys(mediaKeys);
 			}
 
-			videoElement.addEventListener("encrypted", onEncrypted);
+			(videoElement as HTMLMediaElement).addEventListener(
+				"encrypted",
+				onEncrypted,
+			);
 		})
 		.catch((err: unknown) => {
 			if (destroyed) return;
@@ -124,7 +128,10 @@ export function setupEme(
 
 	return () => {
 		destroyed = true;
-		videoElement.removeEventListener("encrypted", onEncrypted);
+		(videoElement as HTMLMediaElement).removeEventListener(
+			"encrypted",
+			onEncrypted,
+		);
 		for (const session of sessions) {
 			session.close().catch(() => {});
 		}

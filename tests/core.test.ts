@@ -1057,3 +1057,100 @@ describe("Quality Level API", () => {
 		expect(player.isAutoQuality).toBe(true);
 	});
 });
+
+describe("audio element support", () => {
+	function makeAudio(): HTMLAudioElement {
+		return document.createElement("audio");
+	}
+
+	it("accepts an audio element", () => {
+		const player = createPlayer(makeAudio());
+		expect(player.state).toBe("idle");
+	});
+
+	it("exposes the underlying audio element", () => {
+		const el = makeAudio();
+		const player = createPlayer(el);
+		expect(player.el).toBe(el);
+	});
+
+	it("isAudio returns true for audio elements", () => {
+		const player = createPlayer(makeAudio());
+		expect(player.isAudio).toBe(true);
+	});
+
+	it("isAudio returns false for video elements", () => {
+		const player = createPlayer(makeVideo());
+		expect(player.isAudio).toBe(false);
+	});
+
+	it("videoWidth returns 0 for audio", () => {
+		const player = createPlayer(makeAudio());
+		expect(player.videoWidth).toBe(0);
+	});
+
+	it("videoHeight returns 0 for audio", () => {
+		const player = createPlayer(makeAudio());
+		expect(player.videoHeight).toBe(0);
+	});
+
+	it("poster getter returns empty string for audio", () => {
+		const player = createPlayer(makeAudio());
+		expect(player.poster).toBe("");
+	});
+
+	it("poster setter is no-op for audio", () => {
+		const player = createPlayer(makeAudio());
+		player.poster = "some.jpg";
+		expect(player.poster).toBe("");
+	});
+
+	it("state transitions work with audio", () => {
+		const el = makeAudio();
+		const player = createPlayer(el);
+		el.dispatchEvent(new Event("loadstart"));
+		expect(player.state).toBe("loading");
+		el.dispatchEvent(new Event("canplay"));
+		expect(player.state).toBe("ready");
+		el.dispatchEvent(new Event("play"));
+		expect(player.state).toBe("playing");
+	});
+
+	it("proxies volume on audio", () => {
+		const el = makeAudio();
+		const player = createPlayer(el);
+		player.volume = 0.5;
+		expect(el.volume).toBe(0.5);
+	});
+
+	it("EventBus works with audio", () => {
+		const el = makeAudio();
+		const player = createPlayer(el);
+		const handler = vi.fn();
+		player.on("statechange", handler);
+		el.dispatchEvent(new Event("loadstart"));
+		expect(handler).toHaveBeenCalledWith({ from: "idle", to: "loading" });
+	});
+
+	it("source handler receives audio element", () => {
+		const el = makeAudio();
+		const player = createPlayer(el);
+		const load = vi.fn();
+		player.registerSourceHandler({
+			canHandle: () => true,
+			load,
+			unload: vi.fn(),
+		});
+		player.src = "https://example.com/audio.mp3";
+		expect(load).toHaveBeenCalledWith("https://example.com/audio.mp3", el);
+	});
+
+	it("destroy works with audio element", () => {
+		const el = makeAudio();
+		const player = createPlayer(el);
+		const handler = vi.fn();
+		player.on("destroy", handler);
+		player.destroy();
+		expect(handler).toHaveBeenCalled();
+	});
+});

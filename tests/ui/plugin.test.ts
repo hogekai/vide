@@ -161,3 +161,67 @@ describe("ui() convenience plugin", () => {
 		player.destroy();
 	});
 });
+
+describe("audio element auto-exclusion", () => {
+	function makeAudio(): HTMLAudioElement {
+		return document.createElement("audio");
+	}
+
+	it("auto-excludes fullscreen for audio elements", () => {
+		const el = makeAudio();
+		const player = createPlayer(el);
+		const container = document.createElement("div");
+
+		player.use(ui({ container }));
+		const root = container.querySelector(".vide-ui") as Element;
+		expect(root.querySelector(".vide-fullscreen")).toBeNull();
+		player.destroy();
+	});
+
+	it("auto-excludes poster for audio elements", () => {
+		const el = makeAudio();
+		const player = createPlayer(el);
+		const container = document.createElement("div");
+
+		player.use(ui({ container, poster: "poster.jpg" }));
+		const root = container.querySelector(".vide-ui") as Element;
+		expect(root.querySelector(".vide-poster")).toBeNull();
+		player.destroy();
+	});
+
+	it("sets aria-label to 'Audio player' for audio elements", () => {
+		const el = makeAudio();
+		const player = createPlayer(el);
+		const container = document.createElement("div");
+
+		player.use(ui({ container }));
+		const root = container.querySelector(".vide-ui") as Element;
+		expect(root.getAttribute("aria-label")).toBe("Audio player");
+		player.destroy();
+	});
+
+	it("keeps other components for audio elements", () => {
+		const el = makeAudio();
+		const player = createPlayer(el);
+		const container = document.createElement("div");
+
+		player.use(ui({ container }));
+		const root = container.querySelector(".vide-ui") as Element;
+		expect(root.querySelector(".vide-play")).not.toBeNull();
+		expect(root.querySelector(".vide-progress")).not.toBeNull();
+		expect(root.querySelector(".vide-volume")).not.toBeNull();
+		expect(root.querySelector(".vide-time")).not.toBeNull();
+		player.destroy();
+	});
+
+	it("does not auto-exclude fullscreen for video elements", () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		const container = document.createElement("div");
+
+		player.use(ui({ container }));
+		const root = container.querySelector(".vide-ui") as Element;
+		expect(root.querySelector(".vide-fullscreen")).not.toBeNull();
+		player.destroy();
+	});
+});

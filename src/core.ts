@@ -1,6 +1,7 @@
 import { ERR_MEDIA } from "./errors.js";
 import type {
 	EventHandler,
+	MediaElement,
 	Player,
 	PlayerEvent,
 	PlayerEventMap,
@@ -33,8 +34,8 @@ function canTransition(from: PlayerState, to: PlayerState): boolean {
 	return transitions[from].includes(to);
 }
 
-/** Infer initial state from current video element readyState. */
-function inferInitialState(el: HTMLVideoElement): PlayerState {
+/** Infer initial state from current media element readyState. */
+function inferInitialState(el: MediaElement): PlayerState {
 	// HTMLMediaElement.readyState:
 	// 0 = HAVE_NOTHING, 1 = HAVE_METADATA, 2 = HAVE_CURRENT_DATA,
 	// 3 = HAVE_FUTURE_DATA, 4 = HAVE_ENOUGH_DATA
@@ -48,9 +49,10 @@ function inferInitialState(el: HTMLVideoElement): PlayerState {
 
 // === createPlayer ===
 
-/** Create a vide player instance wrapping the given video element. */
-export function createPlayer(el: HTMLVideoElement): Player {
+/** Create a vide player instance wrapping the given media element. */
+export function createPlayer(el: MediaElement): Player {
 	let state: PlayerState = inferInitialState(el);
+	const isAudio = el instanceof HTMLAudioElement;
 	const handlers = new Map<string, Set<EventHandler<unknown>>>();
 	const cleanups: (() => void)[] = [];
 	let destroyed = false;
@@ -459,6 +461,9 @@ export function createPlayer(el: HTMLVideoElement): Player {
 		get isAutoQuality(): boolean {
 			return (pluginData.get("autoQuality") as boolean) ?? true;
 		},
+		get isAudio(): boolean {
+			return isAudio;
+		},
 		setQuality(id: number): void {
 			const setter = pluginData.get("qualitySetter") as
 				| ((id: number) => void)
@@ -524,10 +529,10 @@ export function createPlayer(el: HTMLVideoElement): Player {
 		},
 
 		get videoWidth() {
-			return el.videoWidth;
+			return isAudio ? 0 : (el as HTMLVideoElement).videoWidth;
 		},
 		get videoHeight() {
-			return el.videoHeight;
+			return isAudio ? 0 : (el as HTMLVideoElement).videoHeight;
 		},
 		get networkState() {
 			return el.networkState;
@@ -545,10 +550,12 @@ export function createPlayer(el: HTMLVideoElement): Player {
 			el.autoplay = v;
 		},
 		get poster() {
-			return el.poster;
+			return isAudio ? "" : (el as HTMLVideoElement).poster;
 		},
 		set poster(v: string) {
-			el.poster = v;
+			if (!isAudio) {
+				(el as HTMLVideoElement).poster = v;
+			}
 		},
 		get preload() {
 			return el.preload;

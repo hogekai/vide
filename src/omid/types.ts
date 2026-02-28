@@ -68,7 +68,7 @@ export type OmidInteractionType = "click" | "invitationAccept";
 // === OM SDK Class Interfaces (minimal stubs) ===
 
 export interface OmidContext {
-	setVideoElement(el: HTMLVideoElement): void;
+	setVideoElement(el: HTMLVideoElement | HTMLAudioElement): void;
 	setSlotElement(el: HTMLElement): void;
 	setServiceWindow(win: Window): void;
 }

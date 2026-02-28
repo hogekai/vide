@@ -5,6 +5,7 @@ import {
 } from "../errors.js";
 import { qualityLabel } from "../quality.js";
 import type {
+	MediaElement,
 	Player,
 	Plugin,
 	QualityLevel,
@@ -121,12 +122,12 @@ export function hls(options: HlsPluginOptions = {}): Plugin {
 					return isHlsUrl(url);
 				},
 
-				load(url: string, videoElement: HTMLVideoElement): void {
+				load(url: string, videoElement: MediaElement): void {
 					this.unload(videoElement);
 					loadWithHlsJs(url, videoElement);
 				},
 
-				unload(_videoElement: HTMLVideoElement): void {
+				unload(_videoElement: MediaElement): void {
 					clearRecoveryTimer();
 					retryCount = 0;
 					if (hlsInstance) {
@@ -136,10 +137,7 @@ export function hls(options: HlsPluginOptions = {}): Plugin {
 				},
 			};
 
-			function loadWithHlsJs(
-				url: string,
-				videoElement: HTMLVideoElement,
-			): void {
+			function loadWithHlsJs(url: string, videoElement: MediaElement): void {
 				import("hls.js")
 					.then((HlsModule) => {
 						if (destroyed) return;

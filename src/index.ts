@@ -3,6 +3,7 @@ export type {
 	AdQuartile,
 	EventBus,
 	EventHandler,
+	MediaElement,
 	Player,
 	PlayerEvent,
 	PlayerEventMap,

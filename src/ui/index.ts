@@ -75,10 +75,19 @@ export function ui(options: UiPluginOptions): UiPlugin {
 	return {
 		name: "ui",
 		setup(player: Player): () => void {
+			// Auto-exclude video-only components for audio elements
+			if (player.isAudio) {
+				excluded.add("fullscreen");
+				excluded.add("poster");
+			}
+
 			const root = document.createElement("div");
 			root.className = "vide-ui";
 			root.setAttribute("role", "region");
-			root.setAttribute("aria-label", "Video player");
+			root.setAttribute(
+				"aria-label",
+				player.isAudio ? "Audio player" : "Video player",
+			);
 			options.container.appendChild(root);
 
 			const all: UIComponent[] = [];

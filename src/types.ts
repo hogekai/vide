@@ -1,3 +1,6 @@
+// === Media Element ===
+export type MediaElement = HTMLVideoElement | HTMLAudioElement;
+
 // === Player States ===
 export type PlayerState =
 	| "idle"
@@ -68,9 +71,9 @@ export interface RecoveryConfig {
 // === EventBus ===
 export type EventHandler<T> = (data: T) => void;
 
-/** HTMLVideoElement event names not already covered by PlayerEventMap. */
-type NativeVideoEvent = Exclude<
-	keyof HTMLVideoElementEventMap,
+/** Native media event names not already covered by PlayerEventMap. */
+type NativeMediaEvent = Exclude<
+	keyof HTMLMediaElementEventMap,
 	keyof PlayerEventMap
 >;
 
@@ -79,9 +82,9 @@ export interface EventBus {
 		event: K,
 		handler: EventHandler<PlayerEventMap[K]>,
 	): void;
-	on<K extends NativeVideoEvent>(
+	on<K extends NativeMediaEvent>(
 		event: K,
-		handler: (ev: HTMLVideoElementEventMap[K]) => void,
+		handler: (ev: HTMLMediaElementEventMap[K]) => void,
 	): void;
 	// biome-ignore lint/suspicious/noExplicitAny: catch-all for dynamic event names
 	on(event: string, handler: (...args: any[]) => void): void;
@@ -90,9 +93,9 @@ export interface EventBus {
 		event: K,
 		handler: EventHandler<PlayerEventMap[K]>,
 	): void;
-	off<K extends NativeVideoEvent>(
+	off<K extends NativeMediaEvent>(
 		event: K,
-		handler: (ev: HTMLVideoElementEventMap[K]) => void,
+		handler: (ev: HTMLMediaElementEventMap[K]) => void,
 	): void;
 	// biome-ignore lint/suspicious/noExplicitAny: catch-all for dynamic event names
 	off(event: string, handler: (...args: any[]) => void): void;
@@ -103,9 +106,9 @@ export interface EventBus {
 		event: K,
 		handler: EventHandler<PlayerEventMap[K]>,
 	): void;
-	once<K extends NativeVideoEvent>(
+	once<K extends NativeMediaEvent>(
 		event: K,
-		handler: (ev: HTMLVideoElementEventMap[K]) => void,
+		handler: (ev: HTMLMediaElementEventMap[K]) => void,
 	): void;
 	// biome-ignore lint/suspicious/noExplicitAny: catch-all for dynamic event names
 	once(event: string, handler: (...args: any[]) => void): void;
@@ -145,10 +148,10 @@ export interface VideCue {
 export interface SourceHandler {
 	/** Whether this handler can process the given URL/type. */
 	canHandle(url: string, type?: string): boolean;
-	/** Load the source into the video element. */
-	load(url: string, videoElement: HTMLVideoElement): void;
+	/** Load the source into the media element. */
+	load(url: string, mediaElement: MediaElement): void;
 	/** Unload the source and clean up. */
-	unload(videoElement: HTMLVideoElement): void;
+	unload(mediaElement: MediaElement): void;
 }
 
 // === Plugin ===
@@ -159,7 +162,7 @@ export interface Plugin {
 
 // === Player ===
 export interface Player extends EventBus {
-	readonly el: HTMLVideoElement;
+	readonly el: MediaElement;
 	readonly state: PlayerState;
 
 	play(): Promise<void>;
@@ -181,6 +184,7 @@ export interface Player extends EventBus {
 	readonly currentQuality: QualityLevel | null;
 	setQuality(id: number): void;
 	readonly isAutoQuality: boolean;
+	readonly isAudio: boolean;
 
 	readonly textTracks: TextTrackList;
 	getTextTracks(): VideTextTrack[];
@@ -206,10 +210,10 @@ export interface Player extends EventBus {
 	crossOrigin: string | null;
 	controls: boolean;
 
-	/** Web-standard addEventListener, delegates to the underlying HTMLVideoElement. */
-	addEventListener<K extends keyof HTMLVideoElementEventMap>(
+	/** Web-standard addEventListener, delegates to the underlying media element. */
+	addEventListener<K extends keyof HTMLMediaElementEventMap>(
 		type: K,
-		listener: (ev: HTMLVideoElementEventMap[K]) => void,
+		listener: (ev: HTMLMediaElementEventMap[K]) => void,
 		options?: boolean | AddEventListenerOptions,
 	): void;
 	addEventListener(
@@ -218,10 +222,10 @@ export interface Player extends EventBus {
 		options?: boolean | AddEventListenerOptions,
 	): void;
 
-	/** Web-standard removeEventListener, delegates to the underlying HTMLVideoElement. */
-	removeEventListener<K extends keyof HTMLVideoElementEventMap>(
+	/** Web-standard removeEventListener, delegates to the underlying media element. */
+	removeEventListener<K extends keyof HTMLMediaElementEventMap>(
 		type: K,
-		listener: (ev: HTMLVideoElementEventMap[K]) => void,
+		listener: (ev: HTMLMediaElementEventMap[K]) => void,
 		options?: boolean | EventListenerOptions,
 	): void;
 	removeEventListener(
