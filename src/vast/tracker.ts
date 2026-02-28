@@ -1,3 +1,5 @@
+import type { VastCompanionAd } from "./types.js";
+
 /** Fire-and-forget tracking. Response is ignored. */
 export function track(urls: string[]): void {
 	for (const url of urls) {
@@ -71,4 +73,10 @@ export function createQuartileTracker(
 			}
 		}
 	};
+}
+
+/** Fire creativeView tracking beacons for a companion ad.
+ *  Call when the companion is actually displayed to the user. */
+export function trackCompanionView(companion: VastCompanionAd): void {
+	track(companion.trackingEvents.creativeView);
 }

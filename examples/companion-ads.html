@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>vide — Companion Ads</title>
+  <link rel="stylesheet" href="../dist/ui/theme.css">
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 1100px; margin: 2rem auto; padding: 0 1rem; }
+    .layout { display: flex; gap: 1rem; align-items: flex-start; }
+    .main { flex: 1; min-width: 0; }
+    .sidebar { width: 300px; flex-shrink: 0; }
+    #player-container { position: relative; width: 100%; background: #000; aspect-ratio: 16/9; }
+    #player-container video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+    .controls { margin: 1rem 0; display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    button { padding: 0.4rem 1rem; cursor: pointer; }
+    h3 span { font-weight: normal; }
+    #log { font-family: monospace; font-size: 13px; background: #1a1a1a; color: #0f0; padding: 1rem; max-height: 300px; overflow-y: auto; border-radius: 4px; margin-top: 1rem; }
+    .log-entry { margin: 2px 0; }
+    .log-entry.ad { color: #0ff; }
+    .log-entry.companion { color: #ff0; }
+    .log-entry.track { color: #f0f; }
+
+    /* Companion ad slots */
+    .companion-slot { border: 2px dashed #555; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #888; font-size: 13px; background: #111; overflow: hidden; }
+    .companion-slot.filled { border-style: solid; border-color: #ff0; }
+    .companion-slot img { display: block; width: 100%; height: 100%; object-fit: contain; cursor: pointer; }
+    #companion-sidebar { width: 300px; height: 250px; margin-bottom: 1rem; }
+    #companion-leaderboard { width: 100%; height: 90px; margin-top: 1rem; }
+  </style>
+</head>
+<body>
+  <h1>vide — Companion Ads</h1>
+  <p>
+    Demonstrates <code>&lt;CompanionAds&gt;</code> parsing and display.
+    The VAST response includes two companion creatives (300x250 sidebar + 728x90 leaderboard).
+    vide parses and emits companion data via <code>ad:companions</code> — this page renders them.
+  </p>
+
+  <div class="layout">
+    <div class="main">
+      <div id="player-container">
+        <video id="player"
+          src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4">
+        </video>
+      </div>
+      <div id="companion-leaderboard" class="companion-slot">728 x 90 — leaderboard slot</div>
+    </div>
+    <div class="sidebar">
+      <div id="companion-sidebar" class="companion-slot">300 x 250 — sidebar slot</div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button onclick="playWithCompanions()">Play Ad (with Companions)</button>
+    <button onclick="playWithoutCompanions()">Play Ad (no Companions)</button>
+    <button onclick="playRequiredAll()">Play Ad (required="all")</button>
+  </div>
+
+  <h3>State: <span id="state">-</span></h3>
+  <div id="log"></div>
+
+  <script type="module">
+    import { createPlayer } from "../dist/index.mjs";
+    import { vast, trackCompanionView } from "../dist/vast/index.mjs";
+    import { ui } from "../dist/ui/index.mjs";
+
+    const el = document.getElementById("player");
+    const container = document.getElementById("player-container");
+    const stateEl = document.getElementById("state");
+    const logEl = document.getElementById("log");
+    const sidebarSlot = document.getElementById("companion-sidebar");
+    const leaderboardSlot = document.getElementById("companion-leaderboard");
+
+    const adVideo = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4";
+
+    // Placeholder images for companion ads (colored rectangles via SVG data URIs)
+    const bannerSvg300 = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="300" height="250"><rect width="300" height="250" fill="%23264653"/><text x="150" y="115" text-anchor="middle" fill="%23e9c46a" font-family="sans-serif" font-size="20" font-weight="bold">Companion Ad</text><text x="150" y="145" text-anchor="middle" fill="%23fff" font-family="sans-serif" font-size="14">300 x 250</text><text x="150" y="200" text-anchor="middle" fill="%2390e0ef" font-family="sans-serif" font-size="12">Click to visit advertiser</text></svg>')}`;
+    const bannerSvg728 = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="728" height="90"><rect width="728" height="90" fill="%232a9d8f"/><text x="364" y="45" text-anchor="middle" fill="%23fff" font-family="sans-serif" font-size="18" font-weight="bold">Companion Ad — 728 x 90 Leaderboard</text><text x="364" y="70" text-anchor="middle" fill="%23e9c46a" font-family="sans-serif" font-size="12">Click to visit advertiser</text></svg>')}`;
+
+    // --- Intercept sendBeacon to log tracking fires ---
+    const origSendBeacon = navigator.sendBeacon.bind(navigator);
+    navigator.sendBeacon = function(url) {
+      if (typeof url === "string") {
+        const match = url.match(/example\.com\/(.+)$/);
+        log(`BEACON  ${match ? match[1] : url}`, "track");
+      }
+      return true;
+    };
+
+    function log(msg, cls = "") {
+      const entry = document.createElement("div");
+      entry.className = "log-entry" + (cls ? ` ${cls}` : "");
+      entry.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+      logEl.prepend(entry);
+      console.log(msg);
+    }
+
+    let player = null;
+    let uiPlugin = null;
+
+    function clearCompanions() {
+      sidebarSlot.innerHTML = "300 x 250 — sidebar slot";
+      sidebarSlot.classList.remove("filled");
+      leaderboardSlot.innerHTML = "728 x 90 — leaderboard slot";
+      leaderboardSlot.classList.remove("filled");
+    }
+
+    function resetPlayer() {
+      if (player) player.destroy();
+      clearCompanions();
+      player = createPlayer(el);
+      uiPlugin = ui({ container });
+      player.use(uiPlugin);
+
+      player.on("statechange", ({ from, to }) => {
+        stateEl.textContent = to;
+        log(`state: ${from} → ${to}`);
+      });
+      player.on("ad:start", ({ adId }) => log(`ad:start id=${adId}`, "ad"));
+      player.on("ad:end", ({ adId }) => {
+        log(`ad:end id=${adId}`, "ad");
+        // Clear companions when ad ends
+        setTimeout(clearCompanions, 500);
+      });
+      player.on("ad:impression", ({ adId }) => log(`ad:impression id=${adId}`, "ad"));
+      player.on("ad:quartile", ({ adId, quartile }) => log(`ad:quartile id=${adId} ${quartile}`, "ad"));
+
+      // --- Companion Ads handler ---
+      player.on("ad:companions", ({ adId, required, companions }) => {
+        log(`ad:companions id=${adId} required="${required}" count=${companions.length}`, "companion");
+
+        for (const companion of companions) {
+          log(`  companion ${companion.width}x${companion.height} resources=${companion.resources.length}`, "companion");
+
+          // Find the matching slot by dimensions
+          let slot = null;
+          if (companion.width === 300 && companion.height === 250) slot = sidebarSlot;
+          else if (companion.width === 728 && companion.height === 90) slot = leaderboardSlot;
+
+          if (!slot) {
+            log(`  no slot for ${companion.width}x${companion.height}, skipping`, "companion");
+            continue;
+          }
+
+          // Pick the first static resource
+          const resource = companion.resources.find(r => r.type === "static");
+          if (!resource) {
+            log(`  no static resource, skipping`, "companion");
+            continue;
+          }
+
+          // Render the companion
+          const img = document.createElement("img");
+          img.src = resource.url;
+          img.alt = companion.altText || "Advertisement";
+          if (companion.clickThrough) {
+            img.addEventListener("click", () => {
+              log(`companion click → ${companion.clickThrough}`, "companion");
+              window.open(companion.clickThrough, "_blank");
+            });
+          }
+
+          slot.innerHTML = "";
+          slot.appendChild(img);
+          slot.classList.add("filled");
+
+          // Fire creativeView tracking
+          trackCompanionView(companion);
+          log(`  trackCompanionView fired for ${companion.width}x${companion.height}`, "track");
+        }
+      });
+    }
+
+    // --- Build VAST XML ---
+
+    function buildVastXml(adId, videoUrl, options = {}) {
+      const companions = options.companions || [];
+      const required = options.required || "none";
+
+      let companionAdsXml = "";
+      if (companions.length > 0) {
+        const companionsXml = companions.map(c => `
+              <Companion width="${c.width}" height="${c.height}" id="${c.id}" renderingMode="concurrent">
+                <StaticResource creativeType="image/svg+xml"><![CDATA[${c.staticUrl}]]></StaticResource>
+                <CompanionClickThrough><![CDATA[${c.clickThrough}]]></CompanionClickThrough>
+                <CompanionClickTracking><![CDATA[https://example.com/companion/${c.id}/click]]></CompanionClickTracking>
+                <TrackingEvents>
+                  <Tracking event="creativeView"><![CDATA[https://example.com/companion/${c.id}/creativeView]]></Tracking>
+                </TrackingEvents>
+                <AltText>${c.altText}</AltText>
+              </Companion>`).join("\n");
+
+        companionAdsXml = `
+            <CompanionAds required="${required}">${companionsXml}
+            </CompanionAds>`;
+      }
+
+      return `<?xml version="1.0" encoding="UTF-8"?>
+<VAST version="4.2">
+  <Ad id="${adId}">
+    <InLine>
+      <AdSystem>vide-example</AdSystem>
+      <AdTitle>Companion Ad Demo</AdTitle>
+      <Impression><![CDATA[https://example.com/imp/${adId}]]></Impression>
+      <Creatives>
+        <Creative>
+          <Linear>
+            <Duration>00:00:15</Duration>
+            <TrackingEvents>
+              <Tracking event="start"><![CDATA[https://example.com/${adId}/start]]></Tracking>
+              <Tracking event="complete"><![CDATA[https://example.com/${adId}/complete]]></Tracking>
+            </TrackingEvents>
+            <VideoClicks>
+              <ClickThrough><![CDATA[https://example.com/landing/${adId}]]></ClickThrough>
+            </VideoClicks>
+            <MediaFiles>
+              <MediaFile delivery="progressive" type="video/mp4" width="640" height="360">
+                <![CDATA[${videoUrl}]]>
+              </MediaFile>
+            </MediaFiles>
+          </Linear>${companionAdsXml}
+        </Creative>
+      </Creatives>
+    </InLine>
+  </Ad>
+</VAST>`;
+    }
+
+    function vastBlobUrl(xml) {
+      const blob = new Blob([xml], { type: "application/xml" });
+      return URL.createObjectURL(blob);
+    }
+
+    // --- Scenarios ---
+
+    // 1) Ad with two companion creatives
+    window.playWithCompanions = function() {
+      logEl.innerHTML = "";
+      resetPlayer();
+      log("=== Ad with Companion Ads (300x250 + 728x90) ===", "companion");
+
+      const xml = buildVastXml("ad-with-companions", adVideo, {
+        required: "any",
+        companions: [
+          { width: 300, height: 250, id: "sidebar-banner", staticUrl: bannerSvg300, clickThrough: "https://example.com/advertiser", altText: "Sidebar banner ad" },
+          { width: 728, height: 90, id: "leaderboard-banner", staticUrl: bannerSvg728, clickThrough: "https://example.com/advertiser", altText: "Leaderboard banner ad" },
+        ],
+      });
+
+      player.use(vast({
+        tagUrl: vastBlobUrl(xml),
+        timeout: 15000,
+        adPlugins: uiPlugin.getAdPlugin(),
+      }));
+    };
+
+    // 2) Ad without companions
+    window.playWithoutCompanions = function() {
+      logEl.innerHTML = "";
+      resetPlayer();
+      log("=== Ad without Companion Ads ===", "ad");
+
+      const xml = buildVastXml("ad-no-companions", adVideo);
+
+      player.use(vast({
+        tagUrl: vastBlobUrl(xml),
+        timeout: 15000,
+        adPlugins: uiPlugin.getAdPlugin(),
+      }));
+    };
+
+    // 3) Ad with required="all" companions
+    window.playRequiredAll = function() {
+      logEl.innerHTML = "";
+      resetPlayer();
+      log('=== Ad with required="all" Companion Ads ===', "companion");
+      log("  When required=\"all\", the publisher must display ALL companions.", "companion");
+      log("  If any cannot be displayed, the ad should be disregarded.", "companion");
+
+      const xml = buildVastXml("ad-required-all", adVideo, {
+        required: "all",
+        companions: [
+          { width: 300, height: 250, id: "sidebar-required", staticUrl: bannerSvg300, clickThrough: "https://example.com/advertiser", altText: "Required sidebar ad" },
+          { width: 728, height: 90, id: "leaderboard-required", staticUrl: bannerSvg728, clickThrough: "https://example.com/advertiser", altText: "Required leaderboard ad" },
+        ],
+      });
+
+      player.use(vast({
+        tagUrl: vastBlobUrl(xml),
+        timeout: 15000,
+        adPlugins: uiPlugin.getAdPlugin(),
+      }));
+    };
+
+    log("Player ready. Click a button above to test.");
+  </script>
+</body>
+</html>

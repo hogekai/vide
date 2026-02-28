@@ -283,6 +283,7 @@ export function createPlayer(el: MediaElement): Player {
 		"timeupdate",
 		"livestatechange",
 		"error",
+		"ad:companions",
 		"ad:start",
 		"ad:end",
 		"ad:skip",

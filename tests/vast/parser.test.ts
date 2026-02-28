@@ -695,3 +695,338 @@ describe("parseDuration", () => {
 		expect(parseDuration("00:30")).toBe(0);
 	});
 });
+
+// === CompanionAds ===
+
+const COMPANION_VAST = `<?xml version="1.0" encoding="UTF-8"?>
+<VAST version="4.1">
+  <Ad id="ad-comp">
+    <InLine>
+      <AdSystem>TestAdServer</AdSystem>
+      <AdTitle>Companion Ad</AdTitle>
+      <Impression><![CDATA[http://example.com/imp]]></Impression>
+      <Creatives>
+        <Creative id="c1">
+          <Linear>
+            <Duration>00:00:30</Duration>
+            <MediaFiles>
+              <MediaFile delivery="progressive" type="video/mp4" width="640" height="360">
+                <![CDATA[http://example.com/ad.mp4]]>
+              </MediaFile>
+            </MediaFiles>
+          </Linear>
+          <CompanionAds required="all">
+            <Companion width="300" height="250" id="comp-1" assetWidth="280" assetHeight="230" expandedWidth="600" expandedHeight="500" apiFramework="VPAID" adSlotId="sidebar" pxratio="2" renderingMode="concurrent">
+              <StaticResource creativeType="image/png"><![CDATA[http://example.com/banner.png]]></StaticResource>
+              <CompanionClickThrough><![CDATA[http://example.com/click]]></CompanionClickThrough>
+              <CompanionClickTracking><![CDATA[http://example.com/track-click]]></CompanionClickTracking>
+              <TrackingEvents>
+                <Tracking event="creativeView"><![CDATA[http://example.com/view]]></Tracking>
+              </TrackingEvents>
+              <AltText>Banner ad</AltText>
+              <AdParameters><![CDATA[param=value]]></AdParameters>
+            </Companion>
+          </CompanionAds>
+        </Creative>
+      </Creatives>
+    </InLine>
+  </Ad>
+</VAST>`;
+
+describe("parseVast — CompanionAds", () => {
+	it("parses a companion with StaticResource", () => {
+		const result = parseVast(COMPANION_VAST);
+		const creative = result.ads[0].creatives[0];
+		expect(creative.companionAds).toBeDefined();
+		expect(creative.companionAds!.required).toBe("all");
+		expect(creative.companionAds!.companions).toHaveLength(1);
+
+		const comp = creative.companionAds!.companions[0];
+		expect(comp.width).toBe(300);
+		expect(comp.height).toBe(250);
+		expect(comp.id).toBe("comp-1");
+		expect(comp.resources).toHaveLength(1);
+		expect(comp.resources[0]).toEqual({
+			type: "static",
+			url: "http://example.com/banner.png",
+			creativeType: "image/png",
+		});
+		expect(comp.clickThrough).toBe("http://example.com/click");
+		expect(comp.clickTracking).toEqual(["http://example.com/track-click"]);
+		expect(comp.trackingEvents.creativeView).toEqual([
+			"http://example.com/view",
+		]);
+		expect(comp.altText).toBe("Banner ad");
+		expect(comp.adParameters).toBe("param=value");
+	});
+
+	it("parses all three resource types", () => {
+		const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<VAST version="4.1">
+  <Ad id="ad-multi">
+    <InLine>
+      <AdSystem>Test</AdSystem>
+      <AdTitle>Multi Resource</AdTitle>
+      <Impression><![CDATA[http://example.com/imp]]></Impression>
+      <Creatives>
+        <Creative>
+          <CompanionAds>
+            <Companion width="300" height="250">
+              <StaticResource creativeType="image/jpeg"><![CDATA[http://example.com/img.jpg]]></StaticResource>
+              <IFrameResource><![CDATA[http://example.com/iframe.html]]></IFrameResource>
+              <HTMLResource><![CDATA[<div>Hello</div>]]></HTMLResource>
+            </Companion>
+          </CompanionAds>
+        </Creative>
+      </Creatives>
+    </InLine>
+  </Ad>
+</VAST>`;
+		const result = parseVast(xml);
+		const comp = result.ads[0].creatives[0].companionAds!.companions[0];
+		expect(comp.resources).toHaveLength(3);
+		expect(comp.resources[0]).toEqual({
+			type: "static",
+			url: "http://example.com/img.jpg",
+			creativeType: "image/jpeg",
+		});
+		expect(comp.resources[1]).toEqual({
+			type: "iframe",
+			url: "http://example.com/iframe.html",
+		});
+		expect(comp.resources[2]).toEqual({
+			type: "html",
+			content: "<div>Hello</div>",
+		});
+	});
+
+	it("parses required attribute values", () => {
+		function makeVastWithRequired(required: string | null): string {
+			const attr = required !== null ? ` required="${required}"` : "";
+			return `<?xml version="1.0" encoding="UTF-8"?>
+<VAST version="4.1">
+  <Ad id="ad-req">
+    <InLine>
+      <AdSystem>Test</AdSystem>
+      <AdTitle>Required Test</AdTitle>
+      <Impression><![CDATA[http://example.com/imp]]></Impression>
+      <Creatives>
+        <Creative>
+          <CompanionAds${attr}>
+            <Companion width="300" height="250">
+              <StaticResource creativeType="image/png"><![CDATA[http://example.com/img.png]]></StaticResource>
+            </Companion>
+          </CompanionAds>
+        </Creative>
+      </Creatives>
+    </InLine>
+  </Ad>
+</VAST>`;
+		}
+
+		expect(
+			parseVast(makeVastWithRequired("all")).ads[0].creatives[0].companionAds!
+				.required,
+		).toBe("all");
+		expect(
+			parseVast(makeVastWithRequired("any")).ads[0].creatives[0].companionAds!
+				.required,
+		).toBe("any");
+		expect(
+			parseVast(makeVastWithRequired("none")).ads[0].creatives[0].companionAds!
+				.required,
+		).toBe("none");
+		expect(
+			parseVast(makeVastWithRequired(null)).ads[0].creatives[0].companionAds!
+				.required,
+		).toBe("none");
+	});
+
+	it("parses all optional companion attributes", () => {
+		const result = parseVast(COMPANION_VAST);
+		const comp = result.ads[0].creatives[0].companionAds!.companions[0];
+		expect(comp.assetWidth).toBe(280);
+		expect(comp.assetHeight).toBe(230);
+		expect(comp.expandedWidth).toBe(600);
+		expect(comp.expandedHeight).toBe(500);
+		expect(comp.apiFramework).toBe("VPAID");
+		expect(comp.adSlotId).toBe("sidebar");
+		expect(comp.pxratio).toBe(2);
+		expect(comp.renderingMode).toBe("concurrent");
+	});
+
+	it("skips companion without width or height", () => {
+		const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<VAST version="4.1">
+  <Ad id="ad-skip">
+    <InLine>
+      <AdSystem>Test</AdSystem>
+      <AdTitle>Skip Test</AdTitle>
+      <Impression><![CDATA[http://example.com/imp]]></Impression>
+      <Creatives>
+        <Creative>
+          <CompanionAds>
+            <Companion height="250">
+              <StaticResource creativeType="image/png"><![CDATA[http://example.com/img.png]]></StaticResource>
+            </Companion>
+          </CompanionAds>
+        </Creative>
+      </Creatives>
+    </InLine>
+  </Ad>
+</VAST>`;
+		const result = parseVast(xml);
+		expect(result.ads[0].creatives[0].companionAds).toBeUndefined();
+	});
+
+	it("returns undefined companionAds when no CompanionAds element", () => {
+		const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<VAST version="4.1">
+  <Ad id="ad-none">
+    <InLine>
+      <AdSystem>Test</AdSystem>
+      <AdTitle>No Companion</AdTitle>
+      <Impression><![CDATA[http://example.com/imp]]></Impression>
+      <Creatives>
+        <Creative>
+          <Linear>
+            <Duration>00:00:15</Duration>
+            <MediaFiles>
+              <MediaFile delivery="progressive" type="video/mp4" width="640" height="360">
+                <![CDATA[http://example.com/ad.mp4]]>
+              </MediaFile>
+            </MediaFiles>
+          </Linear>
+        </Creative>
+      </Creatives>
+    </InLine>
+  </Ad>
+</VAST>`;
+		const result = parseVast(xml);
+		expect(result.ads[0].creatives[0].companionAds).toBeUndefined();
+	});
+
+	it("parses multiple companions", () => {
+		const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<VAST version="4.1">
+  <Ad id="ad-multi-comp">
+    <InLine>
+      <AdSystem>Test</AdSystem>
+      <AdTitle>Multi Companion</AdTitle>
+      <Impression><![CDATA[http://example.com/imp]]></Impression>
+      <Creatives>
+        <Creative>
+          <CompanionAds required="any">
+            <Companion width="300" height="250">
+              <StaticResource creativeType="image/png"><![CDATA[http://example.com/banner1.png]]></StaticResource>
+            </Companion>
+            <Companion width="728" height="90">
+              <StaticResource creativeType="image/png"><![CDATA[http://example.com/banner2.png]]></StaticResource>
+            </Companion>
+          </CompanionAds>
+        </Creative>
+      </Creatives>
+    </InLine>
+  </Ad>
+</VAST>`;
+		const result = parseVast(xml);
+		const companionAds = result.ads[0].creatives[0].companionAds!;
+		expect(companionAds.required).toBe("any");
+		expect(companionAds.companions).toHaveLength(2);
+		expect(companionAds.companions[0].width).toBe(300);
+		expect(companionAds.companions[0].height).toBe(250);
+		expect(companionAds.companions[1].width).toBe(728);
+		expect(companionAds.companions[1].height).toBe(90);
+	});
+
+	it("ignores non-creativeView tracking events for companions", () => {
+		const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<VAST version="4.1">
+  <Ad id="ad-track">
+    <InLine>
+      <AdSystem>Test</AdSystem>
+      <AdTitle>Tracking Test</AdTitle>
+      <Impression><![CDATA[http://example.com/imp]]></Impression>
+      <Creatives>
+        <Creative>
+          <CompanionAds>
+            <Companion width="300" height="250">
+              <StaticResource creativeType="image/png"><![CDATA[http://example.com/img.png]]></StaticResource>
+              <TrackingEvents>
+                <Tracking event="creativeView"><![CDATA[http://example.com/view]]></Tracking>
+                <Tracking event="start"><![CDATA[http://example.com/start]]></Tracking>
+              </TrackingEvents>
+            </Companion>
+          </CompanionAds>
+        </Creative>
+      </Creatives>
+    </InLine>
+  </Ad>
+</VAST>`;
+		const result = parseVast(xml);
+		const comp = result.ads[0].creatives[0].companionAds!.companions[0];
+		expect(comp.trackingEvents.creativeView).toEqual([
+			"http://example.com/view",
+		]);
+		expect(Object.keys(comp.trackingEvents)).toEqual(["creativeView"]);
+	});
+
+	it("parses creative with both Linear and CompanionAds", () => {
+		const result = parseVast(COMPANION_VAST);
+		const creative = result.ads[0].creatives[0];
+		expect(creative.linear).not.toBeNull();
+		expect(creative.linear!.duration).toBe(30);
+		expect(creative.companionAds).toBeDefined();
+		expect(creative.companionAds!.companions).toHaveLength(1);
+	});
+
+	it("parses renderingMode end-card", () => {
+		const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<VAST version="4.1">
+  <Ad id="ad-endcard">
+    <InLine>
+      <AdSystem>Test</AdSystem>
+      <AdTitle>End Card</AdTitle>
+      <Impression><![CDATA[http://example.com/imp]]></Impression>
+      <Creatives>
+        <Creative>
+          <CompanionAds>
+            <Companion width="320" height="480" renderingMode="end-card">
+              <StaticResource creativeType="image/png"><![CDATA[http://example.com/endcard.png]]></StaticResource>
+            </Companion>
+          </CompanionAds>
+        </Creative>
+      </Creatives>
+    </InLine>
+  </Ad>
+</VAST>`;
+		const result = parseVast(xml);
+		const comp = result.ads[0].creatives[0].companionAds!.companions[0];
+		expect(comp.renderingMode).toBe("end-card");
+	});
+
+	it("leaves renderingMode undefined when not specified", () => {
+		const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<VAST version="4.1">
+  <Ad id="ad-nomode">
+    <InLine>
+      <AdSystem>Test</AdSystem>
+      <AdTitle>No Mode</AdTitle>
+      <Impression><![CDATA[http://example.com/imp]]></Impression>
+      <Creatives>
+        <Creative>
+          <CompanionAds>
+            <Companion width="300" height="250">
+              <StaticResource creativeType="image/png"><![CDATA[http://example.com/img.png]]></StaticResource>
+            </Companion>
+          </CompanionAds>
+        </Creative>
+      </Creatives>
+    </InLine>
+  </Ad>
+</VAST>`;
+		const result = parseVast(xml);
+		const comp = result.ads[0].creatives[0].companionAds!.companions[0];
+		expect(comp.renderingMode).toBeUndefined();
+	});
+});

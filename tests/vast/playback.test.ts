@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { playSingleAd } from "../../src/vast/playback.js";
 import type {
 	VastAd,
+	VastCompanionAds,
 	VastLinear,
 	VastTrackingEvents,
 } from "../../src/vast/types.js";
@@ -32,14 +33,14 @@ function emptyTracking(): VastTrackingEvents {
 	};
 }
 
-function makeAd(id: string): VastAd {
+function makeAd(id: string, companionAds?: VastCompanionAds): VastAd {
 	return {
 		id,
 		sequence: undefined,
 		adSystem: "test",
 		adTitle: `Ad ${id}`,
 		impressions: [`http://example.com/imp/${id}`],
-		creatives: [],
+		creatives: companionAds ? [{ linear: null, companionAds }] : [],
 		errors: [],
 	};
 }
@@ -338,5 +339,68 @@ describe("playSingleAd", () => {
 		await promise;
 
 		expect(cleanup).toHaveBeenCalledOnce();
+	});
+
+	it("emits ad:companions when ad has companion creatives", async () => {
+		const player = createMockPlayer();
+		const companionAds: VastCompanionAds = {
+			required: "all",
+			companions: [
+				{
+					width: 300,
+					height: 250,
+					resources: [
+						{
+							type: "static",
+							url: "http://example.com/banner.png",
+							creativeType: "image/png",
+						},
+					],
+					clickTracking: [],
+					trackingEvents: { creativeView: ["http://example.com/view"] },
+				},
+			],
+		};
+
+		const { promise } = playSingleAd({
+			player: player as any,
+			ad: makeAd("ad-1", companionAds),
+			linear: makeLinear(),
+			source: "vast",
+		});
+
+		player.el._fire("canplay");
+		player.el._fire("ended");
+		await promise;
+
+		const companionEvent = player.emitted.find(
+			(e) => e.event === "ad:companions",
+		);
+		expect(companionEvent).toBeDefined();
+		expect(companionEvent!.data).toEqual({
+			adId: "ad-1",
+			required: "all",
+			companions: companionAds.companions,
+		});
+	});
+
+	it("does not emit ad:companions when ad has no companion creatives", async () => {
+		const player = createMockPlayer();
+
+		const { promise } = playSingleAd({
+			player: player as any,
+			ad: makeAd("ad-1"),
+			linear: makeLinear(),
+			source: "vast",
+		});
+
+		player.el._fire("canplay");
+		player.el._fire("ended");
+		await promise;
+
+		const companionEvent = player.emitted.find(
+			(e) => e.event === "ad:companions",
+		);
+		expect(companionEvent).toBeUndefined();
 	});
 });

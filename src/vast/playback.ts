@@ -44,6 +44,18 @@ export function playSingleAd(options: PlaySingleAdOptions): {
 	setState("ad:loading");
 	player.emit("ad:start", { adId });
 
+	// Emit companion ads if present in any creative
+	for (const creative of ad.creatives) {
+		if (creative.companionAds && creative.companionAds.companions.length > 0) {
+			player.emit("ad:companions", {
+				adId,
+				required: creative.companionAds.required,
+				companions: creative.companionAds.companions,
+			});
+			break;
+		}
+	}
+
 	// --- Ad plugins lifecycle ---
 	const adPluginCleanups: (() => void)[] = [];
 	if (options.adPlugins) {

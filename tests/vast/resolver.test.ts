@@ -1,12 +1,21 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { resolveVast } from "../../src/vast/parser.js";
 
+interface CompanionDef {
+	width: number;
+	height: number;
+	staticUrl: string;
+	clickTracking?: string[];
+}
+
 function makeInlineVast(options?: {
 	adId?: string;
 	impressions?: string[];
 	errors?: string[];
 	tracking?: Record<string, string[]>;
 	clickTracking?: string[];
+	companions?: CompanionDef[];
+	companionRequired?: string;
 }): string {
 	const adId = options?.adId ?? "ad-001";
 	const impressions = (options?.impressions ?? ["http://example.com/imp"])
@@ -26,6 +35,25 @@ function makeInlineVast(options?: {
 	const clickTracking = (options?.clickTracking ?? [])
 		.map((u) => `<ClickTracking><![CDATA[${u}]]></ClickTracking>`)
 		.join("\n");
+
+	let companionAdsXml = "";
+	if (options?.companions) {
+		const reqAttr = options.companionRequired
+			? ` required="${options.companionRequired}"`
+			: "";
+		const companionsXml = options.companions
+			.map(
+				(c) => `
+            <Companion width="${c.width}" height="${c.height}">
+              <StaticResource creativeType="image/png"><![CDATA[${c.staticUrl}]]></StaticResource>
+              ${(c.clickTracking ?? []).map((u) => `<CompanionClickTracking><![CDATA[${u}]]></CompanionClickTracking>`).join("\n              ")}
+            </Companion>`,
+			)
+			.join("\n");
+		companionAdsXml = `
+          <CompanionAds${reqAttr}>${companionsXml}
+          </CompanionAds>`;
+	}
 
 	return `<?xml version="1.0" encoding="UTF-8"?>
 <VAST version="4.1">
@@ -50,7 +78,7 @@ function makeInlineVast(options?: {
             <VideoClicks>
               ${clickTracking}
             </VideoClicks>
-          </Linear>
+          </Linear>${companionAdsXml}
         </Creative>
       </Creatives>
     </InLine>
@@ -65,6 +93,8 @@ function makeWrapperVast(
 		errors?: string[];
 		tracking?: Record<string, string[]>;
 		clickTracking?: string[];
+		companions?: CompanionDef[];
+		companionRequired?: string;
 	},
 ): string {
 	const impressions = (options?.impressions ?? [])
@@ -85,6 +115,27 @@ function makeWrapperVast(
 		.map((u) => `<ClickTracking><![CDATA[${u}]]></ClickTracking>`)
 		.join("\n");
 
+	let companionAdsXml = "";
+	if (options?.companions) {
+		const reqAttr = options.companionRequired
+			? ` required="${options.companionRequired}"`
+			: "";
+		const companionsXml = options.companions
+			.map(
+				(c) => `
+            <Companion width="${c.width}" height="${c.height}">
+              <StaticResource creativeType="image/png"><![CDATA[${c.staticUrl}]]></StaticResource>
+              ${(c.clickTracking ?? []).map((u) => `<CompanionClickTracking><![CDATA[${u}]]></CompanionClickTracking>`).join("\n              ")}
+            </Companion>`,
+			)
+			.join("\n");
+		companionAdsXml = `
+        <Creative>
+          <CompanionAds${reqAttr}>${companionsXml}
+          </CompanionAds>
+        </Creative>`;
+	}
+
 	return `<?xml version="1.0" encoding="UTF-8"?>
 <VAST version="4.1">
   <Ad id="wrapper">
@@ -103,7 +154,7 @@ function makeWrapperVast(
               ${clickTracking}
             </VideoClicks>
           </Linear>
-        </Creative>
+        </Creative>${companionAdsXml}
       </Creatives>
     </Wrapper>
   </Ad>
@@ -329,6 +380,124 @@ describe("resolveVast", () => {
 		expect(result.ads[0].creatives[0].linear?.clickTracking).toEqual([
 			"http://wrapper.com/click",
 			"http://inline.com/click",
+		]);
+	});
+
+	it("InLine companions take precedence over wrapper companions", async () => {
+		const wrapperXml = makeWrapperVast("http://example.com/inline", {
+			companions: [
+				{ width: 300, height: 250, staticUrl: "http://wrapper.com/banner.png" },
+			],
+		});
+		const inlineXml = makeInlineVast({
+			companions: [
+				{
+					width: 728,
+					height: 90,
+					staticUrl: "http://inline.com/leaderboard.png",
+				},
+			],
+		});
+
+		fetchMock
+			.mockReturnValueOnce(mockFetchResponse(wrapperXml))
+			.mockReturnValueOnce(mockFetchResponse(inlineXml));
+
+		const result = await resolveVast("http://example.com/wrapper");
+		const companionAds = result.ads[0].creatives[0].companionAds;
+		expect(companionAds).toBeDefined();
+		expect(companionAds!.companions).toHaveLength(1);
+		expect(companionAds!.companions[0].width).toBe(728);
+		expect(companionAds!.companions[0].height).toBe(90);
+	});
+
+	it("uses wrapper companions when InLine has none", async () => {
+		const wrapperXml = makeWrapperVast("http://example.com/inline", {
+			companions: [
+				{ width: 300, height: 250, staticUrl: "http://wrapper.com/banner.png" },
+			],
+		});
+		const inlineXml = makeInlineVast();
+
+		fetchMock
+			.mockReturnValueOnce(mockFetchResponse(wrapperXml))
+			.mockReturnValueOnce(mockFetchResponse(inlineXml));
+
+		const result = await resolveVast("http://example.com/wrapper");
+		const companionAds = result.ads[0].creatives[0].companionAds;
+		expect(companionAds).toBeDefined();
+		expect(companionAds!.companions).toHaveLength(1);
+		expect(companionAds!.companions[0].width).toBe(300);
+	});
+
+	it("closest wrapper to InLine wins when InLine has no companions", async () => {
+		const wrapper1 = makeWrapperVast("http://example.com/w2", {
+			companions: [
+				{
+					width: 300,
+					height: 250,
+					staticUrl: "http://outer-wrapper.com/banner.png",
+				},
+			],
+		});
+		const wrapper2 = makeWrapperVast("http://example.com/inline", {
+			companions: [
+				{
+					width: 728,
+					height: 90,
+					staticUrl: "http://inner-wrapper.com/banner.png",
+				},
+			],
+		});
+		const inlineXml = makeInlineVast();
+
+		fetchMock
+			.mockReturnValueOnce(mockFetchResponse(wrapper1))
+			.mockReturnValueOnce(mockFetchResponse(wrapper2))
+			.mockReturnValueOnce(mockFetchResponse(inlineXml));
+
+		const result = await resolveVast("http://example.com/w1");
+		const companionAds = result.ads[0].creatives[0].companionAds;
+		expect(companionAds).toBeDefined();
+		expect(companionAds!.companions[0].width).toBe(728);
+		expect(companionAds!.companions[0].resources[0]).toEqual({
+			type: "static",
+			url: "http://inner-wrapper.com/banner.png",
+			creativeType: "image/png",
+		});
+	});
+
+	it("merges wrapper CompanionClickTracking into InLine companions", async () => {
+		const wrapperXml = makeWrapperVast("http://example.com/inline", {
+			companions: [
+				{
+					width: 300,
+					height: 250,
+					staticUrl: "http://wrapper.com/banner.png",
+					clickTracking: ["http://wrapper.com/comp-click"],
+				},
+			],
+		});
+		const inlineXml = makeInlineVast({
+			companions: [
+				{
+					width: 300,
+					height: 250,
+					staticUrl: "http://inline.com/banner.png",
+					clickTracking: ["http://inline.com/comp-click"],
+				},
+			],
+		});
+
+		fetchMock
+			.mockReturnValueOnce(mockFetchResponse(wrapperXml))
+			.mockReturnValueOnce(mockFetchResponse(inlineXml));
+
+		const result = await resolveVast("http://example.com/wrapper");
+		const companionAds = result.ads[0].creatives[0].companionAds;
+		expect(companionAds!.companions[0].clickTracking).toEqual([
+			"http://wrapper.com/comp-click",
+			"http://inline.com/comp-click",
 		]);
 	});
 });

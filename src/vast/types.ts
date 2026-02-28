@@ -36,6 +36,7 @@ export interface VastCreative {
 	id?: string | undefined;
 	sequence?: number | undefined;
 	linear: VastLinear | null;
+	companionAds?: VastCompanionAds | undefined;
 }
 
 export interface VastLinear {
@@ -88,6 +89,62 @@ export interface VastTrackingEvents {
 	otherAdInteraction: string[];
 	creativeView: string[];
 	progress: VastProgressEvent[];
+}
+
+// === VAST 4.1 CompanionAds ===
+
+export type CompanionRequired = "all" | "any" | "none";
+
+export type CompanionRenderingMode = "default" | "end-card" | "concurrent";
+
+export interface CompanionTrackingEvents {
+	creativeView: string[];
+}
+
+export interface CompanionStaticResource {
+	type: "static";
+	url: string;
+	creativeType: string;
+}
+
+export interface CompanionIFrameResource {
+	type: "iframe";
+	url: string;
+}
+
+export interface CompanionHTMLResource {
+	type: "html";
+	content: string;
+}
+
+export type CompanionResource =
+	| CompanionStaticResource
+	| CompanionIFrameResource
+	| CompanionHTMLResource;
+
+export interface VastCompanionAd {
+	width: number;
+	height: number;
+	id?: string | undefined;
+	assetWidth?: number | undefined;
+	assetHeight?: number | undefined;
+	expandedWidth?: number | undefined;
+	expandedHeight?: number | undefined;
+	apiFramework?: string | undefined;
+	adSlotId?: string | undefined;
+	pxratio?: number | undefined;
+	renderingMode?: CompanionRenderingMode | undefined;
+	resources: CompanionResource[];
+	clickThrough?: string | undefined;
+	clickTracking: string[];
+	trackingEvents: CompanionTrackingEvents;
+	altText?: string | undefined;
+	adParameters?: string | undefined;
+}
+
+export interface VastCompanionAds {
+	required: CompanionRequired;
+	companions: VastCompanionAd[];
 }
 
 // === Ad Plugin (per-ad lifecycle) ===

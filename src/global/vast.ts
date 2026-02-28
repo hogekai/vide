@@ -6,6 +6,7 @@ import {
 	resolveVast,
 	selectMediaFile,
 	track,
+	trackCompanionView,
 	vast,
 } from "../vast/index.js";
 
@@ -18,6 +19,7 @@ Object.assign(ns, {
 	fetchVast,
 	resolveVast,
 	track,
+	trackCompanionView,
 	getQuartile,
 	classifyAds,
 	selectMediaFile,

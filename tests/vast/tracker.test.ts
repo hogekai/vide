@@ -3,7 +3,9 @@ import {
 	createQuartileTracker,
 	getQuartile,
 	track,
+	trackCompanionView,
 } from "../../src/vast/tracker.js";
+import type { VastCompanionAd } from "../../src/vast/types.js";
 
 describe("track", () => {
 	it("uses sendBeacon when available", () => {
@@ -140,5 +142,47 @@ describe("createQuartileTracker", () => {
 			"midpoint",
 			"thirdQuartile",
 		]);
+	});
+});
+
+describe("trackCompanionView", () => {
+	it("fires creativeView beacons for companion", () => {
+		const beacon = vi.fn();
+		vi.stubGlobal("navigator", { sendBeacon: beacon });
+
+		const companion: VastCompanionAd = {
+			width: 300,
+			height: 250,
+			resources: [
+				{
+					type: "static",
+					url: "http://example.com/banner.png",
+					creativeType: "image/png",
+				},
+			],
+			clickTracking: [],
+			trackingEvents: {
+				creativeView: ["http://example.com/view1", "http://example.com/view2"],
+			},
+		};
+
+		trackCompanionView(companion);
+		expect(beacon).toHaveBeenCalledTimes(2);
+		expect(beacon).toHaveBeenCalledWith("http://example.com/view1");
+		expect(beacon).toHaveBeenCalledWith("http://example.com/view2");
+
+		vi.unstubAllGlobals();
+	});
+
+	it("handles companion with no creativeView URLs", () => {
+		const companion: VastCompanionAd = {
+			width: 300,
+			height: 250,
+			resources: [],
+			clickTracking: [],
+			trackingEvents: { creativeView: [] },
+		};
+
+		expect(() => trackCompanionView(companion)).not.toThrow();
 	});
 });

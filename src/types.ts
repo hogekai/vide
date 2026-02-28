@@ -37,6 +37,31 @@ export interface PlayerEventMap {
 		recoverable?: boolean | undefined;
 		retryCount?: number | undefined;
 	};
+	"ad:companions": {
+		adId: string;
+		required: "all" | "any" | "none";
+		companions: {
+			width: number;
+			height: number;
+			id?: string | undefined;
+			assetWidth?: number | undefined;
+			assetHeight?: number | undefined;
+			expandedWidth?: number | undefined;
+			expandedHeight?: number | undefined;
+			pxratio?: number | undefined;
+			renderingMode?: "default" | "end-card" | "concurrent" | undefined;
+			resources: Array<
+				| { type: "static"; url: string; creativeType: string }
+				| { type: "iframe"; url: string }
+				| { type: "html"; content: string }
+			>;
+			clickThrough?: string | undefined;
+			clickTracking: string[];
+			trackingEvents: { creativeView: string[] };
+			altText?: string | undefined;
+			adParameters?: string | undefined;
+		}[];
+	};
 	"ad:start": { adId: string };
 	"ad:end": { adId: string };
 	"ad:skip": { adId: string };

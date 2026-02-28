@@ -1,9 +1,15 @@
 import type {
 	AdCategory,
 	AdVerification,
+	CompanionRenderingMode,
+	CompanionRequired,
+	CompanionResource,
+	CompanionTrackingEvents,
 	InteractiveCreativeFile,
 	ResolveOptions,
 	VastAd,
+	VastCompanionAd,
+	VastCompanionAds,
 	VastCreative,
 	VastLinear,
 	VastMediaFile,
@@ -150,7 +156,9 @@ function parseCreative(creativeEl: Element): VastCreative {
 	const linearEl = creativeEl.querySelector("Linear");
 	const linear = linearEl ? parseLinear(linearEl) : null;
 
-	return { id, sequence, linear };
+	const companionAds = parseCompanionAds(creativeEl);
+
+	return { id, sequence, linear, companionAds };
 }
 
 function parseLinear(linearEl: Element): VastLinear {
@@ -235,6 +243,115 @@ function parseInteractiveCreativeFiles(
 	}
 
 	return files;
+}
+
+// === CompanionAds Parsing ===
+
+function parseCompanionAds(creativeEl: Element): VastCompanionAds | undefined {
+	const companionAdsEl = directChild(creativeEl, "CompanionAds");
+	if (!companionAdsEl) return undefined;
+
+	const requiredAttr = companionAdsEl.getAttribute("required");
+	const required: CompanionRequired =
+		requiredAttr === "all" || requiredAttr === "any" ? requiredAttr : "none";
+
+	const companions: VastCompanionAd[] = [];
+	for (const companionEl of directChildren(companionAdsEl, "Companion")) {
+		const companion = parseCompanion(companionEl);
+		if (companion) companions.push(companion);
+	}
+
+	return companions.length > 0 ? { required, companions } : undefined;
+}
+
+function parseCompanion(companionEl: Element): VastCompanionAd | null {
+	const width = safeInt(companionEl.getAttribute("width"), 0);
+	const height = safeInt(companionEl.getAttribute("height"), 0);
+	if (width === 0 || height === 0) return null;
+
+	const id = companionEl.getAttribute("id") ?? undefined;
+	const assetWidth = safeInt(companionEl.getAttribute("assetWidth"), undefined);
+	const assetHeight = safeInt(
+		companionEl.getAttribute("assetHeight"),
+		undefined,
+	);
+	const expandedWidth = safeInt(
+		companionEl.getAttribute("expandedWidth"),
+		undefined,
+	);
+	const expandedHeight = safeInt(
+		companionEl.getAttribute("expandedHeight"),
+		undefined,
+	);
+	const apiFramework = companionEl.getAttribute("apiFramework") ?? undefined;
+	const adSlotId = companionEl.getAttribute("adSlotId") ?? undefined;
+	const pxratio = safeFloat(companionEl.getAttribute("pxratio"), undefined);
+	const renderingModeAttr = companionEl.getAttribute("renderingMode");
+	const renderingMode: CompanionRenderingMode | undefined =
+		renderingModeAttr === "end-card" || renderingModeAttr === "concurrent"
+			? renderingModeAttr
+			: renderingModeAttr === "default"
+				? "default"
+				: undefined;
+
+	const resources: CompanionResource[] = [];
+	for (const staticEl of directChildren(companionEl, "StaticResource")) {
+		const url = (staticEl.textContent ?? "").trim();
+		const creativeType = staticEl.getAttribute("creativeType") ?? "";
+		if (url) resources.push({ type: "static", url, creativeType });
+	}
+	for (const iframeEl of directChildren(companionEl, "IFrameResource")) {
+		const url = (iframeEl.textContent ?? "").trim();
+		if (url) resources.push({ type: "iframe", url });
+	}
+	for (const htmlEl of directChildren(companionEl, "HTMLResource")) {
+		const content = (htmlEl.textContent ?? "").trim();
+		if (content) resources.push({ type: "html", content });
+	}
+
+	const clickThrough =
+		textContent(companionEl, "CompanionClickThrough") || undefined;
+	const clickTracking = textContents(companionEl, "CompanionClickTracking");
+	const trackingEvents = parseCompanionTrackingEvents(companionEl);
+	const altText = textContent(companionEl, "AltText") || undefined;
+	const adParameters = textContent(companionEl, "AdParameters") || undefined;
+
+	return {
+		width,
+		height,
+		id,
+		assetWidth,
+		assetHeight,
+		expandedWidth,
+		expandedHeight,
+		apiFramework,
+		adSlotId,
+		pxratio,
+		renderingMode,
+		resources,
+		clickThrough,
+		clickTracking,
+		trackingEvents,
+		altText,
+		adParameters,
+	};
+}
+
+function parseCompanionTrackingEvents(
+	companionEl: Element,
+): CompanionTrackingEvents {
+	const events: CompanionTrackingEvents = { creativeView: [] };
+	const trackingEventsEl = companionEl.querySelector("TrackingEvents");
+	if (!trackingEventsEl) return events;
+
+	for (const t of trackingEventsEl.querySelectorAll("Tracking")) {
+		const eventName = t.getAttribute("event");
+		const url = (t.textContent ?? "").trim();
+		if (eventName === "creativeView" && url) {
+			events.creativeView.push(url);
+		}
+	}
+	return events;
 }
 
 const SIMPLE_TRACKING_EVENTS = new Set([
@@ -390,6 +507,8 @@ interface WrapperAd {
 	impressions: string[];
 	trackingEvents: VastTrackingEvents;
 	clickTracking: string[];
+	companionAds?: VastCompanionAds | undefined;
+	companionClickTracking: string[];
 }
 
 /**
@@ -478,6 +597,8 @@ function extractWrapperFromXml(xml: string): WrapperAd | null {
 
 		let trackingEvents = emptyTrackingEvents();
 		let clickTracking: string[] = [];
+		let companionAds: VastCompanionAds | undefined;
+		const companionClickTracking: string[] = [];
 		const creativesEl = wrapperEl.querySelector("Creatives");
 		if (creativesEl) {
 			for (const creativeEl of directChildren(creativesEl, "Creative")) {
@@ -488,12 +609,27 @@ function extractWrapperFromXml(xml: string): WrapperAd | null {
 					if (videoClicksEl) {
 						clickTracking = textContents(videoClicksEl, "ClickTracking");
 					}
-					break;
+				}
+
+				const parsed = parseCompanionAds(creativeEl);
+				if (parsed) {
+					companionAds = parsed;
+					for (const c of parsed.companions) {
+						companionClickTracking.push(...c.clickTracking);
+					}
 				}
 			}
 		}
 
-		return { adTagUri, errors, impressions, trackingEvents, clickTracking };
+		return {
+			adTagUri,
+			errors,
+			impressions,
+			trackingEvents,
+			clickTracking,
+			companionAds,
+			companionClickTracking,
+		};
 	}
 	return null;
 }
@@ -555,21 +691,59 @@ function mergeWrapperIntoAd(ad: VastAd, wrapperChain: WrapperAd[]): VastAd {
 	];
 
 	const mergedCreatives = ad.creatives.map((creative) => {
-		if (!creative.linear) return creative;
-		return {
-			...creative,
-			linear: {
-				...creative.linear,
-				trackingEvents: mergeTrackingEvents(
-					wrapperChain.map((w) => w.trackingEvents),
-					creative.linear.trackingEvents,
-				),
-				clickTracking: [
-					...wrapperChain.flatMap((w) => w.clickTracking),
-					...creative.linear.clickTracking,
-				],
-			},
-		};
+		let merged = creative;
+
+		// Merge linear tracking
+		if (creative.linear) {
+			merged = {
+				...merged,
+				linear: {
+					...creative.linear,
+					trackingEvents: mergeTrackingEvents(
+						wrapperChain.map((w) => w.trackingEvents),
+						creative.linear.trackingEvents,
+					),
+					clickTracking: [
+						...wrapperChain.flatMap((w) => w.clickTracking),
+						...creative.linear.clickTracking,
+					],
+				},
+			};
+		}
+
+		// Merge companion ads (VAST 4.2 §2.3.5.2):
+		// - InLine companions take precedence
+		// - If InLine has none, use wrapper closest to InLine (last in chain)
+		// - CompanionClickTracking from wrappers merges into InLine companions
+		if (creative.companionAds) {
+			const wrapperClickTracking = wrapperChain.flatMap(
+				(w) => w.companionClickTracking,
+			);
+			if (wrapperClickTracking.length > 0) {
+				merged = {
+					...merged,
+					companionAds: {
+						...creative.companionAds,
+						companions: creative.companionAds.companions.map((c) => ({
+							...c,
+							clickTracking: [...wrapperClickTracking, ...c.clickTracking],
+						})),
+					},
+				};
+			}
+		} else {
+			for (let i = wrapperChain.length - 1; i >= 0; i--) {
+				if (wrapperChain[i].companionAds) {
+					merged = {
+						...merged,
+						companionAds: wrapperChain[i].companionAds,
+					};
+					break;
+				}
+			}
+		}
+
+		return merged;
 	});
 
 	return {
@@ -588,5 +762,18 @@ function safeInt(
 ): number | undefined {
 	if (value == null) return fallback;
 	const n = Number.parseInt(value, 10);
+	return Number.isNaN(n) ? fallback : n;
+}
+
+function safeFloat(
+	value: string | null,
+	fallback: undefined,
+): number | undefined;
+function safeFloat(
+	value: string | null,
+	fallback: number | undefined,
+): number | undefined {
+	if (value == null) return fallback;
+	const n = Number.parseFloat(value);
 	return Number.isNaN(n) ? fallback : n;
 }

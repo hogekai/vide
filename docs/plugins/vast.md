@@ -75,6 +75,7 @@ const classified = classifyAds(response.ads);
 | `ad:unmute` | `{ adId }` | Ad unmuted |
 | `ad:volumeChange` | `{ adId, volume }` | Ad volume changed |
 | `ad:fullscreen` | `{ adId, fullscreen }` | Fullscreen state changed during ad |
+| `ad:companions` | `{ adId, required, companions }` | Companion ad data available (emitted with `ad:start`) |
 
 ### Pod Events
 
@@ -102,6 +103,48 @@ player.use(vast({
   ],
 }));
 ```
+
+## Companion Ads
+
+Companion ads are secondary ads (banners, sidebars) that accompany the video ad. The plugin parses `<CompanionAds>` from the VAST response and emits data via the `ad:companions` event. Display is the integrator's responsibility.
+
+### Listening for Companions
+
+```ts
+import { trackCompanionView } from "@videts/vide/vast";
+
+player.on("ad:companions", ({ companions, required }) => {
+  const banner = companions.find(c => c.width === 300 && c.height === 250);
+  if (banner) {
+    const resource = banner.resources.find(r => r.type === "static");
+    if (resource) {
+      document.getElementById("sidebar-ad")!.innerHTML =
+        `<a href="${banner.clickThrough}"><img src="${resource.url}" alt="${banner.altText || ""}"></a>`;
+      trackCompanionView(banner); // fires creativeView tracking beacons
+    }
+  }
+});
+```
+
+### `required` Attribute
+
+| Value | Behavior |
+|-------|----------|
+| `"all"` | All companions must be displayed, or disregard the ad |
+| `"any"` | At least one companion must be displayed |
+| `"none"` | Companion display is optional (default) |
+
+### Resource Types
+
+Each companion may contain multiple resources. The integrator picks the most suitable:
+
+- `{ type: "static", url, creativeType }` — Static image (e.g. `image/png`)
+- `{ type: "iframe", url }` — URL to load in an iframe
+- `{ type: "html", content }` — Inline HTML snippet
+
+### Tracking
+
+Call `trackCompanionView(companion)` when a companion is actually displayed to fire the `creativeView` tracking beacons. The plugin does not fire these automatically since it does not control rendering.
 
 ## Notes
 
