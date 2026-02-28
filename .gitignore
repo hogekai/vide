@@ -8,3 +8,6 @@ docs/.vitepress/cache/
 docs/api-reference/
 test-results/
 playwright-report/
+.svelte-kit/
+src/**/*.d.ts
+src/**/*.d.ts.map
