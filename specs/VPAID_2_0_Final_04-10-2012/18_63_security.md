@@ -1,0 +1,3 @@
+## 6.3 Security
+
+To implement unidirectional scripting in ActionScript 3, use Security.allowDomain["<playerdomain or "*"]. The ad swf must also be served from a domain where /crossdomain.xml allows the ad swf to be loaded by the video player domain or *. The video player should load the ad swf into a separate security and application domain. The ad unit SWF should not access the Stage. Special attention should be paid in the ad unit SWF for handling ads that require JavaScript access via ExternalInterface: an `AuError` should be thrown if this access is not allowed.

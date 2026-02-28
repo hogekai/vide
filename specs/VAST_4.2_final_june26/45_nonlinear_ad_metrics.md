@@ -1,0 +1,10 @@
+# NonLinear Ad Metrics
+
+- **creativeView:** Not to be confused with an impression, this event indicates that an individual creative portion of the ad was viewed. An impression indicates that at least a portion of the ad was displayed; however an ad may be composed of multiple creative, or creative that only play on some platforms and not others. This event enables ad servers to track which ad creative are viewed, and therefore, which platforms are more common.
+- **acceptInvitation:** The user clicked or otherwise activated a control used to pause streaming content, which either expands the ad within the player's viewable area or "takes-over" the streaming content area by launching an additional portion of the ad. An ad in video format is usually played upon acceptance, but other forms of media such as games, animation, tutorials, social media, or other engaging media are also used.
+- **adExpand:** The user activated a control to expand the creative.
+- **adCollapse:** The user activated a control to reduce the creative to its original dimensions.
+- **minimize:** The user clicked or otherwise activated a control used to minimize the ad to a size smaller than a collapsed ad but without fully dispatching the ad from the player environment. Unlike a collapsed ad that is big enough to display it's message, the minimized ad is only big enough to offer a control that enables the user to redisplay the ad if desired.
+- **close:** The user clicked or otherwise activated a control for removing the ad, which fully dispatches the ad from the player environment in a manner that does not allow the user to re-display the ad.
+- **overlayViewDuration:** The time that the initial ad is displayed. This time is based on the time between the impression and either the completed length of display based on the agreement between transactional parties or a close, minimize, or accept invitation event.
+- **otherAdInteraction:** An optional metric that can capture all other user interactions under one metric such as hover-overs, or custom clicks. It should NOT replace clickthrough events or other existing events like mute, unmute, pause, etc.

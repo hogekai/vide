@@ -1,0 +1,15 @@
+## 2. Executive Summary
+
+Secure Interactive Media Interface Definition (SIMID) is a standard for providing rich interactivity in the context of streaming audio and video (media) ads. While the Video Ad Serving Template (VAST) standard addresses how publishers discover various metadata assets related to an ad campaign, SIMID addresses how the publisher's media player should communicate and interface with a rich interactive layer and vice versa. As such, one can think of the SIMID creative as one of the assets listed in a VAST document.
+
+A main tenet of SIMID is the separation of the interactive layer from the media asset. This clear separation allows publisher players to be in control of their streams and enables use cases such as server-side ad insertion (SSAI), as well as live streaming.
+
+SIMID was built with strong security from the ground up, and is designed to be sandboxed from the media player, providing peace of mind to publishers when serving ads from third party services. SIMID aims to provide the tools and controls to allow creatives to offer rich augmented user experiences while degrading gracefully if certain features are not supported.
+
+*SIMID ads sandboxing from the publisher player environment*
+
+[Figure: A diagram showing the SIMID sandboxing architecture. On the left side, there are three separate elements stacked vertically: "Media Player" (with a play button icon), "Ad Media" (with a film strip icon), and "Ad Creative" (with a code bracket icon). An arrow points from these to the right side, which shows a nested box structure. The outermost box is labeled "Media Player". Inside it, "Ad Media" sits at the top. Below that is a box labeled "iframe" containing "Ad Creative" (with a code bracket icon). At the top of the Media Player box, there is a clock icon with the label "Time Synchronized via SIMID API". At the bottom, the text reads "Layered in Window via CSS".]
+
+[Figure: A diagram showing SIMID ads sandboxed from the publisher player environment. On the left, the "VPAID API MODEL" shows a "WINDOW" containing "Media Player", "Ad Video", and "Ad Creative" boxes all connected via a "VPAID API" bar at the bottom. On the right, the "SIMID API MODEL" shows a "WINDOW" containing "Media Player" and "Ad Media" boxes, and a separate "IFRAME" containing an "Ad Creative" box. The WINDOW and IFRAME are connected via a "SIMID API" bar at the bottom.]
+
+SIMID is part of a broader effort to replace the older VPAID standard (more details in this blog post by the IAB Tech Lab). While Open Measurement replaces the use case of verification and measurement, SIMID replaces the use case of interactive streaming media ads, the original intended purpose of the VPAID standard. SIMID provides a path for VPAID deprecation and allows the industry to move to more secure and transparent standards. SIMID aims to gain broad industry adoption by ensuring that the standard is focused on the primary use case of interactivity.

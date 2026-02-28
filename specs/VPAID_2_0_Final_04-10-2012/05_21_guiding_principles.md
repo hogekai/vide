@@ -1,0 +1,11 @@
+# 2.1 Guiding Principles
+
+VPAID was designed using the following guiding principles:
+
+1. **Generalized:** the API needs to be generalized enough to support emerging interactive ad formats. For example, the API should enable video players to position ads in time and space when sufficient data is available.
+2. **Simple:** the API needs to be as simple as possible while still satisfying the ability to offer generalized support for emerging ad formats (as stated in principle 1 above).
+3. **Shift the API burden on to the video player:** The video player must implement the API so that it can display any VPAID ads without requiring API implementation in simple ad formats.
+4. **Video Player in control:** the API is designed in a way that the ad unit could request certain services from the video player, but the video player ultimately remains in control of the overall run-time environment. For example, the video player has the ability to unload a misbehaving ad unit.
+5. **Keep the ad unit portable:** API specifications should allow the ad unit to be independent of the ad request parameters, XML schema used to traffic the ad unit, reporting beacon formats, etc. Separating the ad unit from specific technologies enables the ad unit to be portable across the multiple ad platforms.
+6. **Consistency across technology implementations:** the API should function across all ad development solutions such as: AS2, AS3, Silverlight, JavaScript, etc.
+7. **Compatibility with previous versions:** In VPAID 2.0 changes and additions were added with respect to compatibility with previous versions of VPAID. A VPAID 2.0 video player should operate without error when interfacing with an ad unit that implements an earlier version of VPAID such as VPAID 1.1. Likewise, a VPAID 2.0 ad unit should display properly in a VPAID 1.1 video player; however, version 2.0 functionality would not be supported. Also, both the ad unit and the video player may need to relax version control in older versions for backwards compatibility. Please report compatibility issues to adtechnology@iab.net, noting the versions of both ad and player tested.
