@@ -2,6 +2,10 @@ import { defineComponent, h, onMounted, onScopeDispose, ref } from "vue";
 import { useVideContext } from "../context.js";
 import { IconFullscreenEnter, IconFullscreenExit } from "../icons.js";
 
+function cx(...classes: (string | undefined)[]): string {
+	return classes.filter(Boolean).join(" ");
+}
+
 export const VideFullscreenButton = defineComponent({
 	name: "VideFullscreenButton",
 	inheritAttrs: false,
@@ -47,7 +51,7 @@ export const VideFullscreenButton = defineComponent({
 				"button",
 				{
 					type: "button",
-					class: attrs.class,
+					class: cx("vide-fullscreen", attrs.class as string),
 					"aria-label": active.value ? "Exit fullscreen" : "Fullscreen",
 					"data-fullscreen": active.value || undefined,
 					onClick,

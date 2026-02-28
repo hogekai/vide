@@ -4,6 +4,10 @@ import { useVideContext } from "../context.js";
 import { IconPause, IconPlay } from "../icons.js";
 import { useVideEvent } from "../use-vide-event.js";
 
+function cx(...classes: (string | undefined)[]): string {
+	return classes.filter(Boolean).join(" ");
+}
+
 export const VidePlayButton = defineComponent({
 	name: "VidePlayButton",
 	inheritAttrs: false,
@@ -43,7 +47,7 @@ export const VidePlayButton = defineComponent({
 				"button",
 				{
 					type: "button",
-					class: attrs.class,
+					class: cx("vide-play", attrs.class as string),
 					"aria-label": playing.value ? "Pause" : "Play",
 					"data-playing": playing.value || undefined,
 					onClick,

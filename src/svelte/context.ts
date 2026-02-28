@@ -1,5 +1,5 @@
 import { getContext } from "svelte";
-import type { MediaElement, Player } from "../types.js";
+import type { MediaElement, Player } from "./helpers.js";
 
 export const VIDE_PLAYER_KEY = Symbol("vide-player");
 export const VIDE_REGISTER_KEY = Symbol("vide-register");

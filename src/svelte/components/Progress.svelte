@@ -1,6 +1,6 @@
 <script lang="ts">
 import { getContext } from "svelte";
-import type { PlayerState } from "../../types.js";
+import type { PlayerState } from "../helpers.js";
 import { type PlayerGetter, VIDE_PLAYER_KEY } from "../context.js";
 
 interface Props {
@@ -82,7 +82,7 @@ function onPointerUp(e: PointerEvent) {
 
 <div
 	bind:this={rootEl}
-	class={className}
+	class={["vide-progress", className].filter(Boolean).join(" ")}
 	role="slider"
 	tabindex="0"
 	aria-label="Seek"
@@ -94,4 +94,8 @@ function onPointerUp(e: PointerEvent) {
 	onpointerdown={onPointerDown}
 	onpointermove={onPointerMove}
 	onpointerup={onPointerUp}
-></div>
+>
+	<div class="vide-progress__buffered"></div>
+	<div class="vide-progress__bar"></div>
+	<div class="vide-progress__handle"></div>
+</div>

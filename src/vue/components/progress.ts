@@ -3,6 +3,10 @@ import type { PlayerState } from "../../types.js";
 import { useVideContext } from "../context.js";
 import { useVideEvent } from "../use-vide-event.js";
 
+function cx(...classes: (string | undefined)[]): string {
+	return classes.filter(Boolean).join(" ");
+}
+
 export const VideProgress = defineComponent({
 	name: "VideProgress",
 	inheritAttrs: false,
@@ -66,23 +70,31 @@ export const VideProgress = defineComponent({
 		};
 
 		return () =>
-			h("div", {
-				ref: rootRef,
-				class: attrs.class,
-				role: "slider",
-				tabindex: 0,
-				"aria-label": "Seek",
-				"aria-valuemin": 0,
-				"aria-valuemax": 100,
-				"aria-valuenow": Math.round(progress.value * 100),
-				"data-disabled": disabled.value || undefined,
-				style: {
-					"--vide-progress": progress.value,
-					"--vide-progress-buffered": buffered.value,
+			h(
+				"div",
+				{
+					ref: rootRef,
+					class: cx("vide-progress", attrs.class as string),
+					role: "slider",
+					tabindex: 0,
+					"aria-label": "Seek",
+					"aria-valuemin": 0,
+					"aria-valuemax": 100,
+					"aria-valuenow": Math.round(progress.value * 100),
+					"data-disabled": disabled.value || undefined,
+					style: {
+						"--vide-progress": progress.value,
+						"--vide-progress-buffered": buffered.value,
+					},
+					onPointerdown: onPointerDown,
+					onPointermove: onPointerMove,
+					onPointerup: onPointerUp,
 				},
-				onPointerdown: onPointerDown,
-				onPointermove: onPointerMove,
-				onPointerup: onPointerUp,
-			});
+				[
+					h("div", { class: "vide-progress__buffered" }),
+					h("div", { class: "vide-progress__bar" }),
+					h("div", { class: "vide-progress__handle" }),
+				],
+			);
 	},
 });

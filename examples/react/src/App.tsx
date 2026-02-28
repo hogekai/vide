@@ -50,6 +50,7 @@ export function App() {
         <Vide.UI ref={uiRef}>
           <Vide.Video
             src={HLS_SRC}
+            autoPlay
             style={{ width: "100%", background: "#000", display: "block" }}
           />
           <Vide.ClickPlay />

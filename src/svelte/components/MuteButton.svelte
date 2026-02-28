@@ -40,7 +40,7 @@ function onClick() {
 
 <button
 	type="button"
-	class={className}
+	class={["vide-mute", className].filter(Boolean).join(" ")}
 	aria-label={muted ? "Unmute" : "Mute"}
 	data-muted={muted || undefined}
 	onclick={onClick}

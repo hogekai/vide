@@ -1,6 +1,6 @@
 import { setContext } from "svelte";
-import { createPlayer } from "../core.js";
-import type { MediaElement, Player } from "../types.js";
+import { createPlayer } from "./helpers.js";
+import type { MediaElement, Player } from "./helpers.js";
 import {
 	type PlayerGetter,
 	type RegisterFn,

@@ -1,4 +1,4 @@
-import type { EventHandler, PlayerEvent, PlayerEventMap } from "../types.js";
+import type { EventHandler, PlayerEvent, PlayerEventMap } from "./helpers.js";
 import type { PlayerGetter } from "./context.js";
 
 export function useVideEvent<K extends PlayerEvent>(

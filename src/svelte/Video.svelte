@@ -1,7 +1,7 @@
 <script lang="ts">
 import { getContext, onMount } from "svelte";
 import type { Snippet } from "svelte";
-import type { MediaElement } from "../types.js";
+import type { MediaElement } from "./helpers.js";
 import { type RegisterFn, VIDE_REGISTER_KEY } from "./context.js";
 
 interface Props {

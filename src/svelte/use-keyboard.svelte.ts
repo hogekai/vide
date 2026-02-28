@@ -1,4 +1,4 @@
-import { isAdState } from "../ui/state.js";
+import { isAdState } from "./helpers.js";
 import type { PlayerGetter } from "./context.js";
 
 export interface UseKeyboardOptions {

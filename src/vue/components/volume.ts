@@ -2,6 +2,10 @@ import { defineComponent, h, onScopeDispose, ref, watch } from "vue";
 import { useVideContext } from "../context.js";
 import { IconVolumeHigh, IconVolumeLow, IconVolumeMute } from "../icons.js";
 
+function cx(...classes: (string | undefined)[]): string {
+	return classes.filter(Boolean).join(" ");
+}
+
 export const VideVolume = defineComponent({
 	name: "VideVolume",
 	inheritAttrs: false,
@@ -82,7 +86,7 @@ export const VideVolume = defineComponent({
 			h(
 				"div",
 				{
-					class: attrs.class,
+					class: cx("vide-volume", attrs.class as string),
 					"data-muted": muted.value || undefined,
 					style: { "--vide-volume": volume.value },
 				},
@@ -91,6 +95,7 @@ export const VideVolume = defineComponent({
 						"button",
 						{
 							type: "button",
+							class: "vide-volume__button",
 							"aria-label": muted.value ? "Unmute" : "Mute",
 							onClick: onMuteClick,
 						},
@@ -105,18 +110,26 @@ export const VideVolume = defineComponent({
 							),
 						],
 					),
-					h("div", {
-						ref: sliderRef,
-						role: "slider",
-						tabindex: 0,
-						"aria-label": "Volume",
-						"aria-valuemin": 0,
-						"aria-valuemax": 100,
-						"aria-valuenow": Math.round(volume.value * 100),
-						onPointerdown: onPointerDown,
-						onPointermove: onPointerMove,
-						onPointerup: onPointerUp,
-					}),
+					h(
+						"div",
+						{
+							ref: sliderRef,
+							class: "vide-volume__slider",
+							role: "slider",
+							tabindex: 0,
+							"aria-label": "Volume",
+							"aria-valuemin": 0,
+							"aria-valuemax": 100,
+							"aria-valuenow": Math.round(volume.value * 100),
+							onPointerdown: onPointerDown,
+							onPointermove: onPointerMove,
+							onPointerup: onPointerUp,
+						},
+						[
+							h("div", { class: "vide-volume__track" }),
+							h("div", { class: "vide-volume__filled" }),
+						],
+					),
 				],
 			);
 	},

@@ -1,5 +1,5 @@
-import type { PlayerState } from "../types.js";
-import { isAdState } from "../ui/state.js";
+import { isAdState } from "./helpers.js";
+import type { PlayerState } from "./helpers.js";
 import type { PlayerGetter } from "./context.js";
 
 const IDLE_DELAY = 3000;

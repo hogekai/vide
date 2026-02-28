@@ -1,8 +1,8 @@
 <script lang="ts">
 import { getContext } from "svelte";
 import type { Snippet } from "svelte";
-import type { PlayerState } from "../../types.js";
-import { stateToClass } from "../../ui/state.js";
+import { stateToClass } from "./helpers.js";
+import type { PlayerState } from "./helpers.js";
 import { type PlayerGetter, VIDE_PLAYER_KEY } from "./context.js";
 
 interface Props {

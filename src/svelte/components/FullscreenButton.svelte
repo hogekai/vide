@@ -47,7 +47,7 @@ function onClick() {
 
 <button
 	type="button"
-	class={className}
+	class={["vide-fullscreen", className].filter(Boolean).join(" ")}
 	aria-label={active ? "Exit fullscreen" : "Fullscreen"}
 	data-fullscreen={active || undefined}
 	onclick={onClick}

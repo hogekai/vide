@@ -2,6 +2,10 @@ import { defineComponent, h, onScopeDispose, ref, watch } from "vue";
 import { useVideContext } from "../context.js";
 import { IconVolumeHigh, IconVolumeLow, IconVolumeMute } from "../icons.js";
 
+function cx(...classes: (string | undefined)[]): string {
+	return classes.filter(Boolean).join(" ");
+}
+
 export const VideMuteButton = defineComponent({
 	name: "VideMuteButton",
 	inheritAttrs: false,
@@ -44,7 +48,7 @@ export const VideMuteButton = defineComponent({
 				"button",
 				{
 					type: "button",
-					class: attrs.class,
+					class: cx("vide-mute", attrs.class as string),
 					"aria-label": muted.value ? "Unmute" : "Mute",
 					"data-muted": muted.value || undefined,
 					onClick,

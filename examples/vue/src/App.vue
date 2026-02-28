@@ -59,6 +59,7 @@ useVideEvent(player, "ad:start", () => {
     <VideUI ref="uiComponent">
       <VideVideo
         :src="HLS_SRC"
+        autoplay
         style="width: 100%; background: #000; display: block"
       />
       <VideClickPlay />

@@ -78,12 +78,13 @@ function onPointerUp(e: PointerEvent) {
 </script>
 
 <div
-	class={className}
+	class={["vide-volume", className].filter(Boolean).join(" ")}
 	data-muted={muted || undefined}
 	style="--vide-volume: {volume}"
 >
 	<button
 		type="button"
+		class="vide-volume__button"
 		aria-label={muted ? "Unmute" : "Mute"}
 		onclick={onMuteClick}
 	>
@@ -99,6 +100,7 @@ function onPointerUp(e: PointerEvent) {
 	</button>
 	<div
 		bind:this={sliderEl}
+		class="vide-volume__slider"
 		role="slider"
 		tabindex="0"
 		aria-label="Volume"
@@ -108,5 +110,8 @@ function onPointerUp(e: PointerEvent) {
 		onpointerdown={onPointerDown}
 		onpointermove={onPointerMove}
 		onpointerup={onPointerUp}
-	></div>
+	>
+		<div class="vide-volume__track"></div>
+		<div class="vide-volume__filled"></div>
+	</div>
 </div>

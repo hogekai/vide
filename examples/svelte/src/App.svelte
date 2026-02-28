@@ -56,6 +56,7 @@
   <VideUI onmount={(el) => uiEl = el}>
     <VideVideo
       src={HLS_SRC}
+      autoplay
       style="width: 100%; background: #000; display: block"
     />
     <ClickPlay />

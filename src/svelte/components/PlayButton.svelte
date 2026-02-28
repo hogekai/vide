@@ -1,7 +1,7 @@
 <script lang="ts">
 import { getContext } from "svelte";
 import type { Snippet } from "svelte";
-import type { PlayerState } from "../../types.js";
+import type { PlayerState } from "../helpers.js";
 import { type PlayerGetter, VIDE_PLAYER_KEY } from "../context.js";
 import IconPause from "../icons/IconPause.svelte";
 import IconPlay from "../icons/IconPlay.svelte";
@@ -48,7 +48,7 @@ function onClick() {
 
 <button
 	type="button"
-	class={className}
+	class={["vide-play", className].filter(Boolean).join(" ")}
 	aria-label={playing ? "Pause" : "Play"}
 	data-playing={playing || undefined}
 	onclick={onClick}

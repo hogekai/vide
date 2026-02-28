@@ -1,6 +1,6 @@
 <script lang="ts">
 import { getContext } from "svelte";
-import { formatTime } from "../../ui/utils.js";
+import { formatTime } from "../helpers.js";
 import { type PlayerGetter, VIDE_PLAYER_KEY } from "../context.js";
 
 interface Props {
@@ -26,7 +26,7 @@ $effect(() => {
 });
 </script>
 
-<div class={className} aria-label="Time">
+<div class={["vide-time", className].filter(Boolean).join(" ")} aria-label="Time">
 	<span>{formatTime(currentTime)}</span>
 	<span>{separator}</span>
 	<span>{formatTime(duration)}</span>
