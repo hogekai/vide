@@ -39,6 +39,7 @@ export default defineConfig({
 			{
 				text: "Guides",
 				items: [
+					{ text: "Text Tracks", link: "/guides/text-tracks" },
 					{ text: "Ads Setup", link: "/guides/ads-setup" },
 					{ text: "Custom Plugin", link: "/guides/custom-plugin" },
 					{

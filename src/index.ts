@@ -11,6 +11,8 @@ export type {
 	QualityLevel,
 	SeekableRange,
 	SourceHandler,
+	VideCue,
+	VideTextTrack,
 } from "./types.js";
 export {
 	ERR_MEDIA,

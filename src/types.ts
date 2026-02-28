@@ -44,6 +44,9 @@ export interface PlayerEventMap {
 	"ad:breakEnd": { breakId: string | undefined };
 	qualitiesavailable: { qualities: QualityLevel[] };
 	qualitychange: { from: QualityLevel | null; to: QualityLevel };
+	texttrackchange: { track: VideTextTrack | null };
+	texttracksavailable: { tracks: VideTextTrack[] };
+	cuechange: { cues: VideCue[] };
 	destroy: undefined;
 }
 
@@ -110,6 +113,21 @@ export interface QualityLevel {
 	label: string;
 }
 
+// === Text Track ===
+export interface VideTextTrack {
+	id: number;
+	label: string;
+	language: string;
+	kind: "subtitles" | "captions" | "descriptions" | "chapters" | "metadata";
+	active: boolean;
+}
+
+export interface VideCue {
+	startTime: number;
+	endTime: number;
+	text: string;
+}
+
 // === Source Handler ===
 export interface SourceHandler {
 	/** Whether this handler can process the given URL/type. */
@@ -150,6 +168,19 @@ export interface Player extends EventBus {
 	readonly currentQuality: QualityLevel | null;
 	setQuality(id: number): void;
 	readonly isAutoQuality: boolean;
+
+	readonly textTracks: TextTrackList;
+	getTextTracks(): VideTextTrack[];
+	getActiveTextTrack(): VideTextTrack | null;
+	readonly activeCues: VideCue[];
+	setTextTrack(id: number): void;
+	addTextTrack(options: {
+		src: string;
+		label: string;
+		language: string;
+		kind?: "subtitles" | "captions";
+		default?: boolean;
+	}): void;
 	readonly videoWidth: number;
 	readonly videoHeight: number;
 	readonly networkState: number;

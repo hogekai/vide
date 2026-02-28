@@ -9,6 +9,8 @@ import type {
 	QualityLevel,
 	SeekableRange,
 	SourceHandler,
+	VideCue,
+	VideTextTrack,
 } from "./types.js";
 
 // === State Machine ===
@@ -186,6 +188,90 @@ export function createPlayer(el: HTMLVideoElement): Player {
 	el.addEventListener("timeupdate", onTimeUpdate);
 	el.addEventListener("error", onError);
 
+	// --- Wire up TextTrack events ---
+
+	function buildVideTextTrack(track: TextTrack, index: number): VideTextTrack {
+		return {
+			id: index,
+			label: track.label,
+			language: track.language,
+			kind: track.kind as VideTextTrack["kind"],
+			active: track.mode === "showing",
+		};
+	}
+
+	function buildVideCues(cueList: TextTrackCueList | null): VideCue[] {
+		if (!cueList) return [];
+		const cues: VideCue[] = [];
+		for (let i = 0; i < cueList.length; i++) {
+			const cue = cueList[i];
+			cues.push({
+				startTime: cue.startTime,
+				endTime: cue.endTime,
+				text: (cue as VTTCue).text ?? "",
+			});
+		}
+		return cues;
+	}
+
+	const cuechangeListeners = new Map<TextTrack, () => void>();
+
+	function attachCueChangeListener(track: TextTrack): void {
+		if (cuechangeListeners.has(track)) return;
+		const handler = () => {
+			if (track.mode === "showing") {
+				emit("cuechange", { cues: buildVideCues(track.activeCues) });
+			}
+		};
+		cuechangeListeners.set(track, handler);
+		track.addEventListener("cuechange", handler);
+	}
+
+	function detachCueChangeListener(track: TextTrack): void {
+		const handler = cuechangeListeners.get(track);
+		if (handler) {
+			track.removeEventListener("cuechange", handler);
+			cuechangeListeners.delete(track);
+		}
+	}
+
+	function emitTextTracksAvailable(): void {
+		const tracks: VideTextTrack[] = [];
+		for (let i = 0; i < el.textTracks.length; i++) {
+			tracks.push(buildVideTextTrack(el.textTracks[i], i));
+		}
+		emit("texttracksavailable", { tracks });
+	}
+
+	function onAddTrack(): void {
+		for (let i = 0; i < el.textTracks.length; i++) {
+			attachCueChangeListener(el.textTracks[i]);
+		}
+		emitTextTracksAvailable();
+	}
+
+	function onRemoveTrack(e: TrackEvent): void {
+		if (e.track) {
+			detachCueChangeListener(e.track as TextTrack);
+		}
+		emitTextTracksAvailable();
+	}
+
+	const ttlSupportsEvents =
+		typeof el.textTracks.addEventListener === "function";
+
+	if (ttlSupportsEvents) {
+		el.textTracks.addEventListener("addtrack", onAddTrack);
+		el.textTracks.addEventListener(
+			"removetrack",
+			onRemoveTrack as EventListener,
+		);
+
+		for (let i = 0; i < el.textTracks.length; i++) {
+			attachCueChangeListener(el.textTracks[i]);
+		}
+	}
+
 	/** Known player event names managed by the EventBus. */
 	const playerEvents = new Set<string>([
 		"statechange",
@@ -211,6 +297,9 @@ export function createPlayer(el: HTMLVideoElement): Player {
 		"ad:breakEnd",
 		"qualitiesavailable",
 		"qualitychange",
+		"texttrackchange",
+		"texttracksavailable",
+		"cuechange",
 		"destroy",
 	]);
 
@@ -225,6 +314,17 @@ export function createPlayer(el: HTMLVideoElement): Player {
 		el.removeEventListener("ended", onEnded);
 		el.removeEventListener("timeupdate", onTimeUpdate);
 		el.removeEventListener("error", onError);
+		if (ttlSupportsEvents) {
+			el.textTracks.removeEventListener("addtrack", onAddTrack);
+			el.textTracks.removeEventListener(
+				"removetrack",
+				onRemoveTrack as EventListener,
+			);
+			for (const [track, handler] of cuechangeListeners) {
+				track.removeEventListener("cuechange", handler);
+			}
+			cuechangeListeners.clear();
+		}
 	}
 
 	function processSourceElements(): void {
@@ -366,6 +466,61 @@ export function createPlayer(el: HTMLVideoElement): Player {
 			if (setter) {
 				setter(id);
 			}
+		},
+
+		// --- Text Track API ---
+		get textTracks(): TextTrackList {
+			return el.textTracks;
+		},
+		getTextTracks(): VideTextTrack[] {
+			const tracks: VideTextTrack[] = [];
+			for (let i = 0; i < el.textTracks.length; i++) {
+				tracks.push(buildVideTextTrack(el.textTracks[i], i));
+			}
+			return tracks;
+		},
+		getActiveTextTrack(): VideTextTrack | null {
+			for (let i = 0; i < el.textTracks.length; i++) {
+				if (el.textTracks[i].mode === "showing") {
+					return buildVideTextTrack(el.textTracks[i], i);
+				}
+			}
+			return null;
+		},
+		get activeCues(): VideCue[] {
+			for (let i = 0; i < el.textTracks.length; i++) {
+				if (el.textTracks[i].mode === "showing") {
+					return buildVideCues(el.textTracks[i].activeCues);
+				}
+			}
+			return [];
+		},
+		setTextTrack(id: number): void {
+			for (let i = 0; i < el.textTracks.length; i++) {
+				el.textTracks[i].mode = i === id ? "showing" : "disabled";
+			}
+			const track =
+				id >= 0 && id < el.textTracks.length
+					? buildVideTextTrack(el.textTracks[id], id)
+					: null;
+			emit("texttrackchange", { track });
+		},
+		addTextTrack(options: {
+			src: string;
+			label: string;
+			language: string;
+			kind?: "subtitles" | "captions";
+			default?: boolean;
+		}): void {
+			const trackEl = document.createElement("track");
+			trackEl.src = options.src;
+			trackEl.label = options.label;
+			trackEl.srclang = options.language;
+			trackEl.kind = options.kind ?? "subtitles";
+			if (options.default) {
+				trackEl.default = true;
+			}
+			el.appendChild(trackEl);
 		},
 
 		get videoWidth() {
