@@ -399,6 +399,101 @@ describe("parseVast — VAST 4.2 additions", () => {
 	});
 });
 
+describe("parseVast — Extensions", () => {
+	it("parses Extensions from InLine", () => {
+		const xml = `<?xml version="1.0"?>
+<VAST version="4.1">
+  <Ad id="ext-ad">
+    <InLine>
+      <AdSystem>Test</AdSystem>
+      <AdTitle>Extensions Test</AdTitle>
+      <Impression><![CDATA[http://example.com/imp]]></Impression>
+      <Extensions>
+        <Extension type="custom"><CustomData>hello</CustomData></Extension>
+        <Extension type="geo"><GeoFence lat="40.7" lon="-74.0"/></Extension>
+      </Extensions>
+      <Creatives>
+        <Creative>
+          <Linear>
+            <Duration>00:00:10</Duration>
+            <MediaFiles>
+              <MediaFile delivery="progressive" type="video/mp4" width="640" height="360">
+                <![CDATA[http://example.com/ad.mp4]]>
+              </MediaFile>
+            </MediaFiles>
+          </Linear>
+        </Creative>
+      </Creatives>
+    </InLine>
+  </Ad>
+</VAST>`;
+		const result = parseVast(xml);
+		const ad = result.ads[0];
+		expect(ad.extensions).toBeDefined();
+		expect(ad.extensions).toHaveLength(2);
+		expect(ad.extensions![0].type).toBe("custom");
+		expect(ad.extensions![0].content).toContain("CustomData");
+		expect(ad.extensions![1].type).toBe("geo");
+		expect(ad.extensions![1].content).toContain("GeoFence");
+	});
+
+	it("returns undefined extensions when absent", () => {
+		const result = parseVast(SAMPLE_VAST);
+		expect(result.ads[0].extensions).toBeUndefined();
+	});
+});
+
+describe("parseVast — ViewableImpression", () => {
+	it("parses ViewableImpression from InLine", () => {
+		const xml = `<?xml version="1.0"?>
+<VAST version="4.1">
+  <Ad id="vi-ad">
+    <InLine>
+      <AdSystem>Test</AdSystem>
+      <AdTitle>ViewableImpression Test</AdTitle>
+      <Impression><![CDATA[http://example.com/imp]]></Impression>
+      <ViewableImpression>
+        <Viewable><![CDATA[http://example.com/viewable1]]></Viewable>
+        <Viewable><![CDATA[http://example.com/viewable2]]></Viewable>
+        <NotViewable><![CDATA[http://example.com/not-viewable]]></NotViewable>
+        <ViewUndetermined><![CDATA[http://example.com/undetermined]]></ViewUndetermined>
+      </ViewableImpression>
+      <Creatives>
+        <Creative>
+          <Linear>
+            <Duration>00:00:10</Duration>
+            <MediaFiles>
+              <MediaFile delivery="progressive" type="video/mp4" width="640" height="360">
+                <![CDATA[http://example.com/ad.mp4]]>
+              </MediaFile>
+            </MediaFiles>
+          </Linear>
+        </Creative>
+      </Creatives>
+    </InLine>
+  </Ad>
+</VAST>`;
+		const result = parseVast(xml);
+		const ad = result.ads[0];
+		expect(ad.viewableImpression).toBeDefined();
+		expect(ad.viewableImpression!.viewable).toEqual([
+			"http://example.com/viewable1",
+			"http://example.com/viewable2",
+		]);
+		expect(ad.viewableImpression!.notViewable).toEqual([
+			"http://example.com/not-viewable",
+		]);
+		expect(ad.viewableImpression!.viewUndetermined).toEqual([
+			"http://example.com/undetermined",
+		]);
+	});
+
+	it("returns undefined viewableImpression when absent", () => {
+		const result = parseVast(SAMPLE_VAST);
+		expect(result.ads[0].viewableImpression).toBeUndefined();
+	});
+});
+
 describe("parseVast — NaN and type safety", () => {
 	it("handles non-numeric sequence attribute", () => {
 		const xml = `<?xml version="1.0"?>

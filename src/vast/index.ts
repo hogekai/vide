@@ -17,6 +17,8 @@ export type {
 	ResolveOptions,
 	AdVerification,
 	AdCategory,
+	VastExtension,
+	VastViewableImpression,
 	VastCompanionAd,
 	VastCompanionAds,
 	CompanionResource,

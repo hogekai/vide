@@ -18,6 +18,8 @@ export interface VastAd {
 	errors: string[];
 	verifications?: AdVerification[] | undefined;
 	categories?: AdCategory[] | undefined;
+	extensions?: VastExtension[] | undefined;
+	viewableImpression?: VastViewableImpression | undefined;
 }
 
 export interface AdVerification {
@@ -30,6 +32,17 @@ export interface AdVerification {
 export interface AdCategory {
 	authority: string;
 	value: string;
+}
+
+export interface VastExtension {
+	type: string;
+	content: string;
+}
+
+export interface VastViewableImpression {
+	viewable: string[];
+	notViewable: string[];
+	viewUndetermined: string[];
 }
 
 export interface VastCreative {

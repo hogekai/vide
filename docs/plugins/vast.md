@@ -308,6 +308,21 @@ trackNonLinear(nonLinearAds, "adExpand");            // user expanded the overla
 trackNonLinear(nonLinearAds, "adCollapse");          // user collapsed the expanded overlay
 ```
 
+## Wrapper Chain Resolution
+
+When a VAST response contains a `<Wrapper>`, the plugin follows the `<VASTAdTagURI>` redirect chain (up to 5 levels by default) until an InLine ad is found. Data from all Wrapper layers is merged into the final InLine ad per VAST 4.2 spec:
+
+- **Errors, Impressions** — concatenated from all layers
+- **Linear TrackingEvents** — concatenated per event name
+- **Linear ClickTracking** — concatenated from all layers
+- **ClickThrough** — InLine only
+- **CompanionAds resources** — InLine takes precedence; falls back to closest Wrapper
+- **CompanionClickTracking, Companion creativeView tracking** — prepended to InLine companions
+- **NonLinear TrackingEvents, NonLinearClickTracking** — concatenated from all layers
+- **AdVerifications** — concatenated from all layers
+- **Extensions** — concatenated from all layers
+- **ViewableImpression** — URLs concatenated per type (Viewable, NotViewable, ViewUndetermined)
+
 ## Notes
 
 - The parser is a pure function: takes XML string, returns `VastResponse`. No I/O inside.

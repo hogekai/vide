@@ -12,11 +12,13 @@ import type {
 	VastCompanionAd,
 	VastCompanionAds,
 	VastCreative,
+	VastExtension,
 	VastLinear,
 	VastMediaFile,
 	VastNonLinearAds,
 	VastResponse,
 	VastTrackingEvents,
+	VastViewableImpression,
 } from "./types.js";
 
 /**
@@ -84,6 +86,8 @@ function parseAd(adEl: Element): VastAd | null {
 
 	const verifications = parseAdVerifications(inlineEl);
 	const categories = parseCategories(inlineEl);
+	const extensions = parseExtensions(inlineEl);
+	const viewableImpression = parseViewableImpression(inlineEl);
 
 	return {
 		id,
@@ -95,6 +99,8 @@ function parseAd(adEl: Element): VastAd | null {
 		errors,
 		verifications,
 		categories,
+		extensions,
+		viewableImpression,
 	};
 }
 
@@ -148,6 +154,47 @@ function parseCategories(parent: Element): AdCategory[] | undefined {
 	}
 
 	return categories.length > 0 ? categories : undefined;
+}
+
+function parseExtensions(parent: Element): VastExtension[] | undefined {
+	const extensionsEl = directChild(parent, "Extensions");
+	if (!extensionsEl) return undefined;
+
+	const extensions: VastExtension[] = [];
+	const serializer = new XMLSerializer();
+	for (const extEl of directChildren(extensionsEl, "Extension")) {
+		const type = extEl.getAttribute("type") ?? "";
+		let content = "";
+		for (let i = 0; i < extEl.childNodes.length; i++) {
+			content += serializer.serializeToString(extEl.childNodes[i]);
+		}
+		content = content.trim();
+		if (content) {
+			extensions.push({ type, content });
+		}
+	}
+	return extensions.length > 0 ? extensions : undefined;
+}
+
+function parseViewableImpression(
+	parent: Element,
+): VastViewableImpression | undefined {
+	const viEl = directChild(parent, "ViewableImpression");
+	if (!viEl) return undefined;
+
+	const viewable = childrenTextContents(viEl, "Viewable");
+	const notViewable = childrenTextContents(viEl, "NotViewable");
+	const viewUndetermined = childrenTextContents(viEl, "ViewUndetermined");
+
+	if (
+		viewable.length === 0 &&
+		notViewable.length === 0 &&
+		viewUndetermined.length === 0
+	) {
+		return undefined;
+	}
+
+	return { viewable, notViewable, viewUndetermined };
 }
 
 function parseCreative(creativeEl: Element): VastCreative {
@@ -611,8 +658,12 @@ interface WrapperAd {
 	clickTracking: string[];
 	companionAds?: VastCompanionAds | undefined;
 	companionClickTracking: string[];
+	companionCreativeViewTracking: string[];
 	nonLinearTrackingEvents: Record<string, string[]>;
 	nonLinearClickTracking: string[];
+	verifications?: AdVerification[] | undefined;
+	extensions?: VastExtension[] | undefined;
+	viewableImpression?: VastViewableImpression | undefined;
 }
 
 /**
@@ -703,6 +754,7 @@ function extractWrapperFromXml(xml: string): WrapperAd | null {
 		let clickTracking: string[] = [];
 		let companionAds: VastCompanionAds | undefined;
 		const companionClickTracking: string[] = [];
+		const companionCreativeViewTracking: string[] = [];
 		let nonLinearTrackingEvents: Record<string, string[]> = {};
 		const nonLinearClickTracking: string[] = [];
 		const creativesEl = wrapperEl.querySelector("Creatives");
@@ -722,6 +774,9 @@ function extractWrapperFromXml(xml: string): WrapperAd | null {
 					companionAds = parsed;
 					for (const c of parsed.companions) {
 						companionClickTracking.push(...c.clickTracking);
+						companionCreativeViewTracking.push(
+							...c.trackingEvents.creativeView,
+						);
 					}
 				}
 
@@ -738,6 +793,10 @@ function extractWrapperFromXml(xml: string): WrapperAd | null {
 			}
 		}
 
+		const verifications = parseAdVerifications(wrapperEl);
+		const extensions = parseExtensions(wrapperEl);
+		const viewableImpression = parseViewableImpression(wrapperEl);
+
 		return {
 			adTagUri,
 			errors,
@@ -746,8 +805,12 @@ function extractWrapperFromXml(xml: string): WrapperAd | null {
 			clickTracking,
 			companionAds,
 			companionClickTracking,
+			companionCreativeViewTracking,
 			nonLinearTrackingEvents,
 			nonLinearClickTracking,
+			verifications,
+			extensions,
+			viewableImpression,
 		};
 	}
 	return null;
@@ -800,6 +863,22 @@ function mergeTrackingEvents(
 	return result;
 }
 
+function mergeViewableImpressions(
+	wrapperImpressions: (VastViewableImpression | undefined)[],
+	inline: VastViewableImpression | undefined,
+): VastViewableImpression | undefined {
+	const all = [...wrapperImpressions, inline].filter(
+		(vi): vi is VastViewableImpression => vi !== undefined,
+	);
+	if (all.length === 0) return undefined;
+
+	return {
+		viewable: all.flatMap((vi) => vi.viewable),
+		notViewable: all.flatMap((vi) => vi.notViewable),
+		viewUndetermined: all.flatMap((vi) => vi.viewUndetermined),
+	};
+}
+
 function mergeWrapperIntoAd(ad: VastAd, wrapperChain: WrapperAd[]): VastAd {
 	if (wrapperChain.length === 0) return ad;
 
@@ -808,6 +887,26 @@ function mergeWrapperIntoAd(ad: VastAd, wrapperChain: WrapperAd[]): VastAd {
 		...wrapperChain.flatMap((w) => w.impressions),
 		...ad.impressions,
 	];
+
+	const wrapperVerifications = wrapperChain.flatMap(
+		(w) => w.verifications ?? [],
+	);
+	const mergedVerifications =
+		wrapperVerifications.length > 0 ||
+		(ad.verifications && ad.verifications.length > 0)
+			? [...wrapperVerifications, ...(ad.verifications ?? [])]
+			: ad.verifications;
+
+	const wrapperExtensions = wrapperChain.flatMap((w) => w.extensions ?? []);
+	const mergedExtensions =
+		wrapperExtensions.length > 0 || (ad.extensions && ad.extensions.length > 0)
+			? [...wrapperExtensions, ...(ad.extensions ?? [])]
+			: ad.extensions;
+
+	const mergedViewableImpression = mergeViewableImpressions(
+		wrapperChain.map((w) => w.viewableImpression),
+		ad.viewableImpression,
+	);
 
 	const mergedCreatives = ad.creatives.map((creative) => {
 		let merged = creative;
@@ -838,7 +937,13 @@ function mergeWrapperIntoAd(ad: VastAd, wrapperChain: WrapperAd[]): VastAd {
 			const wrapperClickTracking = wrapperChain.flatMap(
 				(w) => w.companionClickTracking,
 			);
-			if (wrapperClickTracking.length > 0) {
+			const wrapperCreativeViewTracking = wrapperChain.flatMap(
+				(w) => w.companionCreativeViewTracking,
+			);
+			if (
+				wrapperClickTracking.length > 0 ||
+				wrapperCreativeViewTracking.length > 0
+			) {
 				merged = {
 					...merged,
 					companionAds: {
@@ -846,6 +951,12 @@ function mergeWrapperIntoAd(ad: VastAd, wrapperChain: WrapperAd[]): VastAd {
 						companions: creative.companionAds.companions.map((c) => ({
 							...c,
 							clickTracking: [...wrapperClickTracking, ...c.clickTracking],
+							trackingEvents: {
+								creativeView: [
+									...wrapperCreativeViewTracking,
+									...c.trackingEvents.creativeView,
+								],
+							},
 						})),
 					},
 				};
@@ -906,6 +1017,9 @@ function mergeWrapperIntoAd(ad: VastAd, wrapperChain: WrapperAd[]): VastAd {
 		errors: mergedErrors,
 		impressions: mergedImpressions,
 		creatives: mergedCreatives,
+		verifications: mergedVerifications,
+		extensions: mergedExtensions,
+		viewableImpression: mergedViewableImpression,
 	};
 }
 
