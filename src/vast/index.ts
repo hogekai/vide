@@ -1,7 +1,8 @@
 import type { Player, PlayerState, Plugin } from "../types.js";
 import { fetchVast, parseVast } from "./parser.js";
-import { createQuartileTracker, track } from "./tracker.js";
-import type { VastAd, VastLinear, VastPluginOptions } from "./types.js";
+import { playSingleAd } from "./playback.js";
+import { classifyAds, playPod, playWaterfall } from "./pod.js";
+import type { VastPluginOptions } from "./types.js";
 
 export type {
 	VastPluginOptions,
@@ -13,6 +14,11 @@ export type {
 } from "./types.js";
 export { parseVast, fetchVast, resolveVast } from "./parser.js";
 export { track, getQuartile } from "./tracker.js";
+export { selectMediaFile } from "./media.js";
+export { playSingleAd } from "./playback.js";
+export type { PlaySingleAdOptions, SingleAdResult } from "./playback.js";
+export { classifyAds, playPod, playWaterfall } from "./pod.js";
+export type { ClassifiedAds, PlayableAd, PodResult } from "./pod.js";
 
 /** Create a VAST ad plugin for vide. */
 export function vast(options: VastPluginOptions): Plugin {
@@ -20,7 +26,7 @@ export function vast(options: VastPluginOptions): Plugin {
 		name: "vast",
 		setup(player: Player): () => void {
 			let aborted = false;
-			let adCleanup: (() => void) | null = null;
+			let adAbort: (() => void) | null = null;
 
 			const setState = (
 				player as unknown as { _setState(s: PlayerState): void }
@@ -28,8 +34,6 @@ export function vast(options: VastPluginOptions): Plugin {
 
 			async function loadAndPlayAd(): Promise<void> {
 				if (aborted) return;
-
-				setState("ad:loading");
 
 				try {
 					const fetchOptions =
@@ -45,271 +49,68 @@ export function vast(options: VastPluginOptions): Plugin {
 						return;
 					}
 
-					// Find the first linear creative with media files
-					let linear: VastLinear | null = null;
-					let matchedAd: VastAd | null = null;
-					for (const ad of response.ads) {
-						for (const creative of ad.creatives) {
-							if (creative.linear && creative.linear.mediaFiles.length > 0) {
-								linear = creative.linear;
-								matchedAd = ad;
-								break;
-							}
-						}
-						if (linear) break;
-					}
-
-					if (!linear || !matchedAd) {
+					const classified = classifyAds(response.ads);
+					if (classified.ads.length === 0) {
 						setState("playing");
 						return;
 					}
 
-					const adId = matchedAd.id;
-					player.emit("ad:start", { adId });
-
-					// --- Ad plugins lifecycle ---
-					const adPluginCleanups: (() => void)[] = [];
-					if (options.adPlugins) {
-						for (const p of options.adPlugins(matchedAd)) {
-							const c = p.setup(player, matchedAd);
-							if (c) adPluginCleanups.push(c);
-						}
-					}
-
-					// Fire impressions
-					for (const ad of response.ads) {
-						track(ad.impressions);
-					}
-					player.emit("ad:impression", { adId });
-
-					// Select best media file (prefer mp4, highest bitrate)
-					const mediaFile = selectMediaFile(linear.mediaFiles);
-					if (!mediaFile) {
-						player.emit("ad:error", {
-							error: new Error("No suitable media file found"),
-							source: "vast",
-						});
-						setState("playing");
-						return;
-					}
-
-					// Play ad using the same video element
+					// Save content state for restoration after ads
 					const originalTime = player.el.currentTime;
 					const prevSrc = player.src;
 
-					// Set up quartile tracking
-					const quartileTracker = createQuartileTracker(
-						linear.duration,
-						(event) => {
-							if (!linear) return;
-							const urls = linear.trackingEvents[event];
-							if (urls) track(urls);
-							player.emit("ad:quartile", { adId, quartile: event });
-						},
-					);
-
-					// Progress tracking (offset-based, each fires once)
-					const firedProgress = new Set<number>();
-					function checkProgress(currentTime: number): void {
-						if (!linear) return;
-						for (const p of linear.trackingEvents.progress) {
-							if (!firedProgress.has(p.offset) && currentTime >= p.offset) {
-								firedProgress.add(p.offset);
-								track([p.url]);
-							}
-						}
-					}
-
-					// Mute/unmute tracking
-					let wasMuted = player.el.muted || player.el.volume === 0;
-
-					// Fullscreen tracking
-					let wasFullscreen = !!document.fullscreenElement;
-
-					// --- Ad ended: restore content ---
-					let adEnding = false;
-
-					function cleanupAdPlugins(): void {
-						for (const c of adPluginCleanups) c();
-						adPluginCleanups.length = 0;
-					}
-
-					function endAd(): void {
-						player.emit("ad:end", { adId });
-						setState("playing");
-						restoreContent();
-					}
-
-					function restoreContent(): void {
-						// Listen for "ready" to restore playback position
-						// and auto-play. Use on() instead of once() because
-						// setting src triggers intermediate state changes
-						// (e.g. playing→paused) that would consume a once()
-						// listener before "ready" arrives.
-						function onReady({ to }: { from: string; to: string }): void {
-							if (to !== "ready") return;
-							player.off("statechange", onReady);
-							if (originalTime > 0) {
-								player.el.currentTime = originalTime;
-							}
-							player.play().catch(() => {
-								player.el.muted = true;
-								player.play().catch(() => {});
-							});
-						}
-						player.on("statechange", onReady);
-						player.src = prevSrc;
-					}
-
-					// --- ad:click: fire tracking, emit event ---
-					function onAdClick(): void {
-						if (!linear || adEnding) return;
-						track(linear.clickTracking);
-						player.emit("ad:click", {
-							clickThrough: linear.clickThrough,
-							clickTracking: linear.clickTracking,
-						});
-					}
-
-					// --- ad:skip: fire tracking, end ad ---
-					function onAdSkip(): void {
-						if (!linear || adEnding) return;
-						track(linear.trackingEvents.skip);
-						adEnding = true;
-						cleanup();
-						cleanupAdPlugins();
-						endAd();
-					}
-
-					// --- Pause / Resume tracking ---
-					function onAdPause(): void {
-						if (!linear || adEnding) return;
-						if (player.state === "ad:playing") {
-							track(linear.trackingEvents.pause);
-							setState("ad:paused");
-						}
-					}
-
-					function onAdPlay(): void {
-						if (!linear || adEnding) return;
-						if (player.state === "ad:paused") {
-							track(linear.trackingEvents.resume);
-							setState("ad:playing");
-						}
-					}
-
-					// --- Time update: quartiles + progress ---
-					function onAdTimeUpdate(): void {
-						quartileTracker(player.el.currentTime);
-						checkProgress(player.el.currentTime);
-					}
-
-					// --- Mute / Unmute tracking ---
-					function onAdVolumeChange(): void {
-						if (!linear || adEnding) return;
-						const nowMuted = player.el.muted || player.el.volume === 0;
-						if (nowMuted && !wasMuted) {
-							track(linear.trackingEvents.mute);
-							player.emit("ad:mute", { adId });
-						} else if (!nowMuted && wasMuted) {
-							track(linear.trackingEvents.unmute);
-							player.emit("ad:unmute", { adId });
-						}
-						wasMuted = nowMuted;
-						player.emit("ad:volumeChange", {
-							adId,
-							volume: player.el.muted ? 0 : player.el.volume,
-						});
-					}
-
-					// --- Fullscreen tracking ---
-					function onAdFullscreenChange(): void {
-						if (!linear || adEnding) return;
-						const isFullscreen = !!document.fullscreenElement;
-						if (isFullscreen && !wasFullscreen) {
-							track(linear.trackingEvents.playerExpand);
-							player.emit("ad:fullscreen", { adId, fullscreen: true });
-						} else if (!isFullscreen && wasFullscreen) {
-							track(linear.trackingEvents.playerCollapse);
-							player.emit("ad:fullscreen", { adId, fullscreen: false });
-						}
-						wasFullscreen = isFullscreen;
-					}
-
-					function onAdError(): void {
-						if (adEnding) return;
-						adEnding = true;
-						cleanup();
-						cleanupAdPlugins();
-						player.emit("ad:error", {
-							error: new Error("Ad media playback failed"),
-							source: "vast",
-						});
-						endAd();
-					}
-
-					function onAdEnded(): void {
-						if (adEnding) return;
-						adEnding = true;
-						if (linear) quartileTracker(linear.duration);
-						cleanup();
-						cleanupAdPlugins();
-						endAd();
-					}
-
-					function onAdCanPlay(): void {
-						player.el.removeEventListener("canplay", onAdCanPlay);
-						if (!linear) return;
-						track(linear.trackingEvents.loaded);
-						track(linear.trackingEvents.creativeView);
-						player.emit("ad:loaded", { adId });
-						setState("ad:playing");
-						player.el.play().catch(() => {
-							player.el.muted = true;
-							player.el.play().catch(() => {});
-						});
-					}
-
-					function cleanup(): void {
-						player.el.removeEventListener("timeupdate", onAdTimeUpdate);
-						player.el.removeEventListener("ended", onAdEnded);
-						player.el.removeEventListener("error", onAdError);
-						player.el.removeEventListener("canplay", onAdCanPlay);
-						player.el.removeEventListener("pause", onAdPause);
-						player.el.removeEventListener("play", onAdPlay);
-						player.el.removeEventListener("click", onAdClick);
-						player.el.removeEventListener("volumechange", onAdVolumeChange);
-						document.removeEventListener(
-							"fullscreenchange",
-							onAdFullscreenChange,
-						);
-						player.off("ad:skip", onAdSkip);
-					}
-
-					player.el.addEventListener("canplay", onAdCanPlay);
-					player.el.addEventListener("timeupdate", onAdTimeUpdate);
-					player.el.addEventListener("ended", onAdEnded);
-					player.el.addEventListener("error", onAdError);
-					player.el.addEventListener("pause", onAdPause);
-					player.el.addEventListener("play", onAdPlay);
-					player.el.addEventListener("click", onAdClick);
-					player.el.addEventListener("volumechange", onAdVolumeChange);
-					document.addEventListener("fullscreenchange", onAdFullscreenChange);
-					player.on("ad:skip", onAdSkip);
-					adCleanup = cleanup;
-
 					// Detach any active source handler (e.g. hls.js) before
 					// loading the ad MP4 directly on the video element.
-					// Setting player.src to empty triggers handler.unload()
-					// in the core, which properly destroys the hls.js instance
-					// and frees the MediaSource. Without this, hls.js remains
-					// attached during ad playback and its internal state becomes
-					// corrupted, causing ORB-blocked segment fetches when
-					// restoring the HLS content after the ad ends.
 					player.src = "";
 
-					player.el.src = mediaFile.url;
-					player.el.load();
+					// Synchronous callback to restore state + content.
+					// Must run in the same stack frame as the ad's ended/error/skip
+					// event so that player.state updates are visible synchronously.
+					function onAdsDone(): void {
+						if (aborted) return;
+						setState("playing");
+						restoreContent(player, prevSrc, originalTime);
+					}
+
+					switch (classified.type) {
+						case "single": {
+							const { promise, abort } = playSingleAd({
+								player,
+								ad: classified.ads[0].ad,
+								linear: classified.ads[0].linear,
+								source: "vast",
+								adPlugins: options.adPlugins,
+								onFinish: onAdsDone,
+							});
+							adAbort = abort;
+							await promise;
+							break;
+						}
+						case "pod": {
+							await playPod(player, classified.ads, {
+								source: "vast",
+								adPlugins: options.adPlugins,
+								onFinish: onAdsDone,
+								standalonePool: classified.standalonePool,
+							});
+							break;
+						}
+						case "waterfall": {
+							const result = await playWaterfall(player, classified.ads, {
+								source: "vast",
+								adPlugins: options.adPlugins,
+								onFinish: onAdsDone,
+							});
+							if (!result) {
+								player.emit("ad:error", {
+									error: new Error("All waterfall ads failed"),
+									source: "vast",
+								});
+								onAdsDone();
+							}
+							break;
+						}
+					}
 				} catch (err) {
 					if (aborted) return;
 					player.emit("ad:error", {
@@ -344,23 +145,30 @@ export function vast(options: VastPluginOptions): Plugin {
 			return () => {
 				aborted = true;
 				player.off("statechange", onStateChange);
-				if (adCleanup) {
-					adCleanup();
+				if (adAbort) {
+					adAbort();
 				}
 			};
 		},
 	};
 }
 
-function selectMediaFile(
-	files: { url: string; mimeType: string; bitrate?: number | undefined }[],
-): { url: string; mimeType: string } | null {
-	if (files.length === 0) return null;
-
-	// Prefer mp4
-	const mp4Files = files.filter((f) => f.mimeType === "video/mp4");
-	const candidates = mp4Files.length > 0 ? mp4Files : files;
-
-	// Pick highest bitrate
-	return candidates.sort((a, b) => (b.bitrate ?? 0) - (a.bitrate ?? 0))[0];
+function restoreContent(
+	player: Player,
+	prevSrc: string,
+	originalTime: number,
+): void {
+	function onReady({ to }: { from: string; to: string }): void {
+		if (to !== "ready") return;
+		player.off("statechange", onReady);
+		if (originalTime > 0) {
+			player.el.currentTime = originalTime;
+		}
+		player.play().catch(() => {
+			player.el.muted = true;
+			player.play().catch(() => {});
+		});
+	}
+	player.on("statechange", onReady);
+	player.src = prevSrc;
 }

@@ -17,6 +17,22 @@ player.on("ad:start", ({ adId }) => console.log("ad started", adId));
 player.on("ad:end", ({ adId }) => console.log("ad ended", adId));
 ```
 
+### Ad Pods and Waterfall
+
+When a VAST response contains multiple `<Ad>` elements, they are automatically handled:
+
+- **Ad Pod** — ads with `sequence` attributes are played sequentially. If one fails, a stand-alone ad is substituted.
+- **Waterfall** — ads without `sequence` are tried in order until one succeeds.
+
+Listen for pod events:
+
+```ts
+player.on("ad:pod:start", ({ ads, total }) => console.log(`pod: ${total} ads`));
+player.on("ad:pod:end", ({ completed, skipped, failed }) => {
+  console.log(`pod done: ${completed} completed, ${skipped} skipped, ${failed} failed`);
+});
+```
+
 ## Scheduled Ads (VMAP)
 
 VMAP adds pre-roll, mid-roll, and post-roll scheduling:

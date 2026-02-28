@@ -51,6 +51,21 @@ export interface PlayerEventMap {
 	"ad:fullscreen": { adId: string; fullscreen: boolean };
 	"ad:breakStart": { breakId: string | undefined };
 	"ad:breakEnd": { breakId: string | undefined };
+	"ad:pod:start": {
+		ads: { id: string; sequence?: number | undefined }[];
+		total: number;
+	};
+	"ad:pod:end": { completed: number; skipped: number; failed: number };
+	"ad:pod:adstart": {
+		ad: { id: string; sequence?: number | undefined };
+		index: number;
+		total: number;
+	};
+	"ad:pod:adend": {
+		ad: { id: string; sequence?: number | undefined };
+		index: number;
+		total: number;
+	};
 	qualitiesavailable: { qualities: QualityLevel[] };
 	qualitychange: { from: QualityLevel | null; to: QualityLevel };
 	texttrackchange: { track: VideTextTrack | null };

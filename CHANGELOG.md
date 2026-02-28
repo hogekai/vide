@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- Ad Pod sequence playback: multiple `<Ad>` elements with `sequence` attributes are played sequentially
+- Waterfall ad fallback: multiple `<Ad>` elements without `sequence` are tried in order until one succeeds
+- Pod events: `ad:pod:start`, `ad:pod:end`, `ad:pod:adstart`, `ad:pod:adend`
+- Stand-alone ad substitution in pods per VAST 3.3.1 (failed pod ads replaced with unsequenced ads)
+- `allowMultipleAds` enforcement in VMAP (when `false`, only first ad is played)
+- New exports: `classifyAds`, `playSingleAd`, `playPod`, `playWaterfall`, `selectMediaFile`
+- New types: `ClassifiedAds`, `PlayableAd`, `PodResult`, `PlaySingleAdOptions`, `SingleAdResult`
+
 ## [0.8.0] - 2026-02-28
 
 ### Added

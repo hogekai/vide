@@ -1,8 +1,10 @@
 import {
+	classifyAds,
 	fetchVast,
 	getQuartile,
 	parseVast,
 	resolveVast,
+	selectMediaFile,
 	track,
 	vast,
 } from "../vast/index.js";
@@ -17,4 +19,6 @@ Object.assign(ns, {
 	resolveVast,
 	track,
 	getQuartile,
+	classifyAds,
+	selectMediaFile,
 });

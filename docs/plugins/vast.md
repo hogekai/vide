@@ -21,7 +21,45 @@ player.use(vast({ tagUrl: "https://example.com/vast.xml" }));
 | `allowSkip` | `boolean` | `true` | Honor skip offsets from the VAST response |
 | `adPlugins` | `(ad: VastAd) => AdPlugin[]` | — | Per-ad plugin factory (e.g. OMID, SIMID, UI ad components) |
 
+## Ad Pods and Waterfall
+
+When a VAST response contains multiple `<Ad>` elements, the plugin automatically classifies and plays them:
+
+| Pattern | Condition | Behavior |
+|---------|-----------|----------|
+| **Pod** | Ads have `sequence` attributes | Played in sequence order. Failures/skips advance to the next ad. |
+| **Waterfall** | Multiple ads without `sequence` | Tried in order. First successful ad wins. |
+| **Single** | One ad | Standard single-ad playback. |
+
+### Pod Behavior
+
+- Ads are sorted by `sequence` attribute and played sequentially.
+- If a pod ad fails, a stand-alone ad (without `sequence`) from the same response is substituted before moving to the next pod ad (per VAST 3.3.1).
+- Individual ad failures or skips do not stop the pod — playback advances to the next ad.
+
+### Waterfall Behavior
+
+- Ads are tried in document order.
+- If an ad fails during **loading** (before `canplay`), the next ad is tried.
+- If an ad fails during **playback** (after `canplay`), the waterfall stops.
+- If all ads fail, an `ad:error` event is emitted.
+
+### Utility Functions
+
+The pod/waterfall logic is available as standalone functions for advanced use:
+
+```ts
+import { classifyAds, playPod, playWaterfall, playSingleAd } from "@videts/vide/vast";
+
+const classified = classifyAds(response.ads);
+// classified.type: "single" | "pod" | "waterfall"
+// classified.ads: PlayableAd[]
+// classified.standalonePool: PlayableAd[] (for pod substitution)
+```
+
 ## Events
+
+### Per-Ad Events
 
 | Event | Payload | Description |
 |-------|---------|-------------|
@@ -30,13 +68,22 @@ player.use(vast({ tagUrl: "https://example.com/vast.xml" }));
 | `ad:end` | `{ adId }` | Ad playback ended |
 | `ad:skip` | `{ adId }` | Ad skipped by user |
 | `ad:click` | `{ clickThrough, clickTracking }` | Ad clicked |
-| `ad:error` | `{ error }` | Ad loading or playback error |
+| `ad:error` | `{ error, source }` | Ad loading or playback error |
 | `ad:impression` | `{ adId }` | Impression pixel fired |
 | `ad:quartile` | `{ adId, quartile }` | Quartile reached (start, firstQuartile, midpoint, thirdQuartile, complete) |
 | `ad:mute` | `{ adId }` | Ad muted |
 | `ad:unmute` | `{ adId }` | Ad unmuted |
 | `ad:volumeChange` | `{ adId, volume }` | Ad volume changed |
 | `ad:fullscreen` | `{ adId, fullscreen }` | Fullscreen state changed during ad |
+
+### Pod Events
+
+| Event | Payload | Description |
+|-------|---------|-------------|
+| `ad:pod:start` | `{ ads, total }` | Pod playback started |
+| `ad:pod:end` | `{ completed, skipped, failed }` | Pod playback ended with stats |
+| `ad:pod:adstart` | `{ ad, index, total }` | Individual ad within pod started |
+| `ad:pod:adend` | `{ ad, index, total }` | Individual ad within pod ended |
 
 ## AdPlugin Lifecycle
 
@@ -62,4 +109,5 @@ player.use(vast({
 - Tracking uses `navigator.sendBeacon()` with `Image` pixel fallback.
 - Wrapper/chain resolution is supported (follows `<VASTAdTagURI>`).
 - The plugin saves/restores the content source after ad playback.
-- Size: **1.5 KB** gzip.
+- Ad Pods and Waterfall are automatically detected from the VAST response structure.
+- `classifyAds`, `playSingleAd`, `playPod`, `playWaterfall`, and `selectMediaFile` are all exported for advanced use cases.
