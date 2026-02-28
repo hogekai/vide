@@ -4,6 +4,29 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.8.0] - 2026-02-28
+
+### Added
+- `<audio>` element support with `isAudio` property and automatic UI exclusion
+- Live stream detection (`isLive`, `seekableRange`, `livestatechange` event)
+- Unified quality level API for HLS/DASH streams
+- Text track API for subtitle/caption control
+- IIFE global builds for CDN / `<script>` tag usage
+- Ad `clickThrough` navigation support
+- Automatic error recovery for HLS/DASH streaming plugins
+
+### Fixed
+- Play button icon not updating during ad states
+- Lint errors (formatting, import sorting)
+
+## [0.7.4] - 2026-02-28
+
+### Added
+- `repository` field for npm provenance
+
+### Fixed
+- Stub jsdom media methods for test compatibility
+
 ## [0.7.3] - 2026-02-28
 
 ### Added
