@@ -433,7 +433,7 @@
 	cursor: pointer;
 	align-items: center;
 	justify-content: center;
-	z-index: 1;
+	z-index: 2;
 	transition: background var(--vide-duration-fast), transform
 		var(--vide-duration) var(--vide-ease);
 }
