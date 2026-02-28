@@ -33,7 +33,7 @@ TypeScript strict · ESM · tsup · vitest · Biome · pnpm
 
 Single package, multiple entry points via `exports` field:
 - `vide` — core (createPlayer + EventBus + StateMachine)
-- `vide/ui` — Headless UI plugin (13 components, optional theme.css)
+- `vide/ui` — Headless UI plugin (16 components, optional theme.css)
 - `vide/vast` — VAST 4.1 Linear Ad plugin
 - `vide/vmap` — VMAP plugin (depends on vast internally)
 - `vide/hls` — HLS streaming plugin (wraps hls.js, optional peer dep)
