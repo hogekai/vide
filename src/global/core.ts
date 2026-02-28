@@ -1,0 +1,13 @@
+export { createPlayer } from "../core.js";
+export {
+	ERR_MEDIA,
+	ERR_HLS_UNSUPPORTED,
+	ERR_HLS_IMPORT,
+	ERR_HLS_FATAL,
+	ERR_DASH_IMPORT,
+	ERR_DASH_PLAYBACK,
+	ERR_DRM_UNSUPPORTED,
+	ERR_DRM_DETECTION,
+	ERR_DRM_LICENSE,
+	ERR_DRM_CERTIFICATE,
+} from "../errors.js";

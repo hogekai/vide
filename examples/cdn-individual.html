@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>vide — CDN Individual Builds</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
+    video { width: 100%; background: #000; display: block; }
+    #log { font-family: monospace; font-size: 13px; background: #1a1a1a; color: #0f0; padding: 1rem; max-height: 300px; overflow-y: auto; border-radius: 4px; }
+    .log-entry { margin: 2px 0; }
+    .controls { margin: 1rem 0; display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    button { padding: 0.4rem 1rem; cursor: pointer; }
+  </style>
+  <!-- hls.js must be loaded before vide HLS plugin -->
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js"></script>
+  <!-- Load core first, then individual plugins -->
+  <script src="../dist/vide.core.global.js"></script>
+  <script src="../dist/vide.hls.global.js"></script>
+  <script src="../dist/vide.vast.global.js"></script>
+</head>
+<body>
+  <h1>vide — CDN Individual Builds</h1>
+
+  <video id="player" controls></video>
+
+  <div class="controls">
+    <button onclick="player.play()">Play</button>
+    <button onclick="player.pause()">Pause</button>
+    <button onclick="player.muted = !player.muted">Toggle Mute</button>
+  </div>
+
+  <h3>State: <span id="state">-</span></h3>
+  <div id="log"></div>
+
+  <script>
+    var el = document.getElementById("player");
+    var stateEl = document.getElementById("state");
+    var logEl = document.getElementById("log");
+
+    function log(msg) {
+      var entry = document.createElement("div");
+      entry.className = "log-entry";
+      entry.textContent = "[" + new Date().toLocaleTimeString() + "] " + msg;
+      logEl.prepend(entry);
+    }
+
+    // Verify individual loading works
+    log("Vide.createPlayer: " + typeof Vide.createPlayer);
+    log("Vide.hls: " + typeof Vide.hls);
+    log("Vide.vast: " + typeof Vide.vast);
+
+    var player = Vide.createPlayer(el);
+    window.player = player;
+
+    player.use(Vide.hls());
+    log("HLS plugin registered");
+
+    player.on("statechange", function(e) {
+      stateEl.textContent = e.to;
+      log("state: " + e.from + " → " + e.to);
+    });
+    player.on("error", function(e) { log("error: [" + e.code + "] " + e.message); });
+
+    log("Player created. State: " + player.state);
+
+    player.src = "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8";
+    log("Loading HLS stream...");
+  </script>
+</body>
+</html>

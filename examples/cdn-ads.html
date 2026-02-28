@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>vide — CDN VAST + HLS Ads</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
+    video { width: 100%; background: #000; display: block; }
+    #log { font-family: monospace; font-size: 13px; background: #1a1a1a; color: #0f0; padding: 1rem; max-height: 300px; overflow-y: auto; border-radius: 4px; }
+    .log-entry { margin: 2px 0; }
+    .controls { margin: 1rem 0; display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    button { padding: 0.4rem 1rem; cursor: pointer; }
+    #video-wrapper { position: relative; }
+    #ad-overlay {
+      display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      cursor: pointer;
+    }
+    #ad-overlay .ad-label {
+      position: absolute; top: 8px; left: 8px;
+      background: rgba(0,0,0,0.7); color: #fff; padding: 2px 8px;
+      font-size: 12px; border-radius: 2px;
+    }
+    #ad-overlay .ad-skip {
+      display: none; position: absolute; bottom: 48px; right: 8px;
+      background: rgba(0,0,0,0.8); color: #fff; padding: 6px 16px;
+      font-size: 14px; border: 1px solid #fff; border-radius: 3px; cursor: pointer;
+    }
+  </style>
+  <!-- hls.js for HLS support -->
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js"></script>
+  <!-- Individual vide builds -->
+  <script src="../dist/vide.core.global.js"></script>
+  <script src="../dist/vide.hls.global.js"></script>
+  <script src="../dist/vide.vast.global.js"></script>
+</head>
+<body>
+  <h1>vide — CDN VAST + HLS Ads</h1>
+
+  <div id="video-wrapper">
+    <video id="player" controls></video>
+    <div id="ad-overlay">
+      <span class="ad-label">Ad</span>
+      <button class="ad-skip">Skip Ad</button>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button onclick="player.play()">Play</button>
+    <button onclick="player.pause()">Pause</button>
+    <button onclick="player.muted = !player.muted">Toggle Mute</button>
+    <button onclick="playWithAd()">Play HLS with VAST Ad</button>
+  </div>
+
+  <h3>State: <span id="state">-</span></h3>
+  <div id="log"></div>
+
+  <script>
+    var el = document.getElementById("player");
+    var stateEl = document.getElementById("state");
+    var logEl = document.getElementById("log");
+    var adOverlay = document.getElementById("ad-overlay");
+    var adSkipBtn = adOverlay.querySelector(".ad-skip");
+
+    function log(msg) {
+      var entry = document.createElement("div");
+      entry.className = "log-entry";
+      entry.textContent = "[" + new Date().toLocaleTimeString() + "] " + msg;
+      logEl.prepend(entry);
+    }
+
+    var player = Vide.createPlayer(el);
+    window.player = player;
+
+    player.use(Vide.hls());
+    log("HLS plugin registered");
+
+    // Ad overlay UI
+    adOverlay.addEventListener("click", function(e) {
+      if (e.target === adSkipBtn) return;
+      el.click();
+      if (el.paused) { el.play(); } else { el.pause(); }
+    });
+    adSkipBtn.addEventListener("click", function(e) {
+      e.stopPropagation();
+      player.emit("ad:skip", { adId: "" });
+    });
+
+    // Events
+    player.on("statechange", function(e) {
+      stateEl.textContent = e.to;
+      log("state: " + e.from + " → " + e.to);
+      if (e.to === "ad:playing" || e.to === "ad:paused") {
+        adOverlay.style.display = "block";
+      } else {
+        adOverlay.style.display = "none";
+        adSkipBtn.style.display = "none";
+      }
+    });
+    player.on("error", function(e) { log("error: [" + e.code + "] " + e.message); });
+    player.on("ad:start", function(e) { log("ad:start id=" + e.adId); });
+    player.on("ad:end", function(e) { log("ad:end id=" + e.adId); });
+    player.on("ad:click", function(e) {
+      log("ad:click → " + (e.clickThrough || "(no clickThrough)"));
+      if (e.clickThrough) window.open(e.clickThrough, "_blank");
+    });
+    player.on("ad:error", function(e) { log("ad:error: " + e.error.message); });
+    player.on("ad:quartile", function(e) { log("ad:quartile: " + e.quartile); });
+
+    log("Player created. State: " + player.state);
+
+    function vastTag() {
+      return "https://pubads.g.doubleclick.net/gampad/ads?"
+        + "iu=/21775744923/external/single_preroll_skippable"
+        + "&sz=640x480"
+        + "&ciu_szs=300x250,728x90"
+        + "&gdfp_req=1"
+        + "&output=vast"
+        + "&unviewed_position_start=1"
+        + "&env=vp"
+        + "&impl=s"
+        + "&correlator=" + Date.now();
+    }
+
+    window.playWithAd = function() {
+      var url = "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8";
+      log("Loading HLS: " + url);
+      player.src = url;
+
+      player.once("statechange", function(e) {
+        if (e.to === "ready") {
+          log("HLS ready — loading VAST ad");
+          player.use(Vide.vast({
+            tagUrl: vastTag(),
+            timeout: 10000,
+          }));
+        }
+      });
+    };
+
+    window.playWithAd();
+  </script>
+</body>
+</html>
