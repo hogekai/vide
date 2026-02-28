@@ -5,7 +5,9 @@ on:
     branches: [main]
     paths:
       - 'docs/**'
+      - 'src/**'
       - 'package.json'
+      - 'typedoc.json'
   workflow_dispatch:
 
 permissions:
@@ -28,6 +30,7 @@ jobs:
           node-version: 20
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: pnpm docs:api
       - run: pnpm docs:build
       - uses: actions/upload-pages-artifact@v3
         with:

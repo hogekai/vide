@@ -146,7 +146,7 @@ player.use(drm({
 player.src = "https://example.com/encrypted-stream.m3u8";
 ```
 
-Works with both HLS and DASH — plugin order doesn't matter.
+Works with HLS, DASH, and standalone encrypted MP4 — plugin order doesn't matter.
 
 ```ts
 // Custom headers for license requests (e.g. auth tokens)

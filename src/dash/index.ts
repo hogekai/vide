@@ -1,3 +1,4 @@
+import { ERR_DASH_IMPORT, ERR_DASH_PLAYBACK } from "../errors.js";
 import type { Player, Plugin, SourceHandler } from "../types.js";
 import type { DashPluginOptions } from "./types.js";
 
@@ -89,11 +90,13 @@ export function dash(options: DashPluginOptions = {}): Plugin {
 									player.emit("error", {
 										code: e.error.code,
 										message: e.error.message,
+										source: "dash",
 									});
 								} else {
 									player.emit("error", {
-										code: 0,
+										code: ERR_DASH_PLAYBACK,
 										message: `DASH error: ${String(e.error)}`,
+										source: "dash",
 									});
 								}
 							},
@@ -104,11 +107,12 @@ export function dash(options: DashPluginOptions = {}): Plugin {
 					.catch((err: unknown) => {
 						if (destroyed) return;
 						player.emit("error", {
-							code: 0,
+							code: ERR_DASH_IMPORT,
 							message:
 								err instanceof Error
 									? `Failed to load dashjs: ${err.message}`
 									: "Failed to load dashjs",
+							source: "dash",
 						});
 					});
 			}

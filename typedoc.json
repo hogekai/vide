@@ -1,0 +1,20 @@
+{
+	"$schema": "https://typedoc.org/schema.json",
+	"entryPoints": [
+		"src/index.ts",
+		"src/vast/index.ts",
+		"src/vmap/index.ts",
+		"src/hls/index.ts",
+		"src/dash/index.ts",
+		"src/drm/index.ts",
+		"src/ssai/index.ts",
+		"src/omid/index.ts",
+		"src/simid/index.ts",
+		"src/ui/index.ts"
+	],
+	"out": "docs/api",
+	"plugin": ["typedoc-plugin-markdown"],
+	"excludePrivate": true,
+	"excludeInternal": true,
+	"readme": "none"
+}

@@ -1,31 +1,32 @@
 # Browser Support
 
-| Feature | Chrome | Firefox | Safari | Edge | iOS Safari | Android Chrome |
-|---------|--------|---------|--------|------|------------|---------------|
-| Core playback | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| HLS | ✅ (hls.js) | ✅ (hls.js) | ✅ (native) | ✅ (hls.js) | ✅ (native) | ✅ (hls.js) |
-| DASH | ✅ | ✅ | ❌ | ✅ | ❌ | ✅ |
-| VAST/VMAP | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| DRM Widevine | ✅ | ✅ | ❌ | ✅ | ❌ | ✅ |
-| DRM FairPlay | ❌ | ❌ | ✅ | ❌ | ✅ | ❌ |
-| SSAI | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| UI keyboard | ✅ | ✅ | ✅ | ✅ | N/A | N/A |
-| UI touch | N/A | N/A | N/A | N/A | ✅ | ✅ |
-| Fullscreen | ✅ | ✅ | ✅ | ✅ | ⚠️ iOS API | ✅ |
-| OMID | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| SIMID | ✅ | ✅ | ✅ | ✅ | ⚠️ iframe | ✅ |
+## General
+vide works in all modern browsers that support ES2022 and the `<video>` element.
 
-⚠️ = partial support with known limitations
+## iOS Safari
 
-::: warning
-This is a design-based compatibility table. Device-level testing has not been performed for all combinations. Entries marked with ⚠️ have known platform-specific limitations.
-:::
+### Inline Playback
+iOS Safari plays video fullscreen by default. Add `playsinline` to your `<video>` element for inline playback:
+```html
+<video playsinline></video>
+```
+vide does **not** add this attribute automatically — it follows the "delegate, don't wrap" principle.
 
-## Notes
+### Autoplay
+iOS Safari blocks autoplay unless the video is muted:
+```ts
+player.play().catch(() => {
+  player.muted = true;
+  player.play();
+});
+```
+The VAST and VMAP plugins handle this automatically.
 
-- **HLS on Safari/iOS**: Uses native HLS support. hls.js is not loaded.
-- **DASH on Safari/iOS**: MSE support is limited. dash.js does not work.
-- **DRM**: Browser must support EME (Encrypted Media Extensions). Widevine is available on Chrome/Firefox/Edge. FairPlay is Safari/iOS only.
-- **Fullscreen on iOS**: Uses the iOS-specific `webkitEnterFullscreen()` API on the video element rather than the standard Fullscreen API.
-- **SIMID on iOS**: iframe sandboxing may restrict some interactive creative features.
-- **UI keyboard**: Not applicable on mobile — touch controls are used instead.
+### Fullscreen
+iOS Safari does not support the standard Fullscreen API on arbitrary elements. The UI plugin falls back to:
+1. `Element.requestFullscreen()` (standard)
+2. `Element.webkitRequestFullscreen()` (older WebKit)
+3. `HTMLVideoElement.webkitEnterFullscreen()` (iOS Safari — video only)
+
+### Source Changes
+When changing `<source>` elements dynamically, call `video.load()` to apply. The vide core handles this via the `src` setter.

@@ -44,6 +44,7 @@ export function simid(options: SimidPluginOptions): AdPlugin {
 				.catch((err) => {
 					player.emit("ad:error", {
 						error: err instanceof Error ? err : new Error(String(err)),
+						source: "simid",
 					});
 					channel.destroy();
 				});

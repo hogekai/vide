@@ -95,6 +95,7 @@ export function vmap(options: VmapPluginOptions): Plugin {
 					if (!mediaFile) {
 						player.emit("ad:error", {
 							error: new Error("No suitable media file found"),
+							source: "vmap",
 						});
 						cleanupAdPlugins();
 						setState("playing");
@@ -230,6 +231,7 @@ export function vmap(options: VmapPluginOptions): Plugin {
 						track(adBreak.trackingEvents.error);
 						player.emit("ad:error", {
 							error: err instanceof Error ? err : new Error(String(err)),
+							source: "vmap",
 						});
 					}
 				} finally {
@@ -276,6 +278,7 @@ export function vmap(options: VmapPluginOptions): Plugin {
 					if (aborted) return;
 					player.emit("ad:error", {
 						error: err instanceof Error ? err : new Error(String(err)),
+						source: "vmap",
 					});
 				}
 			}

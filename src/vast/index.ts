@@ -87,6 +87,7 @@ export function vast(options: VastPluginOptions): Plugin {
 					if (!mediaFile) {
 						player.emit("ad:error", {
 							error: new Error("No suitable media file found"),
+							source: "vast",
 						});
 						setState("playing");
 						return;
@@ -242,6 +243,7 @@ export function vast(options: VastPluginOptions): Plugin {
 						cleanupAdPlugins();
 						player.emit("ad:error", {
 							error: new Error("Ad media playback failed"),
+							source: "vast",
 						});
 						endAd();
 					}
@@ -312,6 +314,7 @@ export function vast(options: VastPluginOptions): Plugin {
 					if (aborted) return;
 					player.emit("ad:error", {
 						error: err instanceof Error ? err : new Error(String(err)),
+						source: "vast",
 					});
 					setState("playing");
 				}

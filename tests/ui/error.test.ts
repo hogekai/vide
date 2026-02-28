@@ -24,7 +24,11 @@ describe("createErrorDisplay", () => {
 		comp.mount(container);
 		comp.connect(player);
 
-		player.emit("error", { code: 4, message: "Media not supported" });
+		player.emit("error", {
+			code: 4,
+			message: "Media not supported",
+			source: "core",
+		});
 
 		expect(container.querySelector(".vide-error__message")?.textContent).toBe(
 			"Media not supported",

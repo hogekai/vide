@@ -85,7 +85,6 @@ describe("parseVast", () => {
 
 	it("parses duration and skipOffset", () => {
 		const result = parseVast(SAMPLE_VAST);
-		// biome-ignore lint/style/noNonNullAssertion: test asserts non-null
 		const linear = result.ads[0].creatives[0].linear!;
 		expect(linear.duration).toBe(30);
 		expect(linear.skipOffset).toBe(5);
@@ -93,7 +92,6 @@ describe("parseVast", () => {
 
 	it("parses media files", () => {
 		const result = parseVast(SAMPLE_VAST);
-		// biome-ignore lint/style/noNonNullAssertion: test asserts non-null
 		const linear = result.ads[0].creatives[0].linear!;
 		expect(linear.mediaFiles).toHaveLength(2);
 
@@ -112,7 +110,6 @@ describe("parseVast", () => {
 
 	it("parses video clicks", () => {
 		const result = parseVast(SAMPLE_VAST);
-		// biome-ignore lint/style/noNonNullAssertion: test asserts non-null
 		const linear = result.ads[0].creatives[0].linear!;
 		expect(linear.clickThrough).toBe("http://advertiser.example.com/landing");
 		expect(linear.clickTracking).toEqual(["http://tracker.example.com/click"]);
@@ -224,7 +221,6 @@ describe("parseVast — edge cases", () => {
   </Ad>
 </VAST>`;
 		const result = parseVast(xml);
-		// biome-ignore lint/style/noNonNullAssertion: test asserts non-null
 		const linear = result.ads[0].creatives[0].linear!;
 		expect(linear.duration).toBe(15);
 		expect(linear.skipOffset).toBeUndefined();
@@ -304,7 +300,6 @@ describe("parseVast — edge cases", () => {
   </Ad>
 </VAST>`;
 		const result = parseVast(xml);
-		// biome-ignore lint/style/noNonNullAssertion: test asserts non-null
 		const linear = result.ads[0].creatives[0].linear!;
 		expect(linear.skipOffset).toBe(5); // 25% of 20s
 	});
@@ -528,7 +523,6 @@ describe("parseVast — InteractiveCreativeFile", () => {
   </Ad>
 </VAST>`;
 		const result = parseVast(xml);
-		// biome-ignore lint/style/noNonNullAssertion: test asserts non-null
 		const linear = result.ads[0].creatives[0].linear!;
 		expect(linear.interactiveCreativeFiles).toHaveLength(1);
 		expect(linear.interactiveCreativeFiles[0].url).toBe(
@@ -571,7 +565,6 @@ describe("parseVast — InteractiveCreativeFile", () => {
 
 	it("returns empty array when no InteractiveCreativeFile present", () => {
 		const result = parseVast(SAMPLE_VAST);
-		// biome-ignore lint/style/noNonNullAssertion: test asserts non-null
 		const linear = result.ads[0].creatives[0].linear!;
 		expect(linear.interactiveCreativeFiles).toEqual([]);
 	});

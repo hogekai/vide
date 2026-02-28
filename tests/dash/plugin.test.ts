@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createPlayer } from "../../src/core.js";
 import { dash } from "../../src/dash/index.js";
+import { ERR_DASH_PLAYBACK } from "../../src/errors.js";
 
 // --- dashjs mock ---
 
@@ -154,6 +155,7 @@ describe("dash plugin — dashjs integration", () => {
 		expect(errorHandler).toHaveBeenCalledWith({
 			code: 25,
 			message: "download error",
+			source: "dash",
 		});
 	});
 
@@ -171,8 +173,9 @@ describe("dash plugin — dashjs integration", () => {
 		errorCallback({ error: "capability" });
 
 		expect(errorHandler).toHaveBeenCalledWith({
-			code: 0,
+			code: ERR_DASH_PLAYBACK,
 			message: "DASH error: capability",
+			source: "dash",
 		});
 	});
 });

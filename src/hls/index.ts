@@ -1,3 +1,8 @@
+import {
+	ERR_HLS_FATAL,
+	ERR_HLS_IMPORT,
+	ERR_HLS_UNSUPPORTED,
+} from "../errors.js";
 import type { Player, Plugin, SourceHandler } from "../types.js";
 import type { HlsPluginOptions } from "./types.js";
 
@@ -87,8 +92,9 @@ export function hls(options: HlsPluginOptions = {}): Plugin {
 								return;
 							}
 							player.emit("error", {
-								code: 0,
+								code: ERR_HLS_UNSUPPORTED,
 								message: "HLS is not supported in this browser",
+								source: "hls",
 							});
 							return;
 						}
@@ -109,8 +115,9 @@ export function hls(options: HlsPluginOptions = {}): Plugin {
 							(_event: string, data: HlsErrorData) => {
 								if (data.fatal) {
 									player.emit("error", {
-										code: 1,
+										code: ERR_HLS_FATAL,
 										message: `HLS fatal error: ${data.type} - ${data.details}`,
+										source: "hls",
 									});
 								}
 							},
@@ -122,11 +129,12 @@ export function hls(options: HlsPluginOptions = {}): Plugin {
 					.catch((err: unknown) => {
 						if (destroyed) return;
 						player.emit("error", {
-							code: 0,
+							code: ERR_HLS_IMPORT,
 							message:
 								err instanceof Error
 									? `Failed to load hls.js: ${err.message}`
 									: "Failed to load hls.js",
+							source: "hls",
 						});
 					});
 			}

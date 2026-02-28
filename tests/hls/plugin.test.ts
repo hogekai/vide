@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createPlayer } from "../../src/core.js";
+import { ERR_HLS_FATAL, ERR_HLS_UNSUPPORTED } from "../../src/errors.js";
 import { hls } from "../../src/hls/index.js";
 
 // --- hls.js mock ---
@@ -159,8 +160,9 @@ describe("hls plugin — hls.js integration", () => {
 		});
 
 		expect(errorHandler).toHaveBeenCalledWith({
-			code: 1,
+			code: ERR_HLS_FATAL,
 			message: expect.stringContaining("HLS fatal error"),
+			source: "hls",
 		});
 	});
 
@@ -194,8 +196,9 @@ describe("hls plugin — hls.js integration", () => {
 		player.src = "https://example.com/stream.m3u8";
 		await flushImport();
 		expect(errorHandler).toHaveBeenCalledWith({
-			code: 0,
+			code: ERR_HLS_UNSUPPORTED,
 			message: "HLS is not supported in this browser",
+			source: "hls",
 		});
 	});
 });

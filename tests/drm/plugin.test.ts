@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createPlayer } from "../../src/core.js";
 import { drm } from "../../src/drm/index.js";
 import type { ResolvedDrmConfig } from "../../src/drm/types.js";
+import { ERR_DRM_UNSUPPORTED } from "../../src/errors.js";
 
 function makeVideo(): HTMLVideoElement {
 	const el = document.createElement("video");
@@ -98,8 +99,9 @@ describe("drm plugin", () => {
 		);
 		await flushDetection();
 		expect(errorHandler).toHaveBeenCalledWith({
-			code: 0,
+			code: ERR_DRM_UNSUPPORTED,
 			message: "No supported DRM key system found",
+			source: "drm",
 		});
 	});
 

@@ -26,12 +26,12 @@ export interface PlayerEventMap {
 	pause: undefined;
 	ended: undefined;
 	timeupdate: { currentTime: number; duration: number };
-	error: { code: number; message: string };
+	error: { code: number; message: string; source: string };
 	"ad:start": { adId: string };
 	"ad:end": { adId: string };
 	"ad:skip": { adId: string };
 	"ad:click": { clickThrough: string | undefined; clickTracking: string[] };
-	"ad:error": { error: Error };
+	"ad:error": { error: Error; source: string };
 	"ad:impression": { adId: string };
 	"ad:loaded": { adId: string };
 	"ad:quartile": { adId: string; quartile: AdQuartile };

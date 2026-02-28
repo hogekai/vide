@@ -8,7 +8,11 @@ export function createFullscreen(): UIComponent {
 	let iconEl: SVGSVGElement | null = null;
 
 	function isFullscreen(): boolean {
-		return document.fullscreenElement != null;
+		return (
+			document.fullscreenElement != null ||
+			// biome-ignore lint/suspicious/noExplicitAny: webkit vendor prefix
+			(document as any).webkitFullscreenElement != null
+		);
 	}
 
 	function setIcon(active: boolean): void {
@@ -21,9 +25,27 @@ export function createFullscreen(): UIComponent {
 	function onClick(): void {
 		if (!fsTarget) return;
 		if (isFullscreen()) {
-			document.exitFullscreen().catch(() => {});
+			if (typeof document.exitFullscreen === "function") {
+				document.exitFullscreen().catch(() => {});
+				// biome-ignore lint/suspicious/noExplicitAny: webkit vendor prefix
+			} else if (typeof (document as any).webkitExitFullscreen === "function") {
+				// biome-ignore lint/suspicious/noExplicitAny: webkit vendor prefix
+				(document as any).webkitExitFullscreen();
+			}
 		} else {
-			fsTarget.requestFullscreen().catch(() => {});
+			if (typeof fsTarget.requestFullscreen === "function") {
+				fsTarget.requestFullscreen().catch(() => {});
+			} else if (
+				// biome-ignore lint/suspicious/noExplicitAny: webkit vendor prefix
+				typeof (fsTarget as any).webkitRequestFullscreen === "function"
+			) {
+				// biome-ignore lint/suspicious/noExplicitAny: webkit vendor prefix
+				(fsTarget as any).webkitRequestFullscreen();
+			} else {
+				// biome-ignore lint/suspicious/noExplicitAny: webkit vendor prefix
+				const video = fsTarget.querySelector("video") as any;
+				video?.webkitEnterFullscreen?.();
+			}
 		}
 	}
 
@@ -55,6 +77,7 @@ export function createFullscreen(): UIComponent {
 			if (!button) return;
 			button.addEventListener("click", onClick);
 			document.addEventListener("fullscreenchange", onFullscreenChange);
+			document.addEventListener("webkitfullscreenchange", onFullscreenChange);
 		},
 		destroy(): void {
 			if (button) {
@@ -64,6 +87,10 @@ export function createFullscreen(): UIComponent {
 				iconEl = null;
 			}
 			document.removeEventListener("fullscreenchange", onFullscreenChange);
+			document.removeEventListener(
+				"webkitfullscreenchange",
+				onFullscreenChange,
+			);
 			fsTarget = null;
 		},
 	};

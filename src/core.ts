@@ -1,3 +1,4 @@
+import { ERR_MEDIA } from "./errors.js";
 import type {
 	EventHandler,
 	Player,
@@ -43,6 +44,7 @@ function inferInitialState(el: HTMLVideoElement): PlayerState {
 
 // === createPlayer ===
 
+/** Create a vide player instance wrapping the given video element. */
 export function createPlayer(el: HTMLVideoElement): Player {
 	let state: PlayerState = inferInitialState(el);
 	const handlers = new Map<string, Set<EventHandler<unknown>>>();
@@ -155,8 +157,9 @@ export function createPlayer(el: HTMLVideoElement): Player {
 			setState("error");
 		}
 		emit("error", {
-			code: mediaError?.code ?? 0,
+			code: mediaError?.code ?? ERR_MEDIA,
 			message: mediaError?.message ?? "Unknown error",
+			source: "core",
 		});
 	}
 

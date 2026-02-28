@@ -312,6 +312,7 @@ export function createSimidHost(
 				error: new Error(
 					`SIMID creative fatal error: ${JSON.stringify(msg.args)}`,
 				),
+				source: "simid",
 			});
 			destroy();
 			return;

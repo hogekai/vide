@@ -82,6 +82,7 @@ export function omid(options: OmidPluginOptions): AdPlugin {
 					);
 					player.emit("ad:error", {
 						error: err instanceof Error ? err : new Error(String(err)),
+						source: "omid",
 					});
 				}
 			}

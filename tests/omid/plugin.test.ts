@@ -161,8 +161,10 @@ describe("omid ad plugin", () => {
 		const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 		mockLoadOmSdk.mockRejectedValue(new Error("network error"));
 
-		const errorEvents: Error[] = [];
-		player.on("ad:error", ({ error }) => errorEvents.push(error));
+		const errorEvents: Array<{ error: Error; source: string }> = [];
+		player.on("ad:error", (payload: { error: Error; source: string }) =>
+			errorEvents.push(payload),
+		);
 
 		omid(defaultOptions()).setup(player, defaultAd());
 
@@ -170,7 +172,8 @@ describe("omid ad plugin", () => {
 			expect(errorEvents.length).toBe(1);
 		});
 
-		expect(errorEvents[0].message).toBe("network error");
+		expect(errorEvents[0].error.message).toBe("network error");
+		expect(errorEvents[0].source).toBe("omid");
 		expect(warnSpy).toHaveBeenCalledWith(
 			"[vide:omid] Failed to initialize:",
 			"network error",
@@ -186,8 +189,10 @@ describe("omid ad plugin", () => {
 		);
 		mockLoadOmSdk.mockResolvedValue(sdk);
 
-		const errorEvents: Error[] = [];
-		player.on("ad:error", ({ error }) => errorEvents.push(error));
+		const errorEvents: Array<{ error: Error; source: string }> = [];
+		player.on("ad:error", (payload: { error: Error; source: string }) =>
+			errorEvents.push(payload),
+		);
 
 		omid(defaultOptions()).setup(player, defaultAd());
 
@@ -195,7 +200,8 @@ describe("omid ad plugin", () => {
 			expect(errorEvents.length).toBe(1);
 		});
 
-		expect(errorEvents[0].message).toContain("not supported");
+		expect(errorEvents[0].error.message).toContain("not supported");
+		expect(errorEvents[0].source).toBe("omid");
 		expect(warnSpy).toHaveBeenCalled();
 	});
 

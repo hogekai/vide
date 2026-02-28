@@ -393,7 +393,9 @@ describe("vast plugin — ad error recovery", () => {
 
 		el.dispatchEvent(new Event("error"));
 
-		expect(errorHandler).toHaveBeenCalled();
+		expect(errorHandler).toHaveBeenCalledWith(
+			expect.objectContaining({ source: "vast" }),
+		);
 		expect(endHandler).toHaveBeenCalledWith({ adId: "ad-1" });
 
 		player.destroy();

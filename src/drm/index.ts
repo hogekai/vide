@@ -1,6 +1,12 @@
+import {
+	ERR_DRM_DETECTION,
+	ERR_DRM_LICENSE,
+	ERR_DRM_UNSUPPORTED,
+} from "../errors.js";
 import type { Player, Plugin } from "../types.js";
 import { dashDrmConfig, hlsDrmConfig } from "./bridge.js";
 import { detectKeySystem } from "./detect.js";
+import { setupEme } from "./eme.js";
 import type {
 	DrmPluginOptions,
 	KeySystem,
@@ -16,6 +22,7 @@ export type {
 } from "./types.js";
 export { detectKeySystem } from "./detect.js";
 export { dashDrmConfig, hlsDrmConfig } from "./bridge.js";
+export { setupEme } from "./eme.js";
 
 /** Create a DRM plugin for vide. */
 export function drm(options: DrmPluginOptions): Plugin {
@@ -23,6 +30,7 @@ export function drm(options: DrmPluginOptions): Plugin {
 		name: "drm",
 		setup(player: Player): () => void {
 			let destroyed = false;
+			let emeCleanup: (() => void) | undefined;
 
 			// Build candidate list from provided options.
 			const candidates: KeySystem[] = [];
@@ -40,8 +48,9 @@ export function drm(options: DrmPluginOptions): Plugin {
 					if (destroyed) return;
 					if (!keySystem) {
 						player.emit("error", {
-							code: 0,
+							code: ERR_DRM_UNSUPPORTED,
 							message: "No supported DRM key system found",
+							source: "drm",
 						});
 						return;
 					}
@@ -56,20 +65,47 @@ export function drm(options: DrmPluginOptions): Plugin {
 						dashConfig: dashDrmConfig(input),
 					};
 					player.setPluginData("drm", resolved);
+
+					// Set up standalone EME fallback for direct MP4 playback.
+					const isFairPlay = keySystem !== "com.widevine.alpha";
+					const config = isFairPlay ? options.fairplay : options.widevine;
+					if (!config) return;
+					const emeOpts: import("./eme.js").EmeOptions = {
+						keySystem,
+						licenseUrl: config.licenseUrl,
+						headers: config.headers,
+						prepareLicenseRequest: config.prepareLicenseRequest,
+						processLicenseResponse: config.processLicenseResponse,
+					};
+					if (isFairPlay) {
+						emeOpts.certificateUrl = (
+							config as import("./types.js").FairPlayConfig
+						).certificateUrl;
+					}
+					emeCleanup = setupEme(player.el, emeOpts, (err) => {
+						if (!destroyed)
+							player.emit("error", {
+								code: ERR_DRM_LICENSE,
+								message: err.message,
+								source: "drm",
+							});
+					});
 				})
 				.catch((err: unknown) => {
 					if (destroyed) return;
 					player.emit("error", {
-						code: 0,
+						code: ERR_DRM_DETECTION,
 						message:
 							err instanceof Error
 								? `DRM detection failed: ${err.message}`
 								: "DRM detection failed",
+						source: "drm",
 					});
 				});
 
 			return () => {
 				destroyed = true;
+				emeCleanup?.();
 			};
 		},
 	};
