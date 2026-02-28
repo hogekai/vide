@@ -26,12 +26,17 @@ export function createPlayButton(): UIComponent {
 
 	function onStateChange({ to }: { from: PlayerState; to: PlayerState }): void {
 		if (!button) return;
-		if (to === "playing") {
+		if (to === "playing" || to === "ad:playing") {
 			button.classList.add("vide-play--playing");
 			button.classList.remove("vide-play--paused");
 			button.setAttribute("aria-label", "Pause");
 			setIcon(true);
-		} else if (to === "paused" || to === "ready" || to === "ended") {
+		} else if (
+			to === "paused" ||
+			to === "ready" ||
+			to === "ended" ||
+			to === "ad:paused"
+		) {
 			button.classList.remove("vide-play--playing");
 			button.classList.add("vide-play--paused");
 			button.setAttribute("aria-label", "Play");

@@ -101,6 +101,44 @@ describe("createPlayButton", () => {
 		comp.destroy();
 	});
 
+	it("toggles to playing class on ad:playing", () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		const container = document.createElement("div");
+		const comp = createPlayButton();
+		comp.mount(container);
+		comp.connect(player);
+
+		// Drive to ad:playing via ad:loading
+		driveToPlaying(el);
+		(player as any)._setState("ad:loading");
+		(player as any)._setState("ad:playing");
+
+		const btn = container.querySelector(".vide-play") as Element;
+		expect(btn.classList.contains("vide-play--playing")).toBe(true);
+		expect(btn.classList.contains("vide-play--paused")).toBe(false);
+		comp.destroy();
+	});
+
+	it("toggles to paused class on ad:paused", () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		const container = document.createElement("div");
+		const comp = createPlayButton();
+		comp.mount(container);
+		comp.connect(player);
+
+		driveToPlaying(el);
+		(player as any)._setState("ad:loading");
+		(player as any)._setState("ad:playing");
+		(player as any)._setState("ad:paused");
+
+		const btn = container.querySelector(".vide-play") as Element;
+		expect(btn.classList.contains("vide-play--paused")).toBe(true);
+		expect(btn.classList.contains("vide-play--playing")).toBe(false);
+		comp.destroy();
+	});
+
 	it("destroy removes the element", () => {
 		const container = document.createElement("div");
 		const comp = createPlayButton();
