@@ -1,5 +1,9 @@
 # Demo
 
+<script setup>
+import LiveDemo from './.vitepress/components/LiveDemo.vue'
+</script>
+
 ::: tip
 See the [examples/](https://github.com/hogekai/vide/tree/main/examples) directory for runnable HTML demos covering all plugin combinations.
 :::
@@ -8,23 +12,36 @@ See the [examples/](https://github.com/hogekai/vide/tree/main/examples) director
 
 A minimal player with HLS streaming and UI:
 
-```ts
+<LiveDemo />
+
+```html
+<div id="player">
+  <video src="https://example.com/stream.m3u8" autoplay muted playsinline></video>
+</div>
+```
+
+```ts [HLS + UI]
 import { createPlayer } from "@videts/vide";
 import { hls } from "@videts/vide/hls";
 import { ui } from "@videts/vide/ui";
 import "@videts/vide/ui/theme.css";
 
-const video = document.querySelector("video")!;
-const player = createPlayer(video);
+const player = createPlayer(document.querySelector("video")!);
 player.use(hls());
 player.use(ui({ container: document.getElementById("player")! }));
-
-player.src = "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8";
 ```
 
 ## With VAST Pre-Roll
 
-```ts
+<LiveDemo vast />
+
+```html
+<div id="player">
+  <video src="https://example.com/stream.m3u8" autoplay muted playsinline></video>
+</div>
+```
+
+```ts [HLS + UI + VAST]
 import { createPlayer } from "@videts/vide";
 import { hls } from "@videts/vide/hls";
 import { ui } from "@videts/vide/ui";
@@ -40,8 +57,6 @@ player.use(vast({
   tagUrl: "https://pubads.g.doubleclick.net/gampad/ads?...",
   adPlugins: uiPlugin.getAdPlugin(),
 }));
-
-player.src = "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8";
 ```
 
 ## Available Examples
