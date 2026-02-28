@@ -6,6 +6,46 @@
 npm install @videts/vide
 ```
 
+## CDN / No Build Tool
+
+vide is ESM-only. Use an ESM CDN like [esm.sh](https://esm.sh) with an import map:
+
+```html
+<script type="importmap">
+{
+  "imports": {
+    "@videts/vide": "https://esm.sh/@videts/vide@0.7",
+    "@videts/vide/ui": "https://esm.sh/@videts/vide@0.7/ui",
+    "@videts/vide/hls": "https://esm.sh/@videts/vide@0.7/hls"
+  }
+}
+</script>
+
+<link rel="stylesheet" href="https://esm.sh/@videts/vide@0.7/ui/theme.css">
+
+<div id="player-container">
+  <video src="video.mp4"></video>
+</div>
+
+<script type="module">
+  import { createPlayer } from "@videts/vide";
+  import { ui } from "@videts/vide/ui";
+
+  const player = createPlayer(document.querySelector("video"));
+  player.use(ui({ container: document.getElementById("player-container") }));
+</script>
+```
+
+Or use bare URLs without an import map:
+
+```html
+<script type="module">
+  import { createPlayer } from "https://esm.sh/@videts/vide@0.7";
+</script>
+```
+
+Import maps are supported in all modern browsers. For older browsers, use [es-module-shims](https://github.com/guybedford/es-module-shims). No UMD or IIFE builds are provided — vide is ESM-only by design.
+
 ## Basic Usage
 
 ```html
@@ -20,6 +60,60 @@ player.play();
 ```
 
 That's it. `createPlayer` wraps a `<video>` element with a typed event bus and state machine. All HTMLVideoElement properties are proxied directly.
+
+## HTML Attributes
+
+Standard `<video>` attributes work as-is — no config object needed.
+
+```html
+<video
+  src="video.mp4"
+  poster="poster.jpg"
+  autoplay
+  muted
+  loop
+  playsinline
+  preload="auto"
+  crossorigin="anonymous"
+></video>
+```
+
+```ts
+const player = createPlayer(document.querySelector("video")!);
+// All attributes above are already active.
+```
+
+| HTML attribute | JS property | Type |
+|---------------|-------------|------|
+| `src` | `player.src` | `string` |
+| `poster` | `player.poster` | `string` |
+| `autoplay` | `player.autoplay` | `boolean` |
+| `muted` | `player.muted` | `boolean` |
+| `loop` | `player.loop` | `boolean` |
+| `preload` | `player.preload` | `"" \| "none" \| "metadata" \| "auto"` |
+| `controls` | `player.controls` | `boolean` |
+| `crossorigin` | `player.crossOrigin` | `string \| null` |
+
+Multiple sources with `<source>` elements:
+
+```html
+<video>
+  <source src="video.webm" type="video/webm">
+  <source src="video.mp4" type="video/mp4">
+</video>
+```
+
+```ts
+const player = createPlayer(document.querySelector("video")!);
+// Browser selects the best source. HLS/DASH plugins intercept matching types.
+```
+
+For attributes without a proxied property (e.g. `playsinline`), use `player.el` directly:
+
+```ts
+player.el.playsInline = true;
+player.el.disablePictureInPicture = true;
+```
 
 ## Adding Plugins
 

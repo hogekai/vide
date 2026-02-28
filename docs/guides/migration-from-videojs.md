@@ -59,6 +59,47 @@ video.js uses a monolithic CSS override approach. vide uses BEM classes and CSS 
 .vide-progress__bar { background: red; }
 ```
 
+vide exposes 45+ CSS custom properties as design tokens. A single token controls all accent uses across the player:
+
+```css
+/* video.js — override individual nested selectors */
+.video-js .vjs-play-progress { background: #3b82f6; }
+.video-js .vjs-volume-level { background: #3b82f6; }
+.video-js .vjs-big-play-button { border-color: #3b82f6; }
+
+/* vide — single token controls all accent uses */
+:root { --vide-accent: #3b82f6; }
+```
+
+See [UI Design Tokens](/plugins/ui#design-tokens) for the full reference.
+
+## HTML Attributes
+
+video.js requires a config object for basic video behavior. vide uses native HTML attributes directly.
+
+**video.js:**
+```js
+const player = videojs("my-video", {
+  autoplay: true,
+  muted: true,
+  loop: true,
+  preload: "auto",
+  poster: "poster.jpg",
+});
+```
+
+**vide:**
+```html
+<video src="video.mp4" autoplay muted loop preload="auto" poster="poster.jpg"></video>
+```
+
+```ts
+const player = createPlayer(document.querySelector("video")!);
+// Attributes are already applied by the browser. No translation layer.
+```
+
+The `<video>` element is the config.
+
 ## Event Differences
 
 | video.js | vide |
