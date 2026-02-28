@@ -1,23 +1,22 @@
 import { render } from "@testing-library/svelte";
 import { describe, expect, it, vi } from "vitest";
 import type { PlayerGetter, RegisterFn } from "../../src/svelte/context.js";
-import type { Player } from "../../src/types.js";
 import CreatePlayerHost from "./CreatePlayerHost.svelte";
 
 describe("createVidePlayer", () => {
 	it("returns null player initially", () => {
-		let playerResult: { readonly player: Player | null } | undefined;
+		let injectedGetPlayer: PlayerGetter | undefined;
 
 		render(CreatePlayerHost, {
 			props: {
-				onCreated: ({ player }) => {
-					playerResult = player;
+				onCreated: ({ getPlayer }) => {
+					injectedGetPlayer = getPlayer;
 				},
 			},
 		});
 
-		expect(playerResult).toBeDefined();
-		expect(playerResult!.player).toBeNull();
+		expect(injectedGetPlayer).toBeDefined();
+		expect(injectedGetPlayer!()).toBeNull();
 	});
 
 	it("provides player and registerEl to children via context", () => {

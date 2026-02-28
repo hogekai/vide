@@ -30,21 +30,21 @@
     "&correlator=" +
     Date.now();
 
-  const { player } = createVidePlayer();
-  useHls(() => player);
-  useVast(() => player, { tagUrl: VAST_TAG });
+  const player = createVidePlayer();
+  useHls(player);
+  useVast(player, { tagUrl: VAST_TAG });
 
   let uiEl: HTMLDivElement | null = $state(null);
-  useAutohide(() => uiEl, () => player);
-  useKeyboard(() => uiEl, () => player);
+  useAutohide(() => uiEl, player);
+  useKeyboard(() => uiEl, player);
 
   let state = $state("idle");
 
-  useVideEvent(() => player, "statechange", ({ to }) => {
+  useVideEvent(player, "statechange", ({ to }) => {
     state = to;
   });
 
-  useVideEvent(() => player, "ad:start", () => {
+  useVideEvent(player, "ad:start", () => {
     console.log("Ad started");
   });
 </script>

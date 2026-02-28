@@ -8,7 +8,7 @@ import {
 	VIDE_REGISTER_KEY,
 } from "./context.js";
 
-export function createVidePlayer(): { readonly player: Player | null } {
+export function createVidePlayer(): PlayerGetter {
 	let player = $state<Player | null>(null);
 
 	const registerEl: RegisterFn = (el: MediaElement) => {
@@ -29,9 +29,5 @@ export function createVidePlayer(): { readonly player: Player | null } {
 	setContext(VIDE_PLAYER_KEY, getPlayer);
 	setContext(VIDE_REGISTER_KEY, registerEl);
 
-	return {
-		get player() {
-			return player;
-		},
-	};
+	return getPlayer;
 }
