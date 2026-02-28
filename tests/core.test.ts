@@ -154,6 +154,16 @@ describe("state transitions", () => {
 		expect(player.state).toBe("ended");
 	});
 
+	it("idle → playing on play before loadstart", () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		expect(player.state).toBe("idle");
+
+		// User clicks play before loadstart fires
+		el.dispatchEvent(new Event("play"));
+		expect(player.state).toBe("playing");
+	});
+
 	it("loading → playing on play before canplay", () => {
 		const el = makeVideo();
 		const player = createPlayer(el);
@@ -215,8 +225,8 @@ describe("state transitions", () => {
 		const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
 		const el = makeVideo();
 		const player = createPlayer(el);
-		// idle → playing is not valid
-		el.dispatchEvent(new Event("play"));
+		// idle → paused is not valid
+		el.dispatchEvent(new Event("pause"));
 		expect(player.state).toBe("idle");
 		expect(warn).toHaveBeenCalledWith(
 			expect.stringContaining("Invalid transition"),

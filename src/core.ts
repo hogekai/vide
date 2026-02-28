@@ -12,7 +12,7 @@ import type {
 // === State Machine ===
 
 const transitions: Record<PlayerState, PlayerState[]> = {
-	idle: ["loading", "error"],
+	idle: ["loading", "playing", "error"],
 	loading: ["ready", "playing", "error"],
 	ready: ["playing", "loading", "ad:loading", "error"],
 	playing: ["paused", "buffering", "loading", "ad:loading", "ended", "error"],
