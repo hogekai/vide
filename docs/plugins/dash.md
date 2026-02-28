@@ -69,9 +69,33 @@ player.on("error", (e) => {
 });
 ```
 
+## Quality Levels
+
+When a DASH stream loads, the plugin automatically detects available quality levels and exposes them through the player API.
+
+```ts
+player.on("qualitiesavailable", ({ qualities }) => {
+  console.log(qualities);
+  // [{ id: 0, width: 1920, height: 1080, bitrate: 5000000, label: "1080p" }, ...]
+});
+
+// Get current state
+player.qualities;      // QualityLevel[]
+player.currentQuality; // QualityLevel | null
+player.isAutoQuality;  // boolean
+
+// Switch quality (use -1 for auto)
+player.setQuality(2);  // select specific level
+player.setQuality(-1); // back to auto
+
+player.on("qualitychange", ({ from, to }) => {
+  console.log(`${from?.label} → ${to.label}`);
+});
+```
+
 ## Events
 
-The DASH plugin maps dash.js errors to player `error` events. No additional custom events are emitted.
+The DASH plugin emits `qualitiesavailable` when the stream initializes and `qualitychange` when the active bitrate switches. Fatal dash.js errors are mapped to player `error` events.
 
 ## Notes
 
