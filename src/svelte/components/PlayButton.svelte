@@ -3,6 +3,8 @@ import { getContext } from "svelte";
 import type { Snippet } from "svelte";
 import type { PlayerState } from "../../types.js";
 import { type PlayerGetter, VIDE_PLAYER_KEY } from "../context.js";
+import IconPause from "../icons/IconPause.svelte";
+import IconPlay from "../icons/IconPlay.svelte";
 
 interface Props {
 	class?: string;
@@ -53,5 +55,9 @@ function onClick() {
 >
 	{#if children}
 		{@render children()}
+	{:else if playing}
+		<IconPause />
+	{:else}
+		<IconPlay />
 	{/if}
 </button>

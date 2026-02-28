@@ -2,6 +2,9 @@
 import { getContext } from "svelte";
 import type { Snippet } from "svelte";
 import { type PlayerGetter, VIDE_PLAYER_KEY } from "../context.js";
+import IconVolumeHigh from "../icons/IconVolumeHigh.svelte";
+import IconVolumeLow from "../icons/IconVolumeLow.svelte";
+import IconVolumeMute from "../icons/IconVolumeMute.svelte";
 
 interface Props {
 	class?: string;
@@ -86,6 +89,12 @@ function onPointerUp(e: PointerEvent) {
 	>
 		{#if children}
 			{@render children()}
+		{:else if muted}
+			<IconVolumeMute />
+		{:else if volume < 0.5}
+			<IconVolumeLow />
+		{:else}
+			<IconVolumeHigh />
 		{/if}
 	</button>
 	<div

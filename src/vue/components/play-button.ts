@@ -1,6 +1,7 @@
 import { defineComponent, h, ref } from "vue";
 import type { PlayerState } from "../../types.js";
 import { useVideContext } from "../context.js";
+import { IconPause, IconPlay } from "../icons.js";
 import { useVideEvent } from "../use-vide-event.js";
 
 export const VidePlayButton = defineComponent({
@@ -47,7 +48,7 @@ export const VidePlayButton = defineComponent({
 					"data-playing": playing.value || undefined,
 					onClick,
 				},
-				slots.default?.(),
+				slots.default?.() ?? [h(playing.value ? IconPause : IconPlay)],
 			);
 	},
 });

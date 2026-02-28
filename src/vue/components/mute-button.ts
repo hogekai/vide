@@ -1,5 +1,6 @@
 import { defineComponent, h, onScopeDispose, ref, watch } from "vue";
 import { useVideContext } from "../context.js";
+import { IconVolumeHigh, IconVolumeLow, IconVolumeMute } from "../icons.js";
 
 export const VideMuteButton = defineComponent({
 	name: "VideMuteButton",
@@ -7,6 +8,7 @@ export const VideMuteButton = defineComponent({
 	setup(_, { attrs, slots }) {
 		const player = useVideContext();
 		const muted = ref(false);
+		const volume = ref(1);
 
 		let offVolumeChange: (() => void) | undefined;
 
@@ -18,6 +20,7 @@ export const VideMuteButton = defineComponent({
 				if (!p) return;
 				const sync = () => {
 					muted.value = p.muted || p.volume === 0;
+					volume.value = p.volume;
 				};
 				p.el.addEventListener("volumechange", sync);
 				sync();
@@ -46,7 +49,16 @@ export const VideMuteButton = defineComponent({
 					"data-muted": muted.value || undefined,
 					onClick,
 				},
-				slots.default?.(),
+				slots.default?.() ??
+					[
+						h(
+							muted.value
+								? IconVolumeMute
+								: volume.value < 0.5
+									? IconVolumeLow
+									: IconVolumeHigh,
+						),
+					],
 			);
 	},
 });

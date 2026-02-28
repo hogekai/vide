@@ -1,5 +1,6 @@
 import { defineComponent, h, onScopeDispose, ref, watch } from "vue";
 import { useVideContext } from "../context.js";
+import { IconVolumeHigh, IconVolumeLow, IconVolumeMute } from "../icons.js";
 
 export const VideVolume = defineComponent({
 	name: "VideVolume",
@@ -93,7 +94,16 @@ export const VideVolume = defineComponent({
 							"aria-label": muted.value ? "Unmute" : "Mute",
 							onClick: onMuteClick,
 						},
-						slots.default?.(),
+						slots.default?.() ??
+						[
+							h(
+								muted.value
+									? IconVolumeMute
+									: volume.value < 0.5
+										? IconVolumeLow
+										: IconVolumeHigh,
+							),
+						],
 					),
 					h("div", {
 						ref: sliderRef,
