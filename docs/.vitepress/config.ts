@@ -3,6 +3,8 @@ import { defineConfig } from "vitepress";
 export default defineConfig({
 	title: "vide",
 	description: "Modular video player. Use only what you need.",
+	base: "/vide/",
+	lang: "en-US",
 
 	themeConfig: {
 		nav: [
