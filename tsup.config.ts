@@ -16,10 +16,11 @@ const esmConfig: Options = {
 		"ssai/index": "src/ssai/index.ts",
 		"ui/index": "src/ui/index.ts",
 		"react/index": "src/react/index.ts",
+		"vue/index": "src/vue/index.ts",
 	},
 	onSuccess:
 		"mkdir -p dist/ui && cp src/ui/theme.css dist/ui/theme.css && cp src/ui/theme.css dist/vide.ui.css",
-	external: ["hls.js", "dashjs", "react", "react-dom", "react/jsx-runtime"],
+	external: ["hls.js", "dashjs", "react", "react-dom", "react/jsx-runtime", "vue"],
 	esbuildOptions(options) {
 		options.jsx = "automatic";
 	},
