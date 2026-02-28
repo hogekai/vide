@@ -8,62 +8,38 @@ describe("useVidePlayer", () => {
 		expect(result.current.player).toBeNull();
 	});
 
-	it("returns a stable ref callback", () => {
+	it("returns a stable _registerEl callback", () => {
 		const { result, rerender } = renderHook(() => useVidePlayer());
-		const ref1 = result.current.ref;
+		const reg1 = result.current._registerEl;
 		rerender();
-		expect(result.current.ref).toBe(ref1);
+		expect(result.current._registerEl).toBe(reg1);
 	});
 
-	it("creates player when ref receives a video element", () => {
+	it("creates player when _registerEl receives a video element", () => {
 		const { result } = renderHook(() => useVidePlayer());
 		const video = document.createElement("video");
 
 		act(() => {
-			result.current.ref(video);
+			result.current._registerEl(video);
 		});
 
 		expect(result.current.player).not.toBeNull();
 		expect(result.current.player!.el).toBe(video);
 	});
 
-	it("destroys player when ref receives null", () => {
-		const { result } = renderHook(() => useVidePlayer());
+	it("destroys player on unmount", () => {
+		const { result, unmount } = renderHook(() => useVidePlayer());
 		const video = document.createElement("video");
 
 		act(() => {
-			result.current.ref(video);
+			result.current._registerEl(video);
 		});
 
 		const player = result.current.player!;
 		const destroySpy = vi.spyOn(player, "destroy");
 
-		act(() => {
-			result.current.ref(null);
-		});
+		unmount();
 
 		expect(destroySpy).toHaveBeenCalledOnce();
-		expect(result.current.player).toBeNull();
-	});
-
-	it("destroys old player when ref receives a new element", () => {
-		const { result } = renderHook(() => useVidePlayer());
-		const video1 = document.createElement("video");
-		const video2 = document.createElement("video");
-
-		act(() => {
-			result.current.ref(video1);
-		});
-
-		const player1 = result.current.player!;
-		const destroySpy = vi.spyOn(player1, "destroy");
-
-		act(() => {
-			result.current.ref(video2);
-		});
-
-		expect(destroySpy).toHaveBeenCalledOnce();
-		expect(result.current.player).not.toBeNull();
-		expect(result.current.player!.el).toBe(video2);
 	});
 });

@@ -2,18 +2,27 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { createPlayer } from "../../src/core.js";
 import { useVideContext } from "../../src/react/context.js";
+import type { UseVidePlayerHandle } from "../../src/react/use-vide-player.js";
 import { VideVideo } from "../../src/react/video.js";
+import type { Player } from "../../src/types.js";
+
+function makeDummyHandle(player: Player | null = null): UseVidePlayerHandle {
+	return {
+		player,
+		_registerEl: () => {},
+	};
+}
 
 describe("VideVideo", () => {
 	it("renders a video element", () => {
-		render(<VideVideo player={null} data-testid="vid" />);
+		render(<VideVideo player={makeDummyHandle()} data-testid="vid" />);
 		expect(screen.getByTestId("vid").tagName).toBe("VIDEO");
 	});
 
 	it("passes HTML attributes to the video element", () => {
 		render(
 			<VideVideo
-				player={null}
+				player={makeDummyHandle()}
 				data-testid="vid"
 				className="my-class"
 				autoPlay
@@ -26,21 +35,6 @@ describe("VideVideo", () => {
 		expect(video).toHaveProperty("muted", true);
 	});
 
-	it("forwards ref to the video element", () => {
-		let refEl: HTMLVideoElement | null = null;
-		render(
-			<VideVideo
-				player={null}
-				ref={(el) => {
-					refEl = el;
-				}}
-				data-testid="vid"
-			/>,
-		);
-		expect(refEl).not.toBeNull();
-		expect(refEl!.tagName).toBe("VIDEO");
-	});
-
 	it("provides player via context to children", () => {
 		const video = document.createElement("video");
 		const player = createPlayer(video);
@@ -51,7 +45,7 @@ describe("VideVideo", () => {
 		}
 
 		render(
-			<VideVideo player={player}>
+			<VideVideo player={makeDummyHandle(player)}>
 				<ContextReader />
 			</VideVideo>,
 		);
@@ -60,31 +54,39 @@ describe("VideVideo", () => {
 		player.destroy();
 	});
 
-	it("provides null context when player is null", () => {
-		function ContextReader() {
-			// useVideContext throws when context is null (outside provider)
-			// but inside <VideVideo player={null}> it should still be inside
-			// the provider, just with null value.
-			// Since useVideContext throws when value is null, we need to
-			// use the raw context instead for this test.
-			return null;
-		}
-
-		// VideVideo with null player should not throw
-		const { container } = render(
-			<VideVideo player={null}>
-				<ContextReader />
+	it("does not render children when player is null", () => {
+		render(
+			<VideVideo player={makeDummyHandle()}>
+				<div data-testid="child">hello</div>
 			</VideVideo>,
 		);
-		expect(container).toBeDefined();
+		expect(screen.queryByTestId("child")).toBeNull();
 	});
 
-	it("renders children alongside video", () => {
+	it("renders children when player is available", () => {
+		const video = document.createElement("video");
+		const player = createPlayer(video);
+
 		render(
-			<VideVideo player={null}>
+			<VideVideo player={makeDummyHandle(player)}>
 				<div data-testid="child">hello</div>
 			</VideVideo>,
 		);
 		expect(screen.getByTestId("child").textContent).toBe("hello");
+		player.destroy();
+	});
+
+	it("calls _registerEl with video element on mount", () => {
+		let registered: HTMLVideoElement | null = null;
+		const handle: UseVidePlayerHandle = {
+			player: null,
+			_registerEl: (el) => {
+				registered = el;
+			},
+		};
+
+		render(<VideVideo player={handle} data-testid="vid" />);
+		expect(registered).not.toBeNull();
+		expect(registered!.tagName).toBe("VIDEO");
 	});
 });

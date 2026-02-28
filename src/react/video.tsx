@@ -1,35 +1,32 @@
 import {
 	type ComponentPropsWithoutRef,
 	type ReactNode,
-	forwardRef,
 	useCallback,
 } from "react";
-import type { Player } from "../types.js";
 import { VideContext } from "./context.js";
+import type { UseVidePlayerHandle } from "./use-vide-player.js";
 
 export interface VideVideoProps extends ComponentPropsWithoutRef<"video"> {
-	player: Player | null;
+	player: UseVidePlayerHandle;
 	children?: ReactNode;
 }
 
-export const VideVideo = forwardRef<HTMLVideoElement, VideVideoProps>(
-	function VideVideo({ player, children, ...videoProps }, forwardedRef) {
-		const videoRefCallback = useCallback(
-			(el: HTMLVideoElement | null) => {
-				if (typeof forwardedRef === "function") {
-					forwardedRef(el);
-				} else if (forwardedRef) {
-					forwardedRef.current = el;
-				}
-			},
-			[forwardedRef],
-		);
+export function VideVideo({
+	player: { player, _registerEl },
+	children,
+	...videoProps
+}: VideVideoProps) {
+	const ref = useCallback(
+		(el: HTMLVideoElement | null) => {
+			if (el) _registerEl(el);
+		},
+		[_registerEl],
+	);
 
-		return (
-			<VideContext.Provider value={player}>
-				<video ref={videoRefCallback} {...videoProps} />
-				{children}
-			</VideContext.Provider>
-		);
-	},
-);
+	return (
+		<VideContext.Provider value={player}>
+			<video ref={ref} {...videoProps} />
+			{player && children}
+		</VideContext.Provider>
+	);
+}

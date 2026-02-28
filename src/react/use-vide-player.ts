@@ -1,28 +1,26 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { createPlayer } from "../core.js";
-import type { MediaElement, Player } from "../types.js";
+import type { Player } from "../types.js";
 
-export interface UseVidePlayerReturn {
+export interface UseVidePlayerHandle {
 	player: Player | null;
-	ref: (el: MediaElement | null) => void;
+	/** @internal Used by Vide.Video to bind the media element. */
+	_registerEl: (el: HTMLVideoElement) => void;
 }
 
-export function useVidePlayer(): UseVidePlayerReturn {
+export function useVidePlayer(): UseVidePlayerHandle {
 	const [player, setPlayer] = useState<Player | null>(null);
-	const playerRef = useRef<Player | null>(null);
 
-	const ref = useCallback((el: MediaElement | null) => {
-		if (playerRef.current) {
-			playerRef.current.destroy();
-			playerRef.current = null;
-			setPlayer(null);
-		}
-		if (el) {
-			const p = createPlayer(el);
-			playerRef.current = p;
-			setPlayer(p);
-		}
+	const _registerEl = useCallback((el: HTMLVideoElement) => {
+		const p = createPlayer(el);
+		setPlayer(p);
 	}, []);
 
-	return { player, ref };
+	useEffect(() => {
+		return () => {
+			player?.destroy();
+		};
+	}, [player]);
+
+	return { player, _registerEl };
 }

@@ -21,7 +21,6 @@ function createPluginComponent<O>(name: string, factory: (opts: O) => Plugin) {
 		optionsRef.current = props;
 
 		useEffect(() => {
-			if (!player) return;
 			const plugin = factory(optionsRef.current);
 			const cleanup = plugin.setup(player);
 			return () => {
