@@ -1,5 +1,8 @@
 export { useVidePlayer } from "./use-vide-player.js";
-export type { UseVidePlayerHandle } from "./use-vide-player.js";
+export type {
+	VidePlayerHandle,
+	UseVidePlayerHandle,
+} from "./use-vide-player.js";
 
 export { useVideEvent } from "./use-vide-event.js";
 

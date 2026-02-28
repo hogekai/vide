@@ -3,9 +3,9 @@ import { describe, expect, it, vi } from "vitest";
 import { useVidePlayer } from "../../src/react/use-vide-player.js";
 
 describe("useVidePlayer", () => {
-	it("returns null player initially", () => {
+	it("returns null current initially", () => {
 		const { result } = renderHook(() => useVidePlayer());
-		expect(result.current.player).toBeNull();
+		expect(result.current.current).toBeNull();
 	});
 
 	it("returns a stable _registerEl callback", () => {
@@ -23,8 +23,8 @@ describe("useVidePlayer", () => {
 			result.current._registerEl(video);
 		});
 
-		expect(result.current.player).not.toBeNull();
-		expect(result.current.player!.el).toBe(video);
+		expect(result.current.current).not.toBeNull();
+		expect(result.current.current!.el).toBe(video);
 	});
 
 	it("destroys player on unmount", () => {
@@ -35,7 +35,7 @@ describe("useVidePlayer", () => {
 			result.current._registerEl(video);
 		});
 
-		const player = result.current.player!;
+		const player = result.current.current!;
 		const destroySpy = vi.spyOn(player, "destroy");
 
 		unmount();

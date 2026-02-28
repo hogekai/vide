@@ -2,27 +2,27 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { createPlayer } from "../../src/core.js";
 import { useVideContext } from "../../src/react/context.js";
-import type { UseVidePlayerHandle } from "../../src/react/use-vide-player.js";
+import type { VidePlayerHandle } from "../../src/react/use-vide-player.js";
 import { VideVideo } from "../../src/react/video.js";
 import type { Player } from "../../src/types.js";
 
-function makeDummyHandle(player: Player | null = null): UseVidePlayerHandle {
+function makeHandle(player: Player | null = null): VidePlayerHandle {
 	return {
-		player,
+		current: player,
 		_registerEl: () => {},
 	};
 }
 
 describe("VideVideo", () => {
 	it("renders a video element", () => {
-		render(<VideVideo player={makeDummyHandle()} data-testid="vid" />);
+		render(<VideVideo player={makeHandle()} data-testid="vid" />);
 		expect(screen.getByTestId("vid").tagName).toBe("VIDEO");
 	});
 
 	it("passes HTML attributes to the video element", () => {
 		render(
 			<VideVideo
-				player={makeDummyHandle()}
+				player={makeHandle()}
 				data-testid="vid"
 				className="my-class"
 				autoPlay
@@ -45,7 +45,7 @@ describe("VideVideo", () => {
 		}
 
 		render(
-			<VideVideo player={makeDummyHandle(player)}>
+			<VideVideo player={makeHandle(player)}>
 				<ContextReader />
 			</VideVideo>,
 		);
@@ -56,7 +56,7 @@ describe("VideVideo", () => {
 
 	it("does not render children when player is null", () => {
 		render(
-			<VideVideo player={makeDummyHandle()}>
+			<VideVideo player={makeHandle()}>
 				<div data-testid="child">hello</div>
 			</VideVideo>,
 		);
@@ -68,7 +68,7 @@ describe("VideVideo", () => {
 		const player = createPlayer(video);
 
 		render(
-			<VideVideo player={makeDummyHandle(player)}>
+			<VideVideo player={makeHandle(player)}>
 				<div data-testid="child">hello</div>
 			</VideVideo>,
 		);
@@ -78,8 +78,8 @@ describe("VideVideo", () => {
 
 	it("calls _registerEl with video element on mount", () => {
 		let registered: HTMLVideoElement | null = null;
-		const handle: UseVidePlayerHandle = {
-			player: null,
+		const handle: VidePlayerHandle = {
+			current: null,
 			_registerEl: (el) => {
 				registered = el;
 			},

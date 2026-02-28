@@ -7,16 +7,17 @@ import { hls } from "../hls/index.js";
 import type { HlsPluginOptions } from "../hls/types.js";
 import { ssai } from "../ssai/index.js";
 import type { SsaiPluginOptions } from "../ssai/types.js";
-import type { Player, Plugin } from "../types.js";
+import type { Plugin } from "../types.js";
 import { ui } from "../ui/index.js";
 import type { UiPluginOptions } from "../ui/types.js";
 import { vast } from "../vast/index.js";
 import type { VastPluginOptions } from "../vast/types.js";
 import { vmap } from "../vmap/index.js";
 import type { VmapPluginOptions } from "../vmap/types.js";
+import type { VidePlayerHandle } from "./use-vide-player.js";
 
 function usePlugin<O>(
-	player: Player | null,
+	handle: VidePlayerHandle,
 	factory: (opts: O) => Plugin,
 	options: O,
 ): void {
@@ -24,54 +25,61 @@ function usePlugin<O>(
 	optionsRef.current = options;
 
 	useEffect(() => {
+		const player = handle.current;
 		if (!player) return;
 		const plugin = factory(optionsRef.current);
 		const cleanup = plugin.setup(player);
 		return () => {
 			cleanup?.();
 		};
-	}, [player, factory]);
+	}, [handle.current, factory]);
 }
 
 export function useHls(
-	player: Player | null,
+	handle: VidePlayerHandle,
 	options?: HlsPluginOptions,
 ): void {
-	usePlugin(player, hls, options ?? {});
+	usePlugin(handle, hls, options ?? {});
 }
 
 export function useDash(
-	player: Player | null,
+	handle: VidePlayerHandle,
 	options?: DashPluginOptions,
 ): void {
-	usePlugin(player, dash, options ?? {});
+	usePlugin(handle, dash, options ?? {});
 }
 
-export function useDrm(player: Player | null, options: DrmPluginOptions): void {
-	usePlugin(player, drm, options);
+export function useDrm(
+	handle: VidePlayerHandle,
+	options: DrmPluginOptions,
+): void {
+	usePlugin(handle, drm, options);
 }
 
 export function useVast(
-	player: Player | null,
+	handle: VidePlayerHandle,
 	options: VastPluginOptions,
 ): void {
-	usePlugin(player, vast, options);
+	usePlugin(handle, vast, options);
 }
 
 export function useVmap(
-	player: Player | null,
+	handle: VidePlayerHandle,
 	options: VmapPluginOptions,
 ): void {
-	usePlugin(player, vmap, options);
+	usePlugin(handle, vmap, options);
 }
 
 export function useSsai(
-	player: Player | null,
+	handle: VidePlayerHandle,
 	options?: SsaiPluginOptions,
 ): void {
-	usePlugin(player, ssai, options ?? {});
+	usePlugin(handle, ssai, options ?? {});
 }
 
-export function useUi(player: Player | null, options: UiPluginOptions): void {
-	usePlugin(player, ui, options);
+export function useUi(
+	handle: VidePlayerHandle,
+	options: UiPluginOptions,
+): void {
+	usePlugin(handle, ui, options);
 }

@@ -1,8 +1,13 @@
 import { renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { createPlayer } from "../../src/core.js";
+import type { VidePlayerHandle } from "../../src/react/use-vide-player.js";
 import { useHls } from "../../src/react/use-plugin.js";
 import type { Player, Plugin } from "../../src/types.js";
+
+function makeHandle(player: Player | null = null): VidePlayerHandle {
+	return { current: player, _registerEl: () => {} };
+}
 
 // A minimal mock plugin factory for testing the generic usePlugin behavior
 function mockPluginFactory(): {
@@ -22,7 +27,7 @@ function mockPluginFactory(): {
 describe("useHls", () => {
 	it("does nothing when player is null", () => {
 		// Should not throw
-		renderHook(() => useHls(null));
+		renderHook(() => useHls(makeHandle(null)));
 	});
 
 	it("sets up plugin when player is provided", () => {
@@ -32,7 +37,7 @@ describe("useHls", () => {
 		// We can't easily spy on the internal hls() call since it requires
 		// hls.js to be available. Instead, test the lifecycle by checking
 		// that the hook doesn't throw and the player is functional.
-		renderHook(() => useHls(player));
+		renderHook(() => useHls(makeHandle(player)));
 
 		// The hook should not have broken the player
 		expect(player.state).toBeDefined();

@@ -5,14 +5,25 @@ import type {
 	PlayerEvent,
 	PlayerEventMap,
 } from "../types.js";
+import type { VidePlayerHandle } from "./use-vide-player.js";
+
+function resolvePlayer(
+	target: VidePlayerHandle | Player | null,
+): Player | null {
+	if (target === null) return null;
+	if ("_registerEl" in target) return target.current;
+	return target;
+}
 
 export function useVideEvent<K extends PlayerEvent>(
-	player: Player | null,
+	target: VidePlayerHandle | Player | null,
 	event: K,
 	handler: EventHandler<PlayerEventMap[K]>,
 ): void {
 	const handlerRef = useRef(handler);
 	handlerRef.current = handler;
+
+	const player = resolvePlayer(target);
 
 	useEffect(() => {
 		if (!player) return;

@@ -1,18 +1,23 @@
 import { renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { createPlayer } from "../../src/core.js";
+import type { VidePlayerHandle } from "../../src/react/use-vide-player.js";
 import { useVideEvent } from "../../src/react/use-vide-event.js";
 
-function makePlayer() {
-	return createPlayer(document.createElement("video"));
+function makeHandle(player = createPlayer(document.createElement("video"))): VidePlayerHandle {
+	return { current: player, _registerEl: () => {} };
+}
+
+function nullHandle(): VidePlayerHandle {
+	return { current: null, _registerEl: () => {} };
 }
 
 describe("useVideEvent", () => {
 	it("subscribes to player event", () => {
-		const player = makePlayer();
+		const player = createPlayer(document.createElement("video"));
 		const handler = vi.fn();
 
-		renderHook(() => useVideEvent(player, "play", handler));
+		renderHook(() => useVideEvent(makeHandle(player), "play", handler));
 
 		player.emit("play", undefined);
 		expect(handler).toHaveBeenCalledOnce();
@@ -23,17 +28,19 @@ describe("useVideEvent", () => {
 	it("does nothing when player is null", () => {
 		const handler = vi.fn();
 
-		renderHook(() => useVideEvent(null, "play", handler));
+		renderHook(() => useVideEvent(nullHandle(), "play", handler));
 
 		// No error thrown, handler never called
 		expect(handler).not.toHaveBeenCalled();
 	});
 
 	it("unsubscribes on unmount", () => {
-		const player = makePlayer();
+		const player = createPlayer(document.createElement("video"));
 		const handler = vi.fn();
 
-		const { unmount } = renderHook(() => useVideEvent(player, "play", handler));
+		const { unmount } = renderHook(() =>
+			useVideEvent(makeHandle(player), "play", handler),
+		);
 
 		unmount();
 
@@ -44,12 +51,13 @@ describe("useVideEvent", () => {
 	});
 
 	it("always calls the latest handler without re-subscribing", () => {
-		const player = makePlayer();
+		const player = createPlayer(document.createElement("video"));
+		const handle = makeHandle(player);
 		const handler1 = vi.fn();
 		const handler2 = vi.fn();
 
 		const { rerender } = renderHook(
-			({ handler }) => useVideEvent(player, "play", handler),
+			({ handler }) => useVideEvent(handle, "play", handler),
 			{ initialProps: { handler: handler1 } },
 		);
 
@@ -63,11 +71,12 @@ describe("useVideEvent", () => {
 	});
 
 	it("re-subscribes when event name changes", () => {
-		const player = makePlayer();
+		const player = createPlayer(document.createElement("video"));
+		const handle = makeHandle(player);
 		const handler = vi.fn();
 
 		const { rerender } = renderHook(
-			({ event }) => useVideEvent(player, event, handler),
+			({ event }) => useVideEvent(handle, event, handler),
 			{ initialProps: { event: "play" as const } },
 		);
 

@@ -4,15 +4,15 @@ import {
 	useCallback,
 } from "react";
 import { VideContext } from "./context.js";
-import type { UseVidePlayerHandle } from "./use-vide-player.js";
+import type { VidePlayerHandle } from "./use-vide-player.js";
 
 export interface VideVideoProps extends ComponentPropsWithoutRef<"video"> {
-	player: UseVidePlayerHandle;
+	player: VidePlayerHandle;
 	children?: ReactNode;
 }
 
 export function VideVideo({
-	player: { player, _registerEl },
+	player: { current: player, _registerEl },
 	children,
 	...videoProps
 }: VideVideoProps) {
