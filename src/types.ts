@@ -26,6 +26,7 @@ export interface PlayerEventMap {
 	pause: undefined;
 	ended: undefined;
 	timeupdate: { currentTime: number; duration: number };
+	livestatechange: { isLive: boolean };
 	error: { code: number; message: string; source: string };
 	"ad:start": { adId: string };
 	"ad:end": { adId: string };
@@ -92,6 +93,12 @@ export interface EventBus {
 	once(event: string, handler: (...args: any[]) => void): void;
 }
 
+// === Seekable Range ===
+export interface SeekableRange {
+	start: number;
+	end: number;
+}
+
 // === Source Handler ===
 export interface SourceHandler {
 	/** Whether this handler can process the given URL/type. */
@@ -126,6 +133,8 @@ export interface Player extends EventBus {
 	readonly buffered: TimeRanges;
 	readonly seekable: TimeRanges;
 	readonly seeking: boolean;
+	readonly isLive: boolean;
+	readonly seekableRange: SeekableRange | null;
 	readonly videoWidth: number;
 	readonly videoHeight: number;
 	readonly networkState: number;

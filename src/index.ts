@@ -8,6 +8,7 @@ export type {
 	PlayerEventMap,
 	PlayerState,
 	Plugin,
+	SeekableRange,
 	SourceHandler,
 } from "./types.js";
 export {

@@ -679,6 +679,156 @@ describe("setPluginData / getPluginData", () => {
 	});
 });
 
+describe("live stream detection", () => {
+	it("isLive returns false for finite duration", () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		expect(player.isLive).toBe(false);
+	});
+
+	it("isLive returns true when duration is Number.POSITIVE_INFINITY", () => {
+		const el = makeVideo();
+		Object.defineProperty(el, "duration", {
+			value: Number.POSITIVE_INFINITY,
+			configurable: true,
+		});
+		const player = createPlayer(el);
+		expect(player.isLive).toBe(true);
+	});
+
+	it("isLive returns false after destroy", () => {
+		const el = makeVideo();
+		Object.defineProperty(el, "duration", {
+			value: Number.POSITIVE_INFINITY,
+			configurable: true,
+		});
+		const player = createPlayer(el);
+		expect(player.isLive).toBe(true);
+		player.destroy();
+		expect(player.isLive).toBe(false);
+	});
+
+	it("seekableRange returns null when seekable is empty", () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		expect(player.seekableRange).toBeNull();
+	});
+
+	it("seekableRange returns start/end from el.seekable", () => {
+		const el = makeVideo();
+		Object.defineProperty(el, "seekable", {
+			value: {
+				length: 1,
+				start: () => 0,
+				end: () => 120,
+			},
+			configurable: true,
+		});
+		const player = createPlayer(el);
+		expect(player.seekableRange).toEqual({ start: 0, end: 120 });
+	});
+
+	it("seekableRange returns null after destroy", () => {
+		const el = makeVideo();
+		Object.defineProperty(el, "seekable", {
+			value: { length: 1, start: () => 0, end: () => 120 },
+			configurable: true,
+		});
+		const player = createPlayer(el);
+		expect(player.seekableRange).toEqual({ start: 0, end: 120 });
+		player.destroy();
+		expect(player.seekableRange).toBeNull();
+	});
+
+	it("emits livestatechange when duration changes to Number.POSITIVE_INFINITY", () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		const handler = vi.fn();
+		player.on("livestatechange", handler);
+
+		Object.defineProperty(el, "duration", {
+			value: Number.POSITIVE_INFINITY,
+			configurable: true,
+		});
+		el.dispatchEvent(new Event("durationchange"));
+
+		expect(handler).toHaveBeenCalledWith({ isLive: true });
+	});
+
+	it("emits livestatechange when duration changes from Number.POSITIVE_INFINITY to finite", () => {
+		const el = makeVideo();
+		Object.defineProperty(el, "duration", {
+			value: Number.POSITIVE_INFINITY,
+			configurable: true,
+		});
+		const player = createPlayer(el);
+		const handler = vi.fn();
+		player.on("livestatechange", handler);
+
+		Object.defineProperty(el, "duration", {
+			value: 300,
+			configurable: true,
+		});
+		el.dispatchEvent(new Event("durationchange"));
+
+		expect(handler).toHaveBeenCalledWith({ isLive: false });
+	});
+
+	it("does not emit livestatechange when isLive does not change", () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		const handler = vi.fn();
+		player.on("livestatechange", handler);
+
+		Object.defineProperty(el, "duration", {
+			value: 300,
+			configurable: true,
+		});
+		el.dispatchEvent(new Event("durationchange"));
+
+		expect(handler).not.toHaveBeenCalled();
+	});
+
+	it("does not emit livestatechange after destroy", () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		const handler = vi.fn();
+		player.on("livestatechange", handler);
+		player.destroy();
+
+		Object.defineProperty(el, "duration", {
+			value: Number.POSITIVE_INFINITY,
+			configurable: true,
+		});
+		el.dispatchEvent(new Event("durationchange"));
+
+		expect(handler).not.toHaveBeenCalled();
+	});
+
+	it("initializes prevIsLive correctly for already-live element", () => {
+		const el = makeVideo();
+		Object.defineProperty(el, "duration", {
+			value: Number.POSITIVE_INFINITY,
+			configurable: true,
+		});
+		const player = createPlayer(el);
+		const handler = vi.fn();
+		player.on("livestatechange", handler);
+
+		// Duration is still Number.POSITIVE_INFINITY — no state change
+		el.dispatchEvent(new Event("durationchange"));
+		expect(handler).not.toHaveBeenCalled();
+
+		// Now switch to finite
+		Object.defineProperty(el, "duration", {
+			value: 600,
+			configurable: true,
+		});
+		el.dispatchEvent(new Event("durationchange"));
+		expect(handler).toHaveBeenCalledWith({ isLive: false });
+	});
+});
+
 describe("<source> element auto-processing", () => {
 	it("processes <source> element when handler is registered", () => {
 		const el = document.createElement("video");

@@ -6,6 +6,7 @@ import type {
 	PlayerEventMap,
 	PlayerState,
 	Plugin,
+	SeekableRange,
 	SourceHandler,
 } from "./types.js";
 
@@ -55,6 +56,7 @@ export function createPlayer(el: HTMLVideoElement): Player {
 	let currentSrc = el.getAttribute("src") ?? "";
 	let srcExplicitlySet = false;
 	const pluginData = new Map<string, unknown>();
+	let prevIsLive = el.duration === Number.POSITIVE_INFINITY;
 
 	function getHandlers(event: string): Set<EventHandler<unknown>> {
 		let set = handlers.get(event);
@@ -163,6 +165,15 @@ export function createPlayer(el: HTMLVideoElement): Player {
 		});
 	}
 
+	function onDurationChange(): void {
+		const currentIsLive = el.duration === Number.POSITIVE_INFINITY;
+		if (currentIsLive !== prevIsLive) {
+			prevIsLive = currentIsLive;
+			emit("livestatechange", { isLive: currentIsLive });
+		}
+	}
+
+	el.addEventListener("durationchange", onDurationChange);
 	el.addEventListener("loadstart", onLoadStart);
 	el.addEventListener("canplay", onCanPlay);
 	el.addEventListener("play", onPlay);
@@ -180,6 +191,7 @@ export function createPlayer(el: HTMLVideoElement): Player {
 		"pause",
 		"ended",
 		"timeupdate",
+		"livestatechange",
 		"error",
 		"ad:start",
 		"ad:end",
@@ -199,6 +211,7 @@ export function createPlayer(el: HTMLVideoElement): Player {
 	]);
 
 	function removeVideoListeners(): void {
+		el.removeEventListener("durationchange", onDurationChange);
 		el.removeEventListener("loadstart", onLoadStart);
 		el.removeEventListener("canplay", onCanPlay);
 		el.removeEventListener("play", onPlay);
@@ -323,6 +336,15 @@ export function createPlayer(el: HTMLVideoElement): Player {
 		},
 		get seeking() {
 			return el.seeking;
+		},
+		get isLive(): boolean {
+			if (destroyed) return false;
+			return el.duration === Number.POSITIVE_INFINITY;
+		},
+		get seekableRange(): SeekableRange | null {
+			if (destroyed) return null;
+			if (el.seekable.length === 0) return null;
+			return { start: el.seekable.start(0), end: el.seekable.end(0) };
 		},
 		get videoWidth() {
 			return el.videoWidth;
