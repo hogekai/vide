@@ -87,7 +87,6 @@
     player.on("ad:skip", ({ adId }) => log(`ad:skip id=${adId}`));
     player.on("ad:click", ({ clickThrough }) => {
       log(`ad:click → ${clickThrough ?? "(no clickThrough)"}`);
-      if (clickThrough) window.open(clickThrough, "_blank");
     });
     player.on("ad:error", ({ error }) => log(`ad:error: ${error.message}`));
     player.on("error", ({ code, message }) => log(`error: [${code}] ${message}`));

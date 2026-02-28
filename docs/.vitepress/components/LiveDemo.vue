@@ -8,9 +8,12 @@ const props = defineProps<{
 const container = ref<HTMLDivElement>();
 const video = ref<HTMLVideoElement>();
 let player: any = null;
+let observer: IntersectionObserver | null = null;
+let initialized = false;
 
-onMounted(async () => {
-  if (!video.value || !container.value) return;
+async function initPlayer() {
+  if (initialized || !video.value || !container.value) return;
+  initialized = true;
 
   // Load theme.css from CDN
   const linkId = "vide-theme-css";
@@ -51,10 +54,30 @@ onMounted(async () => {
   }
 
   player.src = "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8";
+}
+
+onMounted(() => {
+  if (!container.value) return;
+
+  observer = new IntersectionObserver(
+    (entries) => {
+      if (entries[0].isIntersecting) {
+        initPlayer();
+        observer?.disconnect();
+        observer = null;
+      }
+    },
+    { threshold: 0.25 },
+  );
+  observer.observe(container.value);
 });
 
 onBeforeUnmount(() => {
+  observer?.disconnect();
+  observer = null;
   player?.destroy();
+  player = null;
+  initialized = false;
 });
 </script>
 

@@ -116,7 +116,7 @@ export function ui(options: UiPluginOptions): UiPlugin {
 				adContainer.className = "vide-ad";
 				root.appendChild(adContainer);
 
-				add("ad-overlay", createAdOverlay(), adContainer);
+				add("ad-overlay", createAdOverlay(adUIStateRef), adContainer);
 				add("ad-label", createAdLabel(), adContainer);
 				add("ad-countdown", createAdCountdown(adUIStateRef), adContainer);
 				add("ad-skip", createAdSkip(adUIStateRef), adContainer);
