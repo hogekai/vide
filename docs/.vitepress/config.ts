@@ -24,6 +24,13 @@ export default defineConfig({
 				],
 			},
 			{
+				text: "Frameworks",
+				items: [
+					{ text: "React", link: "/frameworks/react" },
+					{ text: "Vue", link: "/frameworks/vue" },
+				],
+			},
+			{
 				text: "Plugins",
 				items: [
 					{ text: "HLS", link: "/plugins/hls" },
@@ -47,13 +54,6 @@ export default defineConfig({
 						text: "Migration from video.js",
 						link: "/guides/migration-from-videojs",
 					},
-				],
-			},
-			{
-				text: "Frameworks",
-				items: [
-					{ text: "React", link: "/frameworks/react" },
-					{ text: "Vue", link: "/frameworks/vue" },
 				],
 			},
 			{
