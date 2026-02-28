@@ -30,9 +30,9 @@ test.describe("UI controls", () => {
 	});
 
 	test("keyboard space toggles play", async ({ page }) => {
-		// Focus the player area
-		const container = page.locator("#player-container");
-		await container.click();
+		// Focus the .vide-ui root (has tabindex="0")
+		const uiRoot = page.locator(".vide-ui");
+		await uiRoot.focus();
 
 		// Press space to play
 		await page.keyboard.press("Space");
@@ -72,10 +72,10 @@ test.describe("UI controls", () => {
 		await page.mouse.move(0, 0);
 		await page.waitForTimeout(4_000);
 
-		// Controls should be hidden via CSS
+		// Controls should be hidden via CSS (class is "vide-ui--autohide")
 		const uiRoot = page.locator(".vide-ui");
 		const hiddenClass = await uiRoot.evaluate((el) =>
-			el.classList.contains("vide-ui--idle"),
+			el.classList.contains("vide-ui--autohide"),
 		);
 		expect(hiddenClass).toBe(true);
 	});
