@@ -4,9 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>vide — HLS Streaming</title>
+  <link rel="stylesheet" href="../dist/ui/theme.css">
   <style>
     body { font-family: system-ui, sans-serif; max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
-    video { width: 100%; background: #000; display: block; }
+    #player-container { position: relative; width: 100%; background: #000; aspect-ratio: 16/9; }
+    #player-container video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
     #log { font-family: monospace; font-size: 13px; background: #1a1a1a; color: #0f0; padding: 1rem; max-height: 300px; overflow-y: auto; border-radius: 4px; }
     .log-entry { margin: 2px 0; }
     .controls { margin: 1rem 0; display: flex; gap: 0.5rem; flex-wrap: wrap; }
@@ -19,13 +21,11 @@
 <body>
   <h1>vide — HLS Streaming</h1>
 
-  <video id="player" controls></video>
+  <div id="player-container">
+    <video id="player"></video>
+  </div>
 
   <div class="controls">
-    <button onclick="player.play()">Play</button>
-    <button onclick="player.pause()">Pause</button>
-    <button onclick="player.currentTime = 0">Restart</button>
-    <button onclick="player.muted = !player.muted">Toggle Mute</button>
     <button onclick="loadStream()">Load HLS Stream</button>
     <button onclick="player.destroy(); log('destroyed')">Destroy</button>
   </div>
@@ -36,8 +36,10 @@
   <script type="module">
     import { createPlayer } from "../dist/index.mjs";
     import { hls } from "../dist/hls/index.mjs";
+    import { ui } from "../dist/ui/index.mjs";
 
     const el = document.getElementById("player");
+    const container = document.getElementById("player-container");
     const stateEl = document.getElementById("state");
     const logEl = document.getElementById("log");
 
@@ -52,9 +54,10 @@
     const player = createPlayer(el);
     window.player = player;
 
-    // Register HLS plugin
+    // Register plugins
     player.use(hls());
-    log("HLS plugin registered");
+    player.use(ui({ container }));
+    log("HLS + UI plugins registered");
 
     // Wire up events
     player.on("statechange", ({ from, to }) => {

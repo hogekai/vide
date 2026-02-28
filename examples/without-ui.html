@@ -3,30 +3,30 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>vide — DASH Streaming</title>
-  <link rel="stylesheet" href="../dist/ui/theme.css">
+  <title>vide — Without UI Plugin</title>
   <style>
     body { font-family: system-ui, sans-serif; max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
-    #player-container { position: relative; width: 100%; background: #000; aspect-ratio: 16/9; }
-    #player-container video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+    video { width: 100%; background: #000; display: block; }
     #log { font-family: monospace; font-size: 13px; background: #1a1a1a; color: #0f0; padding: 1rem; max-height: 300px; overflow-y: auto; border-radius: 4px; }
     .log-entry { margin: 2px 0; }
     .controls { margin: 1rem 0; display: flex; gap: 0.5rem; flex-wrap: wrap; }
     button { padding: 0.4rem 1rem; cursor: pointer; }
   </style>
-  <script type="importmap">
-    { "imports": { "dashjs": "https://esm.sh/dashjs@4" } }
-  </script>
 </head>
 <body>
-  <h1>vide — DASH Streaming</h1>
+  <h1>vide — Without UI Plugin</h1>
+  <p>Core player with native browser controls and no UI plugin.
+  All interaction is done via the player API. For the UI plugin, see <a href="ui.html">ui.html</a>.</p>
 
-  <div id="player-container">
-    <video id="player"></video>
-  </div>
+  <video id="player" controls
+    src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4">
+  </video>
 
   <div class="controls">
-    <button onclick="loadStream()">Load DASH Stream</button>
+    <button onclick="player.play()">Play</button>
+    <button onclick="player.pause()">Pause</button>
+    <button onclick="player.currentTime = 0">Restart</button>
+    <button onclick="player.muted = !player.muted">Toggle Mute</button>
     <button onclick="player.destroy(); log('destroyed')">Destroy</button>
   </div>
 
@@ -35,11 +35,8 @@
 
   <script type="module">
     import { createPlayer } from "../dist/index.mjs";
-    import { dash } from "../dist/dash/index.mjs";
-    import { ui } from "../dist/ui/index.mjs";
 
     const el = document.getElementById("player");
-    const container = document.getElementById("player-container");
     const stateEl = document.getElementById("state");
     const logEl = document.getElementById("log");
 
@@ -54,11 +51,6 @@
     const player = createPlayer(el);
     window.player = player;
 
-    // Register plugins
-    player.use(dash());
-    player.use(ui({ container }));
-    log("DASH + UI plugins registered");
-
     // Wire up events
     player.on("statechange", ({ from, to }) => {
       stateEl.textContent = to;
@@ -70,25 +62,6 @@
     player.on("error", ({ code, message }) => log(`error: [${code}] ${message}`));
 
     log("Player created. State: " + player.state);
-
-    // Load DASH stream and autoplay when ready
-    window.loadStream = function() {
-      const url = "https://dash.akamaized.net/akamai/bbb_30fps/bbb_30fps.mpd";
-      log("Loading: " + url);
-      player.src = url;
-      player.once("statechange", ({ to }) => {
-        if (to === "ready") {
-          player.play().catch(() => {
-            // Autoplay blocked — mute and retry
-            player.muted = true;
-            player.play().catch(() => {});
-          });
-        }
-      });
-    };
-
-    // Auto-load on page open
-    window.loadStream();
   </script>
 </body>
 </html>

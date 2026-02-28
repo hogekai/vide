@@ -3,171 +3,73 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>vide — Sample</title>
+  <title>vide — Examples</title>
   <style>
-    body { font-family: system-ui, sans-serif; max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
-    video { width: 100%; background: #000; display: block; }
-    #log { font-family: monospace; font-size: 13px; background: #1a1a1a; color: #0f0; padding: 1rem; max-height: 300px; overflow-y: auto; border-radius: 4px; }
-    .log-entry { margin: 2px 0; }
-    .controls { margin: 1rem 0; display: flex; gap: 0.5rem; flex-wrap: wrap; }
-    button { padding: 0.4rem 1rem; cursor: pointer; }
-    #video-wrapper { position: relative; }
-    #ad-overlay {
-      display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-      cursor: pointer;
+    body { font-family: system-ui, sans-serif; max-width: 800px; margin: 2rem auto; padding: 0 1rem; color: #222; }
+    h1 { margin-bottom: 0.25rem; }
+    h1 + p { color: #666; margin-top: 0; }
+    h2 { margin-top: 2rem; border-bottom: 1px solid #ddd; padding-bottom: 0.25rem; }
+    ul { list-style: none; padding: 0; }
+    li { margin: 0.5rem 0; }
+    a { color: #1a73e8; text-decoration: none; font-weight: 500; }
+    a:hover { text-decoration: underline; }
+    .badge {
+      display: inline-block; font-size: 11px; font-weight: 600; padding: 1px 6px;
+      border-radius: 3px; margin-left: 0.5rem; vertical-align: middle;
     }
-    #ad-overlay .ad-label {
-      position: absolute; top: 8px; left: 8px;
-      background: rgba(0,0,0,0.7); color: #fff; padding: 2px 8px;
-      font-size: 12px; border-radius: 2px;
-    }
-    #ad-overlay .ad-skip {
-      display: none; position: absolute; bottom: 48px; right: 8px;
-      background: rgba(0,0,0,0.8); color: #fff; padding: 6px 16px;
-      font-size: 14px; border: 1px solid #fff; border-radius: 3px; cursor: pointer;
-    }
+    .badge-ui { background: #e8f5e9; color: #2e7d32; }
+    .badge-headless { background: #fff3e0; color: #e65100; }
+    .badge-debug { background: #f3e5f5; color: #7b1fa2; }
+    .desc { color: #666; font-size: 14px; }
   </style>
 </head>
 <body>
-  <h1>vide sample</h1>
+  <h1>vide — Examples</h1>
+  <p>Browse the examples below. Open any HTML file directly in a browser after running <code>pnpm build</code>.</p>
 
-  <div id="video-wrapper">
-    <video id="player" controls
-      src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4">
-    </video>
-    <div id="ad-overlay">
-      <span class="ad-label">Ad</span>
-      <button class="ad-skip">Skip Ad</button>
-    </div>
-  </div>
+  <h2>Getting Started</h2>
+  <ul>
+    <li><a href="ui.html">ui.html</a> <span class="badge badge-ui">UI</span> <span class="desc">— Full UI plugin with default theme</span></li>
+    <li><a href="ui-standalone.html">ui-standalone.html</a> <span class="badge badge-ui">UI</span> <span class="desc">— Manual component assembly (no convenience function)</span></li>
+    <li><a href="ui-headless.html">ui-headless.html</a> <span class="badge badge-ui">UI</span> <span class="desc">— Custom theme without theme.css (cyberpunk style)</span></li>
+    <li><a href="without-ui.html">without-ui.html</a> <span class="badge badge-headless">Without UI</span> <span class="desc">— Core player with native browser controls, no UI plugin</span></li>
+  </ul>
 
-  <div class="controls">
-    <button onclick="player.play()">Play</button>
-    <button onclick="player.pause()">Pause</button>
-    <button onclick="player.currentTime = 0">Restart</button>
-    <button onclick="player.muted = !player.muted">Toggle Mute</button>
-    <button onclick="playWithAd()">Play with VAST Ad</button>
-    <button onclick="debugVast()">Debug: Parse VAST</button>
-  </div>
+  <h2>Streaming</h2>
+  <ul>
+    <li><a href="hls.html">hls.html</a> <span class="badge badge-ui">UI</span> <span class="desc">— HLS adaptive streaming via hls.js</span></li>
+    <li><a href="dash.html">dash.html</a> <span class="badge badge-ui">UI</span> <span class="desc">— DASH adaptive streaming via dash.js</span></li>
+  </ul>
 
-  <h3>State: <span id="state">-</span></h3>
-  <div id="log"></div>
+  <h2>Ads</h2>
+  <ul>
+    <li><a href="ui-vast.html">ui-vast.html</a> <span class="badge badge-ui">UI</span> <span class="desc">— VAST pre-roll ad with UI</span></li>
+    <li><a href="hls-vast.html">hls-vast.html</a> <span class="badge badge-ui">UI</span> <span class="desc">— HLS streaming + VAST pre-roll</span></li>
+    <li><a href="dash-vast.html">dash-vast.html</a> <span class="badge badge-ui">UI</span> <span class="desc">— DASH streaming + VAST pre-roll</span></li>
+    <li><a href="vmap.html">vmap.html</a> <span class="badge badge-ui">UI</span> <span class="desc">— VMAP ad schedule (preroll / midroll / postroll)</span></li>
+    <li><a href="ad-pod.html">ad-pod.html</a> <span class="badge badge-ui">UI</span> <span class="desc">— Ad pod sequencing and waterfall fallback</span></li>
+    <li><a href="companion-ads.html">companion-ads.html</a> <span class="badge badge-ui">UI</span> <span class="desc">— Companion ad slots (300x250, 728x90)</span></li>
+    <li><a href="nonlinear-ads.html">nonlinear-ads.html</a> <span class="badge badge-ui">UI</span> <span class="desc">— NonLinear overlay ads</span></li>
+  </ul>
 
-  <script type="module">
-    import { createPlayer } from "../dist/index.mjs";
-    import { vast, parseVast, fetchVast } from "../dist/vast/index.mjs";
+  <h2>Advanced <span class="badge badge-headless">Headless</span></h2>
+  <ul>
+    <li><a href="ssai.html">ssai.html</a> <span class="badge badge-headless">Headless</span> <span class="desc">— Server-side ad insertion (HLS + EXT-X-DATERANGE)</span></li>
+    <li><a href="omid.html">omid.html</a> <span class="badge badge-headless">Headless</span> <span class="desc">— Open Measurement (OM SDK) verification</span></li>
+    <li><a href="simid.html">simid.html</a> <span class="badge badge-headless">Headless</span> <span class="desc">— SIMID interactive ads in sandboxed iframe</span></li>
+  </ul>
 
-    const el = document.getElementById("player");
-    const stateEl = document.getElementById("state");
-    const logEl = document.getElementById("log");
-    const adOverlay = document.getElementById("ad-overlay");
-    const adSkipBtn = adOverlay.querySelector(".ad-skip");
+  <h2>CDN (no bundler)</h2>
+  <ul>
+    <li><a href="cdn-all.html">cdn-all.html</a> <span class="badge badge-ui">UI</span> <span class="desc">— All-in-one IIFE build (global Vide.*)</span></li>
+    <li><a href="cdn-individual.html">cdn-individual.html</a> <span class="badge badge-headless">Headless</span> <span class="desc">— Individual IIFE builds loaded separately</span></li>
+    <li><a href="cdn-ads.html">cdn-ads.html</a> <span class="badge badge-headless">Headless</span> <span class="desc">— CDN + HLS + VAST ads</span></li>
+  </ul>
 
-    function log(msg) {
-      const entry = document.createElement("div");
-      entry.className = "log-entry";
-      entry.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
-      logEl.prepend(entry);
-    }
-
-    const player = createPlayer(el);
-    window.player = player;
-
-    // --- Ad overlay UI ---
-    let currentClickThrough = null;
-
-    adOverlay.addEventListener("click", (e) => {
-      if (e.target === adSkipBtn) return;
-      // Forward click to video element so VAST plugin fires ad:click tracking
-      el.click();
-      // Toggle pause/play on the ad video
-      if (el.paused) {
-        el.play();
-      } else {
-        el.pause();
-      }
-    });
-
-    adSkipBtn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      player.emit("ad:skip", { adId: "" });
-    });
-
-    player.on("statechange", ({ from, to }) => {
-      stateEl.textContent = to;
-      log(`state: ${from} → ${to}`);
-      // Show/hide ad overlay based on ad states
-      if (to === "ad:playing" || to === "ad:paused") {
-        adOverlay.style.display = "block";
-      } else {
-        adOverlay.style.display = "none";
-        adSkipBtn.style.display = "none";
-        currentClickThrough = null;
-      }
-    });
-    player.on("play", () => log("event: play"));
-    player.on("pause", () => log("event: pause"));
-    player.on("ended", () => log("event: ended"));
-    player.on("error", ({ code, message }) => log(`error: [${code}] ${message}`));
-    player.on("ad:start", ({ adId }) => log(`ad:start id=${adId}`));
-    player.on("ad:end", ({ adId }) => log(`ad:end id=${adId}`));
-    player.on("ad:click", ({ clickThrough }) => {
-      log(`ad:click → ${clickThrough ?? "(no clickThrough)"}`);
-      if (clickThrough) window.open(clickThrough, "_blank");
-    });
-    player.on("ad:error", ({ error }) => log(`ad:error: ${error.message}`));
-
-    log("Player created. State: " + player.state);
-
-    // Google IMA sample VAST tag (pre-roll, linear, skippable)
-    function vastTag() {
-      return "https://pubads.g.doubleclick.net/gampad/ads?"
-        + "iu=/21775744923/external/single_preroll_skippable"
-        + "&sz=640x480"
-        + "&ciu_szs=300x250,728x90"
-        + "&gdfp_req=1"
-        + "&output=vast"
-        + "&unviewed_position_start=1"
-        + "&env=vp"
-        + "&impl=s"
-        + "&correlator=" + Date.now();
-    }
-
-    // --- Play with VAST ad (the actual plugin flow) ---
-    window.playWithAd = function() {
-      log("--- Using vast() plugin ---");
-      player.use(vast({
-        tagUrl: vastTag(),
-        timeout: 10000,
-      }));
-    };
-
-    // --- Debug: manually fetch + parse (inspect XML structure) ---
-    window.debugVast = async function() {
-      log("--- Debug: fetching VAST tag ---");
-      try {
-        const xml = await fetchVast(vastTag(), { timeout: 10000 });
-        log(`Fetched ${xml.length} bytes`);
-
-        const response = parseVast(xml);
-        log(`version=${response.version}, ads=${response.ads.length}`);
-
-        for (const ad of response.ads) {
-          log(`Ad: id=${ad.id}, system=${ad.adSystem}, title=${ad.adTitle}`);
-          log(`  impressions=${ad.impressions.length}, errors=${ad.errors.length}`);
-          for (const c of ad.creatives) {
-            if (!c.linear) continue;
-            const l = c.linear;
-            log(`  Linear: ${l.duration}s, skip=${l.skipOffset ?? "none"}, files=${l.mediaFiles.length}`);
-            for (const mf of l.mediaFiles) {
-              log(`    ${mf.mimeType} ${mf.width}x${mf.height} br=${mf.bitrate ?? "?"} ${mf.delivery}`);
-            }
-          }
-        }
-      } catch (err) {
-        log(`Error: ${err.message}`);
-      }
-    };
-  </script>
+  <h2>Debug</h2>
+  <ul>
+    <li><a href="vast-debug.html">vast-debug.html</a> <span class="badge badge-debug">Debug</span> <span class="desc">— VAST XML inspection and manual ad playback</span></li>
+    <li><a href="wrapper.html">wrapper.html</a> <span class="badge badge-debug">Debug</span> <span class="desc">— VAST wrapper chain resolution</span></li>
+  </ul>
 </body>
 </html>
