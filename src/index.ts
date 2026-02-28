@@ -9,6 +9,7 @@ export type {
 	PlayerState,
 	Plugin,
 	QualityLevel,
+	RecoveryConfig,
 	SeekableRange,
 	SourceHandler,
 	VideCue,

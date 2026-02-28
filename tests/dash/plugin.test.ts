@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createPlayer } from "../../src/core.js";
 import { dash } from "../../src/dash/index.js";
 import { ERR_DASH_PLAYBACK } from "../../src/errors.js";
@@ -10,6 +10,7 @@ const mockInstance = {
 	updateSettings: vi.fn(),
 	on: vi.fn(),
 	destroy: vi.fn(),
+	reset: vi.fn(),
 	getBitrateInfoListFor: vi.fn().mockReturnValue([]),
 	setQualityFor: vi.fn(),
 	getSettings: vi.fn().mockReturnValue({}),
@@ -63,6 +64,7 @@ beforeEach(() => {
 	mockInstance.updateSettings.mockClear();
 	mockInstance.on.mockClear();
 	mockInstance.destroy.mockClear();
+	mockInstance.reset.mockClear();
 	mockInstance.getBitrateInfoListFor.mockReset().mockReturnValue([]);
 	mockInstance.setQualityFor.mockClear();
 	mockInstance.getSettings.mockReset().mockReturnValue({});
@@ -158,11 +160,13 @@ describe("dash plugin — dashjs integration", () => {
 			error: { code: 25, message: "download error" },
 		});
 
-		expect(errorHandler).toHaveBeenCalledWith({
-			code: 25,
-			message: "download error",
-			source: "dash",
-		});
+		expect(errorHandler).toHaveBeenCalledWith(
+			expect.objectContaining({
+				code: 25,
+				message: "download error",
+				source: "dash",
+			}),
+		);
 	});
 
 	it("emits player error on dashjs string error", async () => {
@@ -530,5 +534,312 @@ describe("dash plugin — quality levels", () => {
 			streaming: { abr: { autoSwitchBitrate: { video: true } } },
 		});
 		expect(player.isAutoQuality).toBe(true);
+	});
+});
+
+describe("dash plugin — error recovery", () => {
+	beforeEach(() => {
+		vi.useFakeTimers();
+	});
+
+	afterEach(() => {
+		vi.useRealTimers();
+	});
+
+	/** flushImport with fake timers needs manual microtask flush. */
+	async function flushImportFake(): Promise<void> {
+		await vi.advanceTimersByTimeAsync(0);
+	}
+
+	function getStreamInitCallback(): () => void {
+		const call = mockInstance.on.mock.calls.find(
+			(c: unknown[]) => c[0] === "streamInitialized",
+		);
+		return call[1] as () => void;
+	}
+
+	it("emits recoverable error on first fatal object error", async () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		const errorHandler = vi.fn();
+		player.on("error", errorHandler);
+		player.use(dash());
+		player.src = "https://example.com/stream.mpd";
+		await flushImportFake();
+
+		const errorCallback = getErrorCallback();
+		errorCallback({
+			error: { code: 25, message: "download error" },
+		});
+
+		expect(errorHandler).toHaveBeenCalledWith({
+			code: 25,
+			message: "download error",
+			source: "dash",
+			recoverable: true,
+			retryCount: 1,
+		});
+	});
+
+	it("calls reset then initialize after delay", async () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		player.use(dash());
+		player.src = "https://example.com/stream.mpd";
+		await flushImportFake();
+
+		const errorCallback = getErrorCallback();
+		mockInstance.initialize.mockClear();
+
+		errorCallback({
+			error: { code: 25, message: "download error" },
+		});
+
+		expect(mockInstance.reset).not.toHaveBeenCalled();
+		vi.advanceTimersByTime(3000);
+		expect(mockInstance.reset).toHaveBeenCalled();
+		expect(mockInstance.initialize).toHaveBeenCalledWith(
+			el,
+			"https://example.com/stream.mpd",
+			false,
+		);
+	});
+
+	it("does not attempt recovery for string errors", async () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		const errorHandler = vi.fn();
+		player.on("error", errorHandler);
+		player.use(dash());
+		player.src = "https://example.com/stream.mpd";
+		await flushImportFake();
+
+		const errorCallback = getErrorCallback();
+		errorCallback({ error: "capability" });
+
+		expect(errorHandler).toHaveBeenCalledWith({
+			code: ERR_DASH_PLAYBACK,
+			message: "DASH error: capability",
+			source: "dash",
+		});
+
+		vi.advanceTimersByTime(10000);
+		expect(mockInstance.reset).not.toHaveBeenCalled();
+	});
+
+	it("applies exponential backoff", async () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		player.use(dash());
+		player.src = "https://example.com/stream.mpd";
+		await flushImportFake();
+
+		const errorCallback = getErrorCallback();
+
+		// 1st error: delay = 3000ms
+		errorCallback({
+			error: { code: 25, message: "download error" },
+		});
+		vi.advanceTimersByTime(3000);
+		expect(mockInstance.reset).toHaveBeenCalledTimes(1);
+
+		// 2nd error: delay = 6000ms
+		mockInstance.initialize.mockClear();
+		errorCallback({
+			error: { code: 25, message: "download error" },
+		});
+		vi.advanceTimersByTime(5999);
+		expect(mockInstance.reset).toHaveBeenCalledTimes(1);
+		vi.advanceTimersByTime(1);
+		expect(mockInstance.reset).toHaveBeenCalledTimes(2);
+
+		// 3rd error: delay = 12000ms
+		errorCallback({
+			error: { code: 25, message: "download error" },
+		});
+		vi.advanceTimersByTime(11999);
+		expect(mockInstance.reset).toHaveBeenCalledTimes(2);
+		vi.advanceTimersByTime(1);
+		expect(mockInstance.reset).toHaveBeenCalledTimes(3);
+	});
+
+	it("emits recoverable: false after max retries exceeded", async () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		const errorHandler = vi.fn();
+		player.on("error", errorHandler);
+		player.use(dash());
+		player.src = "https://example.com/stream.mpd";
+		await flushImportFake();
+
+		const errorCallback = getErrorCallback();
+
+		// Exhaust 3 retries
+		for (let i = 0; i < 3; i++) {
+			errorCallback({
+				error: { code: 25, message: "download error" },
+			});
+		}
+
+		// 4th error: max retries exceeded
+		errorCallback({
+			error: { code: 25, message: "download error" },
+		});
+
+		const lastCall =
+			errorHandler.mock.calls[errorHandler.mock.calls.length - 1][0];
+		expect(lastCall.recoverable).toBe(false);
+		expect(lastCall.retryCount).toBeUndefined();
+	});
+
+	it("does not call reset after max retries exceeded", async () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		player.use(dash());
+		player.src = "https://example.com/stream.mpd";
+		await flushImportFake();
+
+		const errorCallback = getErrorCallback();
+
+		// Fire errors one at a time, letting each timer fire
+		for (let i = 0; i < 3; i++) {
+			errorCallback({
+				error: { code: 25, message: "download error" },
+			});
+			vi.advanceTimersByTime(3000 * 2 ** i);
+		}
+		expect(mockInstance.reset).toHaveBeenCalledTimes(3);
+
+		// 4th error: max retries exceeded, no more recovery
+		errorCallback({
+			error: { code: 25, message: "download error" },
+		});
+		vi.advanceTimersByTime(100000);
+		expect(mockInstance.reset).toHaveBeenCalledTimes(3);
+	});
+
+	it("resets retry count on STREAM_INITIALIZED", async () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		const errorHandler = vi.fn();
+		player.on("error", errorHandler);
+		player.use(dash());
+		player.src = "https://example.com/stream.mpd";
+		await flushImportFake();
+
+		const errorCallback = getErrorCallback();
+		const streamInitCallback = getStreamInitCallback();
+
+		// Trigger 2 errors
+		errorCallback({
+			error: { code: 25, message: "download error" },
+		});
+		errorCallback({
+			error: { code: 25, message: "download error" },
+		});
+
+		// Recovery succeeds
+		mockInstance.getBitrateInfoListFor.mockReturnValue([]);
+		streamInitCallback();
+
+		// New error should start fresh with retryCount: 1
+		errorCallback({
+			error: { code: 25, message: "download error" },
+		});
+
+		const lastCall =
+			errorHandler.mock.calls[errorHandler.mock.calls.length - 1][0];
+		expect(lastCall.recoverable).toBe(true);
+		expect(lastCall.retryCount).toBe(1);
+	});
+
+	it("clears recovery timer on source change", async () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		player.use(dash());
+		player.src = "https://example.com/stream.mpd";
+		await flushImportFake();
+
+		const errorCallback = getErrorCallback();
+		errorCallback({
+			error: { code: 25, message: "download error" },
+		});
+
+		// Change source (triggers unload)
+		player.src = "https://example.com/other.mpd";
+
+		vi.advanceTimersByTime(10000);
+		expect(mockInstance.reset).not.toHaveBeenCalled();
+	});
+
+	it("clears recovery timer on destroy", async () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		player.use(dash());
+		player.src = "https://example.com/stream.mpd";
+		await flushImportFake();
+
+		const errorCallback = getErrorCallback();
+		errorCallback({
+			error: { code: 25, message: "download error" },
+		});
+
+		player.destroy();
+
+		vi.advanceTimersByTime(10000);
+		expect(mockInstance.reset).not.toHaveBeenCalled();
+	});
+
+	it("disables recovery when options.recovery is false", async () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		const errorHandler = vi.fn();
+		player.on("error", errorHandler);
+		player.use(dash({ recovery: false }));
+		player.src = "https://example.com/stream.mpd";
+		await flushImportFake();
+
+		const errorCallback = getErrorCallback();
+		errorCallback({
+			error: { code: 25, message: "download error" },
+		});
+
+		expect(errorHandler).toHaveBeenCalledWith({
+			code: 25,
+			message: "download error",
+			source: "dash",
+			recoverable: false,
+			retryCount: undefined,
+		});
+
+		vi.advanceTimersByTime(10000);
+		expect(mockInstance.reset).not.toHaveBeenCalled();
+	});
+
+	it("uses custom recovery config", async () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		const errorHandler = vi.fn();
+		player.on("error", errorHandler);
+		player.use(dash({ recovery: { maxRetries: 1, retryDelay: 1000 } }));
+		player.src = "https://example.com/stream.mpd";
+		await flushImportFake();
+
+		const errorCallback = getErrorCallback();
+
+		// 1st error: recoverable
+		errorCallback({
+			error: { code: 25, message: "download error" },
+		});
+		expect(errorHandler.mock.calls[0][0].recoverable).toBe(true);
+
+		vi.advanceTimersByTime(1000);
+		expect(mockInstance.reset).toHaveBeenCalledTimes(1);
+
+		// 2nd error: max retries exceeded (maxRetries: 1)
+		errorCallback({
+			error: { code: 25, message: "download error" },
+		});
+		expect(errorHandler.mock.calls[1][0].recoverable).toBe(false);
 	});
 });

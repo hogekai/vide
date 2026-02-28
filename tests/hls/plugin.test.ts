@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createPlayer } from "../../src/core.js";
 import { ERR_HLS_FATAL, ERR_HLS_UNSUPPORTED } from "../../src/errors.js";
 import { hls } from "../../src/hls/index.js";
@@ -13,17 +13,25 @@ const mockInstance = {
 	levels: [] as Array<{ width: number; height: number; bitrate: number }>,
 	currentLevel: -1,
 	autoLevelEnabled: true,
+	recoverMediaError: vi.fn(),
+	startLoad: vi.fn(),
 };
 
 const MockHls = vi.fn(() => mockInstance) as ReturnType<typeof vi.fn> & {
 	isSupported: ReturnType<typeof vi.fn>;
-	Events: { ERROR: string; MANIFEST_PARSED: string; LEVEL_SWITCHED: string };
+	Events: {
+		ERROR: string;
+		MANIFEST_PARSED: string;
+		LEVEL_SWITCHED: string;
+		FRAG_LOADED: string;
+	};
 };
 MockHls.isSupported = vi.fn(() => true);
 MockHls.Events = {
 	ERROR: "hlsError",
 	MANIFEST_PARSED: "hlsManifestParsed",
 	LEVEL_SWITCHED: "hlsLevelSwitched",
+	FRAG_LOADED: "hlsFragLoaded",
 };
 
 vi.mock("hls.js", () => ({ default: MockHls }));
@@ -62,6 +70,8 @@ beforeEach(() => {
 	mockInstance.loadSource.mockClear();
 	mockInstance.destroy.mockClear();
 	mockInstance.on.mockClear();
+	mockInstance.recoverMediaError.mockClear();
+	mockInstance.startLoad.mockClear();
 	mockInstance.levels = [];
 	mockInstance.currentLevel = -1;
 	mockInstance.autoLevelEnabled = true;
@@ -166,11 +176,13 @@ describe("hls plugin — hls.js integration", () => {
 			details: "manifestLoadError",
 		});
 
-		expect(errorHandler).toHaveBeenCalledWith({
-			code: ERR_HLS_FATAL,
-			message: expect.stringContaining("HLS fatal error"),
-			source: "hls",
-		});
+		expect(errorHandler).toHaveBeenCalledWith(
+			expect.objectContaining({
+				code: ERR_HLS_FATAL,
+				message: expect.stringContaining("HLS fatal error"),
+				source: "hls",
+			}),
+		);
 	});
 
 	it("does not emit error on non-fatal hls.js error", async () => {
@@ -518,5 +530,335 @@ describe("hls plugin — quality levels", () => {
 		mockInstance.autoLevelEnabled = true;
 		getLevelSwitchedCallback()("hlsLevelSwitched", { level: 0 });
 		expect(player.isAutoQuality).toBe(true);
+	});
+});
+
+describe("hls plugin — error recovery", () => {
+	beforeEach(() => {
+		vi.useFakeTimers();
+	});
+
+	afterEach(() => {
+		vi.useRealTimers();
+	});
+
+	/** flushImport with fake timers needs manual microtask flush. */
+	async function flushImportFake(): Promise<void> {
+		await vi.advanceTimersByTimeAsync(0);
+	}
+
+	function getFragLoadedCallback(): () => void {
+		const call = mockInstance.on.mock.calls.find(
+			(c: unknown[]) => c[0] === "hlsFragLoaded",
+		);
+		return call[1] as () => void;
+	}
+
+	it("emits recoverable error on first fatal network error", async () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		const errorHandler = vi.fn();
+		player.on("error", errorHandler);
+		player.use(hls());
+		player.src = "https://example.com/stream.m3u8";
+		await flushImportFake();
+
+		const errorCallback = getErrorCallback();
+		errorCallback("hlsError", {
+			fatal: true,
+			type: "networkError",
+			details: "manifestLoadError",
+		});
+
+		expect(errorHandler).toHaveBeenCalledWith({
+			code: ERR_HLS_FATAL,
+			message: expect.stringContaining("HLS fatal error"),
+			source: "hls",
+			recoverable: true,
+			retryCount: 1,
+		});
+	});
+
+	it("calls startLoad(-1) for network errors after delay", async () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		player.use(hls());
+		player.src = "https://example.com/stream.m3u8";
+		await flushImportFake();
+
+		const errorCallback = getErrorCallback();
+		errorCallback("hlsError", {
+			fatal: true,
+			type: "networkError",
+			details: "manifestLoadError",
+		});
+
+		expect(mockInstance.startLoad).not.toHaveBeenCalled();
+		vi.advanceTimersByTime(3000);
+		expect(mockInstance.startLoad).toHaveBeenCalledWith(-1);
+	});
+
+	it("calls recoverMediaError for media errors after delay", async () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		player.use(hls());
+		player.src = "https://example.com/stream.m3u8";
+		await flushImportFake();
+
+		const errorCallback = getErrorCallback();
+		errorCallback("hlsError", {
+			fatal: true,
+			type: "mediaError",
+			details: "bufferStalledError",
+		});
+
+		expect(mockInstance.recoverMediaError).not.toHaveBeenCalled();
+		vi.advanceTimersByTime(3000);
+		expect(mockInstance.recoverMediaError).toHaveBeenCalled();
+	});
+
+	it("applies exponential backoff", async () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		player.use(hls());
+		player.src = "https://example.com/stream.m3u8";
+		await flushImportFake();
+
+		const errorCallback = getErrorCallback();
+
+		// 1st error: delay = 3000ms (3000 * 2^0)
+		errorCallback("hlsError", {
+			fatal: true,
+			type: "networkError",
+			details: "fragLoadError",
+		});
+		vi.advanceTimersByTime(3000);
+		expect(mockInstance.startLoad).toHaveBeenCalledTimes(1);
+
+		// 2nd error: delay = 6000ms (3000 * 2^1)
+		errorCallback("hlsError", {
+			fatal: true,
+			type: "networkError",
+			details: "fragLoadError",
+		});
+		vi.advanceTimersByTime(5999);
+		expect(mockInstance.startLoad).toHaveBeenCalledTimes(1);
+		vi.advanceTimersByTime(1);
+		expect(mockInstance.startLoad).toHaveBeenCalledTimes(2);
+
+		// 3rd error: delay = 12000ms (3000 * 2^2)
+		errorCallback("hlsError", {
+			fatal: true,
+			type: "networkError",
+			details: "fragLoadError",
+		});
+		vi.advanceTimersByTime(11999);
+		expect(mockInstance.startLoad).toHaveBeenCalledTimes(2);
+		vi.advanceTimersByTime(1);
+		expect(mockInstance.startLoad).toHaveBeenCalledTimes(3);
+	});
+
+	it("emits recoverable: false after max retries exceeded", async () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		const errorHandler = vi.fn();
+		player.on("error", errorHandler);
+		player.use(hls());
+		player.src = "https://example.com/stream.m3u8";
+		await flushImportFake();
+
+		const errorCallback = getErrorCallback();
+
+		// Exhaust 3 retries
+		for (let i = 0; i < 3; i++) {
+			errorCallback("hlsError", {
+				fatal: true,
+				type: "networkError",
+				details: "fragLoadError",
+			});
+		}
+
+		// 4th error: max retries exceeded
+		errorCallback("hlsError", {
+			fatal: true,
+			type: "networkError",
+			details: "fragLoadError",
+		});
+
+		const lastCall =
+			errorHandler.mock.calls[errorHandler.mock.calls.length - 1][0];
+		expect(lastCall.recoverable).toBe(false);
+		expect(lastCall.retryCount).toBeUndefined();
+	});
+
+	it("does not call startLoad after max retries exceeded", async () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		player.use(hls());
+		player.src = "https://example.com/stream.m3u8";
+		await flushImportFake();
+
+		const errorCallback = getErrorCallback();
+
+		// Fire errors one at a time, letting each timer fire
+		for (let i = 0; i < 3; i++) {
+			errorCallback("hlsError", {
+				fatal: true,
+				type: "networkError",
+				details: "fragLoadError",
+			});
+			vi.advanceTimersByTime(3000 * 2 ** i);
+		}
+		expect(mockInstance.startLoad).toHaveBeenCalledTimes(3);
+
+		// 4th error: max retries exceeded, no more recovery
+		errorCallback("hlsError", {
+			fatal: true,
+			type: "networkError",
+			details: "fragLoadError",
+		});
+		vi.advanceTimersByTime(100000);
+		expect(mockInstance.startLoad).toHaveBeenCalledTimes(3);
+	});
+
+	it("resets retry count on FRAG_LOADED", async () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		const errorHandler = vi.fn();
+		player.on("error", errorHandler);
+		player.use(hls());
+		player.src = "https://example.com/stream.m3u8";
+		await flushImportFake();
+
+		const errorCallback = getErrorCallback();
+		const fragLoadedCallback = getFragLoadedCallback();
+
+		// Trigger 2 errors
+		errorCallback("hlsError", {
+			fatal: true,
+			type: "networkError",
+			details: "fragLoadError",
+		});
+		errorCallback("hlsError", {
+			fatal: true,
+			type: "networkError",
+			details: "fragLoadError",
+		});
+
+		// Recovery succeeds
+		fragLoadedCallback();
+
+		// New error should start fresh with retryCount: 1
+		errorCallback("hlsError", {
+			fatal: true,
+			type: "networkError",
+			details: "fragLoadError",
+		});
+
+		const lastCall =
+			errorHandler.mock.calls[errorHandler.mock.calls.length - 1][0];
+		expect(lastCall.recoverable).toBe(true);
+		expect(lastCall.retryCount).toBe(1);
+	});
+
+	it("clears recovery timer on source change", async () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		player.use(hls());
+		player.src = "https://example.com/stream.m3u8";
+		await flushImportFake();
+
+		const errorCallback = getErrorCallback();
+		errorCallback("hlsError", {
+			fatal: true,
+			type: "networkError",
+			details: "fragLoadError",
+		});
+
+		// Change source (triggers unload)
+		player.src = "https://example.com/other.m3u8";
+
+		// Advance past the timer
+		vi.advanceTimersByTime(10000);
+		expect(mockInstance.startLoad).not.toHaveBeenCalled();
+	});
+
+	it("clears recovery timer on destroy", async () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		player.use(hls());
+		player.src = "https://example.com/stream.m3u8";
+		await flushImportFake();
+
+		const errorCallback = getErrorCallback();
+		errorCallback("hlsError", {
+			fatal: true,
+			type: "networkError",
+			details: "fragLoadError",
+		});
+
+		player.destroy();
+
+		vi.advanceTimersByTime(10000);
+		expect(mockInstance.startLoad).not.toHaveBeenCalled();
+	});
+
+	it("disables recovery when options.recovery is false", async () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		const errorHandler = vi.fn();
+		player.on("error", errorHandler);
+		player.use(hls({ recovery: false }));
+		player.src = "https://example.com/stream.m3u8";
+		await flushImportFake();
+
+		const errorCallback = getErrorCallback();
+		errorCallback("hlsError", {
+			fatal: true,
+			type: "networkError",
+			details: "manifestLoadError",
+		});
+
+		expect(errorHandler).toHaveBeenCalledWith({
+			code: ERR_HLS_FATAL,
+			message: expect.stringContaining("HLS fatal error"),
+			source: "hls",
+			recoverable: false,
+			retryCount: undefined,
+		});
+
+		vi.advanceTimersByTime(10000);
+		expect(mockInstance.startLoad).not.toHaveBeenCalled();
+	});
+
+	it("uses custom recovery config", async () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		const errorHandler = vi.fn();
+		player.on("error", errorHandler);
+		player.use(hls({ recovery: { maxRetries: 1, retryDelay: 1000 } }));
+		player.src = "https://example.com/stream.m3u8";
+		await flushImportFake();
+
+		const errorCallback = getErrorCallback();
+
+		// 1st error: recoverable
+		errorCallback("hlsError", {
+			fatal: true,
+			type: "networkError",
+			details: "fragLoadError",
+		});
+		expect(errorHandler.mock.calls[0][0].recoverable).toBe(true);
+
+		vi.advanceTimersByTime(1000);
+		expect(mockInstance.startLoad).toHaveBeenCalledTimes(1);
+
+		// 2nd error: max retries exceeded (maxRetries: 1)
+		errorCallback("hlsError", {
+			fatal: true,
+			type: "networkError",
+			details: "fragLoadError",
+		});
+		expect(errorHandler.mock.calls[1][0].recoverable).toBe(false);
 	});
 });

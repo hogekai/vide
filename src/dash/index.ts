@@ -1,11 +1,23 @@
 import { ERR_DASH_IMPORT, ERR_DASH_PLAYBACK } from "../errors.js";
 import { qualityLabel } from "../quality.js";
-import type { Player, Plugin, QualityLevel, SourceHandler } from "../types.js";
+import type {
+	Player,
+	Plugin,
+	QualityLevel,
+	RecoveryConfig,
+	SourceHandler,
+} from "../types.js";
 import type { DashPluginOptions } from "./types.js";
 
 export type { DashPluginOptions } from "./types.js";
 
 const DASH_MIME_TYPE = "application/dash+xml";
+
+const DEFAULT_RECOVERY: RecoveryConfig = {
+	maxRetries: 3,
+	retryDelay: 3000,
+	backoffMultiplier: 2,
+};
 
 function isDashUrl(url: string): boolean {
 	try {
@@ -27,6 +39,7 @@ interface DashMediaPlayerLike {
 	// biome-ignore lint/suspicious/noExplicitAny: dashjs event data varies by event type
 	on(type: string, listener: (e: any) => void): void;
 	destroy(): void;
+	reset(): void;
 	getBitrateInfoListFor(type: string): DashBitrateInfo[];
 	setQualityFor(type: string, value: number, replace?: boolean): void;
 	getSettings(): Record<string, unknown>;
@@ -51,6 +64,46 @@ export function dash(options: DashPluginOptions = {}): Plugin {
 			let dashInstance: DashMediaPlayerLike | null = null;
 			let destroyed = false;
 
+			const recoveryConfig: RecoveryConfig | false =
+				options.recovery === false
+					? false
+					: { ...DEFAULT_RECOVERY, ...(options.recovery ?? {}) };
+			let retryCount = 0;
+			let recoveryTimer: ReturnType<typeof setTimeout> | null = null;
+			let currentUrl = "";
+			let currentVideoElement: HTMLVideoElement | null = null;
+
+			function clearRecoveryTimer(): void {
+				if (recoveryTimer !== null) {
+					clearTimeout(recoveryTimer);
+					recoveryTimer = null;
+				}
+			}
+
+			function attemptRecovery(instance: DashMediaPlayerLike): boolean {
+				if (recoveryConfig === false || destroyed) return false;
+				if (retryCount >= recoveryConfig.maxRetries) return false;
+				if (!currentVideoElement) return false;
+
+				retryCount++;
+				const delay =
+					recoveryConfig.retryDelay *
+					recoveryConfig.backoffMultiplier ** (retryCount - 1);
+
+				clearRecoveryTimer();
+				recoveryTimer = setTimeout(() => {
+					if (destroyed || !currentVideoElement) return;
+					instance.reset();
+					instance.initialize(
+						currentVideoElement,
+						currentUrl,
+						currentVideoElement.autoplay,
+					);
+				}, delay);
+
+				return true;
+			}
+
 			const handler: SourceHandler = {
 				canHandle(url: string, type?: string): boolean {
 					if (type && isDashType(type)) return true;
@@ -63,6 +116,10 @@ export function dash(options: DashPluginOptions = {}): Plugin {
 				},
 
 				unload(_videoElement: HTMLVideoElement): void {
+					clearRecoveryTimer();
+					retryCount = 0;
+					currentUrl = "";
+					currentVideoElement = null;
 					if (dashInstance) {
 						dashInstance.destroy();
 						dashInstance = null;
@@ -74,6 +131,9 @@ export function dash(options: DashPluginOptions = {}): Plugin {
 				url: string,
 				videoElement: HTMLVideoElement,
 			): void {
+				currentUrl = url;
+				currentVideoElement = videoElement;
+
 				import("dashjs")
 					.then((dashjsModule) => {
 						if (destroyed) return;
@@ -99,10 +159,14 @@ export function dash(options: DashPluginOptions = {}): Plugin {
 							djsNamespace.MediaPlayer.events.ERROR,
 							(e: DashErrorEvent) => {
 								if (typeof e.error === "object" && e.error !== null) {
+									const recovering = attemptRecovery(instance);
+
 									player.emit("error", {
 										code: e.error.code,
 										message: e.error.message,
 										source: "dash",
+										recoverable: recovering,
+										retryCount: recovering ? retryCount : undefined,
 									});
 								} else {
 									player.emit("error", {
@@ -117,6 +181,11 @@ export function dash(options: DashPluginOptions = {}): Plugin {
 						instance.on(
 							djsNamespace.MediaPlayer.events.STREAM_INITIALIZED,
 							() => {
+								if (retryCount > 0) {
+									retryCount = 0;
+									clearRecoveryTimer();
+								}
+
 								const bitrateList = instance.getBitrateInfoListFor("video");
 								const qualities: QualityLevel[] = bitrateList.map(
 									(info: DashBitrateInfo) => ({
@@ -198,6 +267,7 @@ export function dash(options: DashPluginOptions = {}): Plugin {
 
 			return () => {
 				destroyed = true;
+				clearRecoveryTimer();
 				handler.unload(player.el);
 			};
 		},

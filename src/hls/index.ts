@@ -4,7 +4,13 @@ import {
 	ERR_HLS_UNSUPPORTED,
 } from "../errors.js";
 import { qualityLabel } from "../quality.js";
-import type { Player, Plugin, QualityLevel, SourceHandler } from "../types.js";
+import type {
+	Player,
+	Plugin,
+	QualityLevel,
+	RecoveryConfig,
+	SourceHandler,
+} from "../types.js";
 import type { HlsPluginOptions } from "./types.js";
 
 export type { HlsPluginOptions } from "./types.js";
@@ -13,6 +19,12 @@ const HLS_MIME_TYPES = [
 	"application/vnd.apple.mpegurl",
 	"application/x-mpegurl",
 ];
+
+const DEFAULT_RECOVERY: RecoveryConfig = {
+	maxRetries: 3,
+	retryDelay: 3000,
+	backoffMultiplier: 2,
+};
 
 function isHlsUrl(url: string): boolean {
 	if (url.startsWith("data:")) {
@@ -43,6 +55,8 @@ interface HlsLike {
 	readonly levels: HlsLevel[];
 	currentLevel: number;
 	readonly autoLevelEnabled: boolean;
+	recoverMediaError(): void;
+	startLoad(startPosition: number): void;
 }
 
 interface HlsLevel {
@@ -65,6 +79,42 @@ export function hls(options: HlsPluginOptions = {}): Plugin {
 			let hlsInstance: HlsLike | null = null;
 			let destroyed = false;
 
+			const recoveryConfig: RecoveryConfig | false =
+				options.recovery === false
+					? false
+					: { ...DEFAULT_RECOVERY, ...(options.recovery ?? {}) };
+			let retryCount = 0;
+			let recoveryTimer: ReturnType<typeof setTimeout> | null = null;
+
+			function clearRecoveryTimer(): void {
+				if (recoveryTimer !== null) {
+					clearTimeout(recoveryTimer);
+					recoveryTimer = null;
+				}
+			}
+
+			function attemptRecovery(instance: HlsLike, errorType: string): boolean {
+				if (recoveryConfig === false || destroyed) return false;
+				if (retryCount >= recoveryConfig.maxRetries) return false;
+
+				retryCount++;
+				const delay =
+					recoveryConfig.retryDelay *
+					recoveryConfig.backoffMultiplier ** (retryCount - 1);
+
+				clearRecoveryTimer();
+				recoveryTimer = setTimeout(() => {
+					if (destroyed) return;
+					if (errorType === "networkError") {
+						instance.startLoad(-1);
+					} else {
+						instance.recoverMediaError();
+					}
+				}, delay);
+
+				return true;
+			}
+
 			const handler: SourceHandler = {
 				canHandle(url: string, type?: string): boolean {
 					if (type && isHlsType(type)) return true;
@@ -77,6 +127,8 @@ export function hls(options: HlsPluginOptions = {}): Plugin {
 				},
 
 				unload(_videoElement: HTMLVideoElement): void {
+					clearRecoveryTimer();
+					retryCount = 0;
 					if (hlsInstance) {
 						hlsInstance.destroy();
 						hlsInstance = null;
@@ -123,15 +175,29 @@ export function hls(options: HlsPluginOptions = {}): Plugin {
 						instance.on(
 							Hls.Events.ERROR,
 							(_event: string, data: HlsErrorData) => {
-								if (data.fatal) {
-									player.emit("error", {
-										code: ERR_HLS_FATAL,
-										message: `HLS fatal error: ${data.type} - ${data.details}`,
-										source: "hls",
-									});
-								}
+								if (!data.fatal) return;
+
+								const recovering = attemptRecovery(
+									instance as HlsLike,
+									data.type,
+								);
+
+								player.emit("error", {
+									code: ERR_HLS_FATAL,
+									message: `HLS fatal error: ${data.type} - ${data.details}`,
+									source: "hls",
+									recoverable: recovering,
+									retryCount: recovering ? retryCount : undefined,
+								});
 							},
 						);
+
+						instance.on(Hls.Events.FRAG_LOADED, () => {
+							if (retryCount > 0) {
+								retryCount = 0;
+								clearRecoveryTimer();
+							}
+						});
 
 						instance.on(Hls.Events.MANIFEST_PARSED, () => {
 							const qualities: QualityLevel[] = instance.levels.map(
@@ -185,6 +251,7 @@ export function hls(options: HlsPluginOptions = {}): Plugin {
 
 			return () => {
 				destroyed = true;
+				clearRecoveryTimer();
 				handler.unload(player.el);
 			};
 		},

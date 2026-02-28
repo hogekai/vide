@@ -27,7 +27,13 @@ export interface PlayerEventMap {
 	ended: undefined;
 	timeupdate: { currentTime: number; duration: number };
 	livestatechange: { isLive: boolean };
-	error: { code: number; message: string; source: string };
+	error: {
+		code: number;
+		message: string;
+		source: string;
+		recoverable?: boolean | undefined;
+		retryCount?: number | undefined;
+	};
 	"ad:start": { adId: string };
 	"ad:end": { adId: string };
 	"ad:skip": { adId: string };
@@ -51,6 +57,13 @@ export interface PlayerEventMap {
 }
 
 export type PlayerEvent = keyof PlayerEventMap;
+
+// === Recovery ===
+export interface RecoveryConfig {
+	maxRetries: number;
+	retryDelay: number;
+	backoffMultiplier: number;
+}
 
 // === EventBus ===
 export type EventHandler<T> = (data: T) => void;
