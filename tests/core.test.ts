@@ -154,6 +154,34 @@ describe("state transitions", () => {
 		expect(player.state).toBe("ended");
 	});
 
+	it("ignores loadstart while video is playing (race condition)", () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		el.dispatchEvent(new Event("loadstart"));
+		el.dispatchEvent(new Event("canplay"));
+		el.dispatchEvent(new Event("play"));
+		expect(player.state).toBe("playing");
+
+		// Simulate el.paused === false (video is actively playing)
+		Object.defineProperty(el, "paused", { value: false, configurable: true });
+
+		// Spurious loadstart while playing should be ignored
+		el.dispatchEvent(new Event("loadstart"));
+		expect(player.state).toBe("playing");
+	});
+
+	it("ready → playing on playing event (recovery)", () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		el.dispatchEvent(new Event("loadstart"));
+		el.dispatchEvent(new Event("canplay"));
+		expect(player.state).toBe("ready");
+
+		// The "playing" DOM event should transition ready → playing
+		el.dispatchEvent(new Event("playing"));
+		expect(player.state).toBe("playing");
+	});
+
 	it("any → error on error", () => {
 		const el = makeVideo();
 		const player = createPlayer(el);

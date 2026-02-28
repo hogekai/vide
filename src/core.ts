@@ -100,7 +100,7 @@ export function createPlayer(el: HTMLVideoElement): Player {
 	}
 
 	function onLoadStart(): void {
-		if (!isAdState()) {
+		if (!isAdState() && el.paused) {
 			setState("loading");
 		}
 	}
@@ -132,7 +132,7 @@ export function createPlayer(el: HTMLVideoElement): Player {
 	}
 
 	function onPlaying(): void {
-		if (state === "buffering") {
+		if (state === "buffering" || state === "ready") {
 			setState("playing");
 		}
 	}
