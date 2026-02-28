@@ -266,6 +266,87 @@ describe("playSingleAd", () => {
 		expect(result.errorPhase).toBe("load");
 	});
 
+	it("emits ad:error with vastErrorCode 403 when no suitable media file", async () => {
+		const player = createMockPlayer();
+		const linear = makeLinear();
+		linear.mediaFiles = [];
+
+		const { promise } = playSingleAd({
+			player: player as any,
+			ad: makeAd("ad-1"),
+			linear,
+			source: "vast",
+		});
+
+		await promise;
+
+		const errorEvent = player.emitted.find((e) => e.event === "ad:error");
+		expect(errorEvent).toBeDefined();
+		expect((errorEvent!.data as any).vastErrorCode).toBe(403);
+	});
+
+	it("emits ad:error with vastErrorCode 401 on media error before canplay", async () => {
+		const player = createMockPlayer();
+
+		const { promise } = playSingleAd({
+			player: player as any,
+			ad: makeAd("ad-1"),
+			linear: makeLinear(),
+			source: "vast",
+		});
+
+		player.el._fire("error");
+		await promise;
+
+		const errorEvent = player.emitted.find((e) => e.event === "ad:error");
+		expect(errorEvent).toBeDefined();
+		expect((errorEvent!.data as any).vastErrorCode).toBe(401);
+	});
+
+	it("emits ad:error with vastErrorCode 405 on media error after canplay", async () => {
+		const player = createMockPlayer();
+
+		const { promise } = playSingleAd({
+			player: player as any,
+			ad: makeAd("ad-1"),
+			linear: makeLinear(),
+			source: "vast",
+		});
+
+		player.el._fire("canplay");
+		player.el._fire("error");
+		await promise;
+
+		const errorEvent = player.emitted.find((e) => e.event === "ad:error");
+		expect(errorEvent).toBeDefined();
+		expect((errorEvent!.data as any).vastErrorCode).toBe(405);
+	});
+
+	it("fires ad.errors URLs with [ERRORCODE] macro replaced on error", async () => {
+		const beacon = vi.fn();
+		vi.stubGlobal("navigator", { sendBeacon: beacon });
+
+		const player = createMockPlayer();
+		const ad = makeAd("ad-1");
+		ad.errors = ["http://example.com/error?code=[ERRORCODE]"];
+
+		const linear = makeLinear();
+		linear.mediaFiles = [];
+
+		const { promise } = playSingleAd({
+			player: player as any,
+			ad,
+			linear,
+			source: "vast",
+		});
+
+		await promise;
+
+		expect(beacon).toHaveBeenCalledWith("http://example.com/error?code=403");
+
+		vi.unstubAllGlobals();
+	});
+
 	it("cleans up event listeners on completion", async () => {
 		const player = createMockPlayer();
 

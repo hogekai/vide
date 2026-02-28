@@ -17,7 +17,8 @@ export {
 export { hls } from "../hls/index.js";
 export { dash } from "../dash/index.js";
 export { vast, parseVast, fetchVast, resolveVast } from "../vast/index.js";
-export { track, getQuartile } from "../vast/tracker.js";
+export { track, getQuartile, trackError } from "../vast/tracker.js";
+export * from "../vast/error-codes.js";
 export { vmap, parseVmap, createScheduler } from "../vmap/index.js";
 export {
 	drm,

@@ -68,7 +68,7 @@ const classified = classifyAds(response.ads);
 | `ad:end` | `{ adId }` | Ad playback ended |
 | `ad:skip` | `{ adId }` | Ad skipped by user |
 | `ad:click` | `{ clickThrough, clickTracking }` | Ad clicked |
-| `ad:error` | `{ error, source }` | Ad loading or playback error |
+| `ad:error` | `{ error, source, vastErrorCode? }` | Ad loading or playback error. `vastErrorCode` is a VAST 4.2 error code when available. |
 | `ad:impression` | `{ adId }` | Impression pixel fired |
 | `ad:quartile` | `{ adId, quartile }` | Quartile reached (start, firstQuartile, midpoint, thirdQuartile, complete) |
 | `ad:mute` | `{ adId }` | Ad muted |
@@ -86,6 +86,88 @@ const classified = classifyAds(response.ads);
 | `ad:pod:end` | `{ completed, skipped, failed }` | Pod playback ended with stats |
 | `ad:pod:adstart` | `{ ad, index, total }` | Individual ad within pod started |
 | `ad:pod:adend` | `{ ad, index, total }` | Individual ad within pod ended |
+
+## Error Codes
+
+The VAST plugin includes all VAST 4.2 error codes as named constants. When an ad error occurs, the `ad:error` event payload includes a `vastErrorCode` field identifying the specific VAST error.
+
+### Usage
+
+```ts
+import { VAST_MEDIA_UNSUPPORTED, VAST_NO_ADS } from "@videts/vide/vast";
+
+player.on("ad:error", ({ error, source, vastErrorCode }) => {
+  switch (vastErrorCode) {
+    case VAST_NO_ADS:
+      console.log("No ads available");
+      break;
+    case VAST_MEDIA_UNSUPPORTED:
+      console.warn("No playable media file in the VAST response");
+      break;
+  }
+});
+```
+
+### Error Tracking URLs
+
+When an error occurs, the plugin automatically fires the `<Error>` tracking URLs from the VAST response with the `[ERRORCODE]` macro replaced:
+
+```xml
+<Error><![CDATA[https://example.com/error?code=[ERRORCODE]]]></Error>
+```
+
+Becomes `https://example.com/error?code=403` when the error is "media file not supported".
+
+For manual error tracking:
+
+```ts
+import { trackError } from "@videts/vide/vast";
+
+trackError(["https://example.com/error?code=[ERRORCODE]"], 403);
+```
+
+### Error Code Reference
+
+| Code | Constant | Description |
+|------|----------|-------------|
+| 100 | `VAST_XML_PARSE_ERROR` | XML parsing error |
+| 101 | `VAST_SCHEMA_ERROR` | VAST schema validation error |
+| 102 | `VAST_VERSION_UNSUPPORTED` | VAST version not supported |
+| 200 | `VAST_TRAFFICKING_ERROR` | Trafficking error |
+| 201 | `VAST_LINEARITY_ERROR` | Expecting different linearity |
+| 202 | `VAST_DURATION_ERROR` | Expecting different duration |
+| 203 | `VAST_SIZE_ERROR` | Expecting different size |
+| 204 | `VAST_CATEGORY_REQUIRED` | Ad category required but not provided |
+| 205 | `VAST_CATEGORY_BLOCKED` | InLine category violates Wrapper BlockedAdCategories |
+| 206 | `VAST_BREAK_SHORTENED` | Ad break shortened, ad not served |
+| 300 | `VAST_WRAPPER_ERROR` | General Wrapper error |
+| 301 | `VAST_WRAPPER_TIMEOUT` | Timeout of VAST URI in Wrapper |
+| 302 | `VAST_WRAPPER_LIMIT` | Wrapper limit reached |
+| 303 | `VAST_NO_ADS` | No VAST response after one or more Wrappers |
+| 304 | `VAST_INLINE_TIMEOUT` | InLine ad failed to display in time |
+| 400 | `VAST_LINEAR_ERROR` | General Linear error |
+| 401 | `VAST_MEDIA_NOT_FOUND` | Unable to find Linear/MediaFile from URI |
+| 402 | `VAST_MEDIA_TIMEOUT` | Timeout of MediaFile URI |
+| 403 | `VAST_MEDIA_UNSUPPORTED` | Could not find supported MediaFile |
+| 405 | `VAST_MEDIA_DISPLAY_ERROR` | Problem displaying MediaFile |
+| 406 | `VAST_MEZZANINE_REQUIRED` | Mezzanine required but not provided |
+| 407 | `VAST_MEZZANINE_DOWNLOADING` | Mezzanine download in progress |
+| 408 | `VAST_CONDITIONAL_REJECTED` | Conditional ad rejected (deprecated) |
+| 409 | `VAST_INTERACTIVE_NOT_EXECUTED` | InteractiveCreativeFile not executed |
+| 410 | `VAST_VERIFICATION_NOT_EXECUTED` | Verification unit not executed |
+| 411 | `VAST_MEZZANINE_INVALID` | Mezzanine didn't meet spec |
+| 500 | `VAST_NONLINEAR_ERROR` | General NonLinearAds error |
+| 501 | `VAST_NONLINEAR_SIZE_ERROR` | NonLinear dimensions don't fit |
+| 502 | `VAST_NONLINEAR_FETCH_ERROR` | Unable to fetch NonLinear resource |
+| 503 | `VAST_NONLINEAR_UNSUPPORTED` | NonLinear resource type not supported |
+| 600 | `VAST_COMPANION_ERROR` | General CompanionAds error |
+| 601 | `VAST_COMPANION_SIZE_ERROR` | Companion dimensions don't fit |
+| 602 | `VAST_COMPANION_REQUIRED_ERROR` | Unable to display required Companion |
+| 603 | `VAST_COMPANION_FETCH_ERROR` | Unable to fetch Companion resource |
+| 604 | `VAST_COMPANION_UNSUPPORTED` | Companion resource type not supported |
+| 900 | `VAST_UNDEFINED_ERROR` | Undefined error |
+| 901 | `VAST_VPAID_ERROR` | General VPAID error |
+| 902 | `VAST_INTERACTIVE_ERROR` | General InteractiveCreativeFile error |
 
 ## AdPlugin Lifecycle
 

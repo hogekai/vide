@@ -1,6 +1,11 @@
 import type { Player, PlayerState } from "../types.js";
+import {
+	VAST_MEDIA_DISPLAY_ERROR,
+	VAST_MEDIA_NOT_FOUND,
+	VAST_MEDIA_UNSUPPORTED,
+} from "./error-codes.js";
 import { selectMediaFile } from "./media.js";
-import { createQuartileTracker, track } from "./tracker.js";
+import { createQuartileTracker, track, trackError } from "./tracker.js";
 import type { AdPlugin, VastAd, VastLinear } from "./types.js";
 
 export interface PlaySingleAdOptions {
@@ -85,9 +90,11 @@ export function playSingleAd(options: PlaySingleAdOptions): {
 	const mediaFile = selectMediaFile(linear.mediaFiles);
 	if (!mediaFile) {
 		cleanupAdPlugins();
+		trackError(ad.errors, VAST_MEDIA_UNSUPPORTED);
 		player.emit("ad:error", {
 			error: new Error("No suitable media file found"),
 			source,
+			vastErrorCode: VAST_MEDIA_UNSUPPORTED,
 		});
 		player.emit("ad:end", { adId });
 		resolvePromise({ outcome: "error", errorPhase: "load", adId });
@@ -216,9 +223,14 @@ export function playSingleAd(options: PlaySingleAdOptions): {
 		adEnding = true;
 		cleanup();
 		cleanupAdPlugins();
+		const vastErrorCode = canPlayFired
+			? VAST_MEDIA_DISPLAY_ERROR
+			: VAST_MEDIA_NOT_FOUND;
+		trackError(ad.errors, vastErrorCode);
 		player.emit("ad:error", {
 			error: new Error("Ad media playback failed"),
 			source,
+			vastErrorCode,
 		});
 		finish("error");
 	}

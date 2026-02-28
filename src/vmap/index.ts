@@ -1,8 +1,13 @@
 import type { Player, PlayerState, Plugin } from "../types.js";
+import {
+	VAST_NO_ADS,
+	VAST_WRAPPER_TIMEOUT,
+	VAST_XML_PARSE_ERROR,
+} from "../vast/error-codes.js";
 import { parseVast, resolveVast } from "../vast/parser.js";
 import { playSingleAd } from "../vast/playback.js";
 import { classifyAds, playPod, playWaterfall } from "../vast/pod.js";
-import { track } from "../vast/tracker.js";
+import { track, trackError } from "../vast/tracker.js";
 import type { VastResponse } from "../vast/types.js";
 import { parseVmap } from "./parser.js";
 import { createScheduler } from "./scheduler.js";
@@ -116,9 +121,11 @@ export function vmap(options: VmapPluginOptions): Plugin {
 								onFinish: onAdsDone,
 							});
 							if (!result) {
+								trackError(response.errors, VAST_NO_ADS);
 								player.emit("ad:error", {
 									error: new Error("All waterfall ads failed"),
 									source: "vmap",
+									vastErrorCode: VAST_NO_ADS,
 								});
 								onAdsDone();
 							}
@@ -127,10 +134,16 @@ export function vmap(options: VmapPluginOptions): Plugin {
 					}
 				} catch (err) {
 					if (!aborted) {
+						const error = err instanceof Error ? err : new Error(String(err));
+						const vastErrorCode =
+							error.name === "AbortError"
+								? VAST_WRAPPER_TIMEOUT
+								: VAST_XML_PARSE_ERROR;
 						track(adBreak.trackingEvents.error);
 						player.emit("ad:error", {
-							error: err instanceof Error ? err : new Error(String(err)),
+							error,
 							source: "vmap",
+							vastErrorCode,
 						});
 					}
 				} finally {

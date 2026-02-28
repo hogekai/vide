@@ -89,7 +89,12 @@ export interface PlayerEventMap {
 	"ad:end": { adId: string };
 	"ad:skip": { adId: string };
 	"ad:click": { clickThrough: string | undefined; clickTracking: string[] };
-	"ad:error": { error: Error; source: string };
+	"ad:error": {
+		error: Error;
+		source: string;
+		/** VAST 4.2 error code. Undefined for non-VAST errors. */
+		vastErrorCode?: number | undefined;
+	};
 	"ad:impression": { adId: string };
 	"ad:loaded": { adId: string };
 	"ad:quartile": { adId: string; quartile: AdQuartile };

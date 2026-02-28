@@ -1,7 +1,13 @@
 import type { Player, PlayerState, Plugin } from "../types.js";
+import {
+	VAST_NO_ADS,
+	VAST_WRAPPER_TIMEOUT,
+	VAST_XML_PARSE_ERROR,
+} from "./error-codes.js";
 import { fetchVast, parseVast } from "./parser.js";
 import { playSingleAd } from "./playback.js";
 import { classifyAds, playPod, playWaterfall } from "./pod.js";
+import { trackError } from "./tracker.js";
 import type { VastPluginOptions } from "./types.js";
 
 export type {
@@ -35,6 +41,8 @@ export { playSingleAd } from "./playback.js";
 export type { PlaySingleAdOptions, SingleAdResult } from "./playback.js";
 export { classifyAds, playPod, playWaterfall } from "./pod.js";
 export type { ClassifiedAds, PlayableAd, PodResult } from "./pod.js";
+export * from "./error-codes.js";
+export { trackError } from "./tracker.js";
 
 /** Create a VAST ad plugin for vide. */
 export function vast(options: VastPluginOptions): Plugin {
@@ -118,9 +126,11 @@ export function vast(options: VastPluginOptions): Plugin {
 								onFinish: onAdsDone,
 							});
 							if (!result) {
+								trackError(response.errors, VAST_NO_ADS);
 								player.emit("ad:error", {
 									error: new Error("All waterfall ads failed"),
 									source: "vast",
+									vastErrorCode: VAST_NO_ADS,
 								});
 								onAdsDone();
 							}
@@ -129,9 +139,15 @@ export function vast(options: VastPluginOptions): Plugin {
 					}
 				} catch (err) {
 					if (aborted) return;
+					const error = err instanceof Error ? err : new Error(String(err));
+					const vastErrorCode =
+						error.name === "AbortError"
+							? VAST_WRAPPER_TIMEOUT
+							: VAST_XML_PARSE_ERROR;
 					player.emit("ad:error", {
-						error: err instanceof Error ? err : new Error(String(err)),
+						error,
 						source: "vast",
+						vastErrorCode,
 					});
 					setState("playing");
 				}

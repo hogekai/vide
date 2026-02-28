@@ -1,5 +1,16 @@
 import type { VastCompanionAd, VastNonLinearAds } from "./types.js";
 
+/**
+ * Fire error tracking URLs, replacing the [ERRORCODE] macro with the given code.
+ * Per VAST 4.2 Section 2.3.6.
+ */
+export function trackError(urls: string[], errorCode: number): void {
+	const replaced = urls.map((url) =>
+		url.replace("[ERRORCODE]", String(errorCode)),
+	);
+	track(replaced);
+}
+
 /** Fire-and-forget tracking. Response is ignored. */
 export function track(urls: string[]): void {
 	for (const url of urls) {
