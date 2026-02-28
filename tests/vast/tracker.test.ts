@@ -4,8 +4,12 @@ import {
 	getQuartile,
 	track,
 	trackCompanionView,
+	trackNonLinear,
 } from "../../src/vast/tracker.js";
-import type { VastCompanionAd } from "../../src/vast/types.js";
+import type {
+	VastCompanionAd,
+	VastNonLinearAds,
+} from "../../src/vast/types.js";
 
 describe("track", () => {
 	it("uses sendBeacon when available", () => {
@@ -184,5 +188,53 @@ describe("trackCompanionView", () => {
 		};
 
 		expect(() => trackCompanionView(companion)).not.toThrow();
+	});
+});
+
+describe("trackNonLinear", () => {
+	it("fires tracking beacons for specified event", () => {
+		const beacon = vi.fn();
+		vi.stubGlobal("navigator", { sendBeacon: beacon });
+
+		const nonLinearAds: VastNonLinearAds = {
+			trackingEvents: {
+				creativeView: ["http://example.com/view1", "http://example.com/view2"],
+				acceptInvitation: ["http://example.com/accept"],
+			},
+			nonLinears: [],
+		};
+
+		trackNonLinear(nonLinearAds, "creativeView");
+		expect(beacon).toHaveBeenCalledTimes(2);
+		expect(beacon).toHaveBeenCalledWith("http://example.com/view1");
+		expect(beacon).toHaveBeenCalledWith("http://example.com/view2");
+
+		vi.unstubAllGlobals();
+	});
+
+	it("handles unknown event name gracefully", () => {
+		const nonLinearAds: VastNonLinearAds = {
+			trackingEvents: {
+				creativeView: ["http://example.com/view"],
+			},
+			nonLinears: [],
+		};
+
+		expect(() => trackNonLinear(nonLinearAds, "unknownEvent")).not.toThrow();
+	});
+
+	it("handles empty URL array", () => {
+		const beacon = vi.fn();
+		vi.stubGlobal("navigator", { sendBeacon: beacon });
+
+		const nonLinearAds: VastNonLinearAds = {
+			trackingEvents: { creativeView: [] },
+			nonLinears: [],
+		};
+
+		trackNonLinear(nonLinearAds, "creativeView");
+		expect(beacon).not.toHaveBeenCalled();
+
+		vi.unstubAllGlobals();
 	});
 });

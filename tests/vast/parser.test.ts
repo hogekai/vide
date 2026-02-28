@@ -1030,3 +1030,296 @@ describe("parseVast — CompanionAds", () => {
 		expect(comp.renderingMode).toBeUndefined();
 	});
 });
+
+const NONLINEAR_VAST = `<?xml version="1.0" encoding="UTF-8"?>
+<VAST version="4.1">
+  <Ad id="ad-nl">
+    <InLine>
+      <AdSystem>TestAdServer</AdSystem>
+      <AdTitle>NonLinear Ad</AdTitle>
+      <Impression><![CDATA[http://example.com/imp]]></Impression>
+      <Creatives>
+        <Creative id="c1">
+          <NonLinearAds>
+            <TrackingEvents>
+              <Tracking event="creativeView"><![CDATA[http://example.com/nlview]]></Tracking>
+              <Tracking event="acceptInvitation"><![CDATA[http://example.com/accept]]></Tracking>
+              <Tracking event="close"><![CDATA[http://example.com/close]]></Tracking>
+            </TrackingEvents>
+            <NonLinear width="468" height="60" id="nl-1" minSuggestedDuration="00:00:15"
+                       scalable="true" maintainAspectRatio="true"
+                       expandedWidth="800" expandedHeight="600" apiFramework="VPAID">
+              <StaticResource creativeType="image/png"><![CDATA[http://example.com/overlay.png]]></StaticResource>
+              <NonLinearClickThrough><![CDATA[http://example.com/click]]></NonLinearClickThrough>
+              <NonLinearClickTracking><![CDATA[http://example.com/track-click]]></NonLinearClickTracking>
+              <AdParameters><![CDATA[param=value]]></AdParameters>
+            </NonLinear>
+          </NonLinearAds>
+        </Creative>
+      </Creatives>
+    </InLine>
+  </Ad>
+</VAST>`;
+
+describe("parseVast — NonLinearAds", () => {
+	it("parses a NonLinear with StaticResource and all attributes", () => {
+		const result = parseVast(NONLINEAR_VAST);
+		const creative = result.ads[0].creatives[0];
+		expect(creative.nonLinearAds).toBeDefined();
+		expect(creative.nonLinearAds!.nonLinears).toHaveLength(1);
+
+		const nl = creative.nonLinearAds!.nonLinears[0];
+		expect(nl.width).toBe(468);
+		expect(nl.height).toBe(60);
+		expect(nl.id).toBe("nl-1");
+		expect(nl.expandedWidth).toBe(800);
+		expect(nl.expandedHeight).toBe(600);
+		expect(nl.scalable).toBe(true);
+		expect(nl.maintainAspectRatio).toBe(true);
+		expect(nl.minSuggestedDuration).toBe(15);
+		expect(nl.apiFramework).toBe("VPAID");
+		expect(nl.resources).toHaveLength(1);
+		expect(nl.resources[0]).toEqual({
+			type: "static",
+			url: "http://example.com/overlay.png",
+			creativeType: "image/png",
+		});
+		expect(nl.clickThrough).toBe("http://example.com/click");
+		expect(nl.clickTracking).toEqual(["http://example.com/track-click"]);
+		expect(nl.adParameters).toBe("param=value");
+	});
+
+	it("parses container-level tracking events", () => {
+		const result = parseVast(NONLINEAR_VAST);
+		const nlAds = result.ads[0].creatives[0].nonLinearAds!;
+		expect(nlAds.trackingEvents).toEqual({
+			creativeView: ["http://example.com/nlview"],
+			acceptInvitation: ["http://example.com/accept"],
+			close: ["http://example.com/close"],
+		});
+	});
+
+	it("parses all three resource types", () => {
+		const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<VAST version="4.1">
+  <Ad id="ad-multi">
+    <InLine>
+      <AdSystem>Test</AdSystem>
+      <AdTitle>Multi Resource</AdTitle>
+      <Impression><![CDATA[http://example.com/imp]]></Impression>
+      <Creatives>
+        <Creative>
+          <NonLinearAds>
+            <NonLinear width="468" height="60">
+              <StaticResource creativeType="image/jpeg"><![CDATA[http://example.com/img.jpg]]></StaticResource>
+              <IFrameResource><![CDATA[http://example.com/iframe.html]]></IFrameResource>
+              <HTMLResource><![CDATA[<div>Hello</div>]]></HTMLResource>
+            </NonLinear>
+          </NonLinearAds>
+        </Creative>
+      </Creatives>
+    </InLine>
+  </Ad>
+</VAST>`;
+		const result = parseVast(xml);
+		const nl = result.ads[0].creatives[0].nonLinearAds!.nonLinears[0];
+		expect(nl.resources).toHaveLength(3);
+		expect(nl.resources[0]).toEqual({
+			type: "static",
+			url: "http://example.com/img.jpg",
+			creativeType: "image/jpeg",
+		});
+		expect(nl.resources[1]).toEqual({
+			type: "iframe",
+			url: "http://example.com/iframe.html",
+		});
+		expect(nl.resources[2]).toEqual({
+			type: "html",
+			content: "<div>Hello</div>",
+		});
+	});
+
+	it("parses minSuggestedDuration to seconds", () => {
+		const result = parseVast(NONLINEAR_VAST);
+		const nl = result.ads[0].creatives[0].nonLinearAds!.nonLinears[0];
+		expect(nl.minSuggestedDuration).toBe(15);
+	});
+
+	it("parses scalable and maintainAspectRatio booleans", () => {
+		const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<VAST version="4.1">
+  <Ad id="ad-bool">
+    <InLine>
+      <AdSystem>Test</AdSystem>
+      <AdTitle>Bool Test</AdTitle>
+      <Impression><![CDATA[http://example.com/imp]]></Impression>
+      <Creatives>
+        <Creative>
+          <NonLinearAds>
+            <NonLinear width="468" height="60" scalable="false" maintainAspectRatio="false">
+              <StaticResource creativeType="image/png"><![CDATA[http://example.com/img.png]]></StaticResource>
+            </NonLinear>
+          </NonLinearAds>
+        </Creative>
+      </Creatives>
+    </InLine>
+  </Ad>
+</VAST>`;
+		const result = parseVast(xml);
+		const nl = result.ads[0].creatives[0].nonLinearAds!.nonLinears[0];
+		expect(nl.scalable).toBe(false);
+		expect(nl.maintainAspectRatio).toBe(false);
+	});
+
+	it("leaves scalable and maintainAspectRatio undefined when not specified", () => {
+		const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<VAST version="4.1">
+  <Ad id="ad-noattr">
+    <InLine>
+      <AdSystem>Test</AdSystem>
+      <AdTitle>No Attr</AdTitle>
+      <Impression><![CDATA[http://example.com/imp]]></Impression>
+      <Creatives>
+        <Creative>
+          <NonLinearAds>
+            <NonLinear width="468" height="60">
+              <StaticResource creativeType="image/png"><![CDATA[http://example.com/img.png]]></StaticResource>
+            </NonLinear>
+          </NonLinearAds>
+        </Creative>
+      </Creatives>
+    </InLine>
+  </Ad>
+</VAST>`;
+		const result = parseVast(xml);
+		const nl = result.ads[0].creatives[0].nonLinearAds!.nonLinears[0];
+		expect(nl.scalable).toBeUndefined();
+		expect(nl.maintainAspectRatio).toBeUndefined();
+	});
+
+	it("skips NonLinear without width or height", () => {
+		const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<VAST version="4.1">
+  <Ad id="ad-skip">
+    <InLine>
+      <AdSystem>Test</AdSystem>
+      <AdTitle>Skip Test</AdTitle>
+      <Impression><![CDATA[http://example.com/imp]]></Impression>
+      <Creatives>
+        <Creative>
+          <NonLinearAds>
+            <NonLinear height="60">
+              <StaticResource creativeType="image/png"><![CDATA[http://example.com/img.png]]></StaticResource>
+            </NonLinear>
+          </NonLinearAds>
+        </Creative>
+      </Creatives>
+    </InLine>
+  </Ad>
+</VAST>`;
+		const result = parseVast(xml);
+		expect(result.ads[0].creatives[0].nonLinearAds).toBeUndefined();
+	});
+
+	it("returns undefined nonLinearAds when no NonLinearAds element", () => {
+		const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<VAST version="4.1">
+  <Ad id="ad-none">
+    <InLine>
+      <AdSystem>Test</AdSystem>
+      <AdTitle>No NonLinear</AdTitle>
+      <Impression><![CDATA[http://example.com/imp]]></Impression>
+      <Creatives>
+        <Creative>
+          <Linear>
+            <Duration>00:00:15</Duration>
+            <MediaFiles>
+              <MediaFile delivery="progressive" type="video/mp4" width="640" height="360">
+                <![CDATA[http://example.com/ad.mp4]]>
+              </MediaFile>
+            </MediaFiles>
+          </Linear>
+        </Creative>
+      </Creatives>
+    </InLine>
+  </Ad>
+</VAST>`;
+		const result = parseVast(xml);
+		expect(result.ads[0].creatives[0].nonLinearAds).toBeUndefined();
+	});
+
+	it("parses multiple NonLinear elements", () => {
+		const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<VAST version="4.1">
+  <Ad id="ad-multi-nl">
+    <InLine>
+      <AdSystem>Test</AdSystem>
+      <AdTitle>Multi NonLinear</AdTitle>
+      <Impression><![CDATA[http://example.com/imp]]></Impression>
+      <Creatives>
+        <Creative>
+          <NonLinearAds>
+            <NonLinear width="468" height="60">
+              <StaticResource creativeType="image/png"><![CDATA[http://example.com/overlay1.png]]></StaticResource>
+            </NonLinear>
+            <NonLinear width="728" height="90">
+              <StaticResource creativeType="image/png"><![CDATA[http://example.com/overlay2.png]]></StaticResource>
+            </NonLinear>
+          </NonLinearAds>
+        </Creative>
+      </Creatives>
+    </InLine>
+  </Ad>
+</VAST>`;
+		const result = parseVast(xml);
+		const nlAds = result.ads[0].creatives[0].nonLinearAds!;
+		expect(nlAds.nonLinears).toHaveLength(2);
+		expect(nlAds.nonLinears[0].width).toBe(468);
+		expect(nlAds.nonLinears[0].height).toBe(60);
+		expect(nlAds.nonLinears[1].width).toBe(728);
+		expect(nlAds.nonLinears[1].height).toBe(90);
+	});
+
+	it("parses creative with Linear, CompanionAds, and NonLinearAds", () => {
+		const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<VAST version="4.1">
+  <Ad id="ad-all">
+    <InLine>
+      <AdSystem>Test</AdSystem>
+      <AdTitle>All Types</AdTitle>
+      <Impression><![CDATA[http://example.com/imp]]></Impression>
+      <Creatives>
+        <Creative>
+          <Linear>
+            <Duration>00:00:30</Duration>
+            <MediaFiles>
+              <MediaFile delivery="progressive" type="video/mp4" width="640" height="360">
+                <![CDATA[http://example.com/ad.mp4]]>
+              </MediaFile>
+            </MediaFiles>
+          </Linear>
+          <CompanionAds required="all">
+            <Companion width="300" height="250">
+              <StaticResource creativeType="image/png"><![CDATA[http://example.com/banner.png]]></StaticResource>
+            </Companion>
+          </CompanionAds>
+          <NonLinearAds>
+            <NonLinear width="468" height="60">
+              <StaticResource creativeType="image/png"><![CDATA[http://example.com/overlay.png]]></StaticResource>
+            </NonLinear>
+          </NonLinearAds>
+        </Creative>
+      </Creatives>
+    </InLine>
+  </Ad>
+</VAST>`;
+		const result = parseVast(xml);
+		const creative = result.ads[0].creatives[0];
+		expect(creative.linear).not.toBeNull();
+		expect(creative.linear!.duration).toBe(30);
+		expect(creative.companionAds).toBeDefined();
+		expect(creative.companionAds!.companions).toHaveLength(1);
+		expect(creative.nonLinearAds).toBeDefined();
+		expect(creative.nonLinearAds!.nonLinears).toHaveLength(1);
+	});
+});

@@ -20,9 +20,16 @@ export type {
 	CompanionRequired,
 	CompanionRenderingMode,
 	CompanionTrackingEvents,
+	NonLinearAd,
+	VastNonLinearAds,
 } from "./types.js";
 export { parseVast, fetchVast, resolveVast } from "./parser.js";
-export { track, getQuartile, trackCompanionView } from "./tracker.js";
+export {
+	track,
+	getQuartile,
+	trackCompanionView,
+	trackNonLinear,
+} from "./tracker.js";
 export { selectMediaFile } from "./media.js";
 export { playSingleAd } from "./playback.js";
 export type { PlaySingleAdOptions, SingleAdResult } from "./playback.js";

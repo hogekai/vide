@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>vide — NonLinear Ads (Overlay)</title>
+  <link rel="stylesheet" href="../dist/ui/theme.css">
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
+    #player-container { position: relative; width: 100%; background: #000; aspect-ratio: 16/9; }
+    #player-container video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+    .controls { margin: 1rem 0; display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    button { padding: 0.4rem 1rem; cursor: pointer; }
+    h3 span { font-weight: normal; }
+    #log { font-family: monospace; font-size: 13px; background: #1a1a1a; color: #0f0; padding: 1rem; max-height: 300px; overflow-y: auto; border-radius: 4px; margin-top: 1rem; }
+    .log-entry { margin: 2px 0; }
+    .log-entry.ad { color: #0ff; }
+    .log-entry.nonlinear { color: #ff0; }
+    .log-entry.track { color: #f0f; }
+
+    /* NonLinear overlay */
+    .nl-overlay { position: absolute; bottom: 60px; left: 50%; transform: translateX(-50%); z-index: 10; cursor: pointer; transition: opacity 0.3s; }
+    .nl-overlay img { display: block; border: 2px solid #ff0; border-radius: 4px; }
+    .nl-close { position: absolute; top: -8px; right: -8px; width: 22px; height: 22px; border-radius: 50%; background: #000; color: #fff; border: 2px solid #ff0; font-size: 14px; line-height: 18px; text-align: center; cursor: pointer; z-index: 11; display: none; }
+    .nl-close.visible { display: block; }
+  </style>
+</head>
+<body>
+  <h1>vide — NonLinear Ads (Overlay)</h1>
+  <p>
+    Demonstrates <code>&lt;NonLinearAds&gt;</code> parsing and overlay display.
+    The VAST response includes a NonLinear creative rendered as an overlay on top of the video.
+    vide parses and emits data via <code>ad:nonlinears</code> — this page renders the overlay and handles tracking.
+  </p>
+
+  <div id="player-container">
+    <video id="player"
+      src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4">
+    </video>
+  </div>
+
+  <div class="controls">
+    <button onclick="playWithOverlay()">Play Ad (with Overlay)</button>
+    <button onclick="playWithDuration()">Play Ad (minSuggestedDuration=5s)</button>
+    <button onclick="playWithoutNonLinear()">Play Ad (no NonLinear)</button>
+  </div>
+
+  <h3>State: <span id="state">-</span></h3>
+  <div id="log"></div>
+
+  <script type="module">
+    import { createPlayer } from "../dist/index.mjs";
+    import { vast, trackNonLinear } from "../dist/vast/index.mjs";
+    import { ui } from "../dist/ui/index.mjs";
+
+    const el = document.getElementById("player");
+    const container = document.getElementById("player-container");
+    const stateEl = document.getElementById("state");
+    const logEl = document.getElementById("log");
+
+    const adVideo = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4";
+
+    // Placeholder overlay image via SVG data URI
+    const overlaySvg = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="468" height="60"><rect width="468" height="60" fill="%23264653" rx="4"/><text x="234" y="28" text-anchor="middle" fill="%23e9c46a" font-family="sans-serif" font-size="16" font-weight="bold">NonLinear Overlay Ad</text><text x="234" y="48" text-anchor="middle" fill="%2390e0ef" font-family="sans-serif" font-size="11">Click to visit advertiser</text></svg>')}`;
+
+    // --- Intercept sendBeacon to log tracking fires ---
+    const origSendBeacon = navigator.sendBeacon.bind(navigator);
+    navigator.sendBeacon = function(url) {
+      if (typeof url === "string") {
+        const match = url.match(/example\.com\/(.+)$/);
+        log(`BEACON  ${match ? match[1] : url}`, "track");
+      }
+      return true;
+    };
+
+    function log(msg, cls = "") {
+      const entry = document.createElement("div");
+      entry.className = "log-entry" + (cls ? ` ${cls}` : "");
+      entry.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+      logEl.prepend(entry);
+      console.log(msg);
+    }
+
+    let player = null;
+    let uiPlugin = null;
+
+    function clearOverlay() {
+      for (const el of container.querySelectorAll(".nl-overlay, .nl-close")) {
+        el.remove();
+      }
+    }
+
+    function resetPlayer() {
+      if (player) player.destroy();
+      clearOverlay();
+      player = createPlayer(el);
+      uiPlugin = ui({ container });
+      player.use(uiPlugin);
+
+      player.on("statechange", ({ from, to }) => {
+        stateEl.textContent = to;
+        log(`state: ${from} → ${to}`);
+      });
+      player.on("ad:start", ({ adId }) => log(`ad:start id=${adId}`, "ad"));
+      player.on("ad:end", ({ adId }) => {
+        log(`ad:end id=${adId}`, "ad");
+        setTimeout(clearOverlay, 500);
+      });
+      player.on("ad:impression", ({ adId }) => log(`ad:impression id=${adId}`, "ad"));
+      player.on("ad:quartile", ({ adId, quartile }) => log(`ad:quartile id=${adId} ${quartile}`, "ad"));
+
+      // --- NonLinear Ads handler ---
+      player.on("ad:nonlinears", ({ adId, nonLinears, trackingEvents }) => {
+        const nonLinearAds = { nonLinears, trackingEvents };
+        log(`ad:nonlinears id=${adId} count=${nonLinears.length}`, "nonlinear");
+
+        for (const nl of nonLinears) {
+          log(`  nonlinear ${nl.width}x${nl.height} resources=${nl.resources.length} minDuration=${nl.minSuggestedDuration ?? "none"}`, "nonlinear");
+
+          const resource = nl.resources.find(r => r.type === "static");
+          if (!resource) {
+            log("  no static resource, skipping", "nonlinear");
+            continue;
+          }
+
+          // Create the overlay
+          const overlay = document.createElement("div");
+          overlay.className = "nl-overlay";
+
+          const img = document.createElement("img");
+          img.src = resource.url;
+          img.width = nl.width;
+          img.height = nl.height;
+          img.alt = "NonLinear Ad";
+          if (nl.clickThrough) {
+            img.addEventListener("click", () => {
+              log(`nonlinear click → ${nl.clickThrough}`, "nonlinear");
+              trackNonLinear(nonLinearAds, "acceptInvitation");
+              log("  trackNonLinear(acceptInvitation) fired", "track");
+              window.open(nl.clickThrough, "_blank");
+            });
+          }
+          overlay.appendChild(img);
+
+          // Close button
+          const closeBtn = document.createElement("div");
+          closeBtn.className = "nl-close";
+          closeBtn.textContent = "×";
+          closeBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            overlay.remove();
+            closeBtn.remove();
+            trackNonLinear(nonLinearAds, "close");
+            log("  trackNonLinear(close) fired — overlay dismissed", "track");
+          });
+          overlay.appendChild(closeBtn);
+
+          container.appendChild(overlay);
+
+          // Fire creativeView
+          trackNonLinear(nonLinearAds, "creativeView");
+          log("  trackNonLinear(creativeView) fired", "track");
+
+          // Show close button after minSuggestedDuration
+          if (nl.minSuggestedDuration) {
+            log(`  close button delayed ${nl.minSuggestedDuration}s (minSuggestedDuration)`, "nonlinear");
+            setTimeout(() => {
+              closeBtn.classList.add("visible");
+              log("  close button now visible", "nonlinear");
+            }, nl.minSuggestedDuration * 1000);
+          } else {
+            closeBtn.classList.add("visible");
+          }
+
+          break; // display only the first nonlinear
+        }
+      });
+    }
+
+    // --- Build VAST XML ---
+
+    function buildVastXml(adId, videoUrl, options = {}) {
+      const nonLinears = options.nonLinears || [];
+      const nlTracking = options.nlTracking || {};
+
+      let nonLinearAdsXml = "";
+      if (nonLinears.length > 0) {
+        const trackingXml = Object.entries(nlTracking).map(([event, urls]) =>
+          urls.map(u => `<Tracking event="${event}"><![CDATA[${u}]]></Tracking>`).join("\n              ")
+        ).join("\n              ");
+
+        const nlsXml = nonLinears.map(nl => `
+            <NonLinear width="${nl.width}" height="${nl.height}" id="${nl.id}"${nl.minSuggestedDuration ? ` minSuggestedDuration="${nl.minSuggestedDuration}"` : ""}${nl.scalable != null ? ` scalable="${nl.scalable}"` : ""}${nl.maintainAspectRatio != null ? ` maintainAspectRatio="${nl.maintainAspectRatio}"` : ""}>
+              <StaticResource creativeType="image/svg+xml"><![CDATA[${nl.staticUrl}]]></StaticResource>
+              <NonLinearClickThrough><![CDATA[${nl.clickThrough}]]></NonLinearClickThrough>
+              <NonLinearClickTracking><![CDATA[https://example.com/nonlinear/${nl.id}/click]]></NonLinearClickTracking>
+            </NonLinear>`).join("\n");
+
+        nonLinearAdsXml = `
+          <NonLinearAds>
+            <TrackingEvents>
+              ${trackingXml}
+            </TrackingEvents>${nlsXml}
+          </NonLinearAds>`;
+      }
+
+      return `<?xml version="1.0" encoding="UTF-8"?>
+<VAST version="4.2">
+  <Ad id="${adId}">
+    <InLine>
+      <AdSystem>vide-example</AdSystem>
+      <AdTitle>NonLinear Ad Demo</AdTitle>
+      <Impression><![CDATA[https://example.com/imp/${adId}]]></Impression>
+      <Creatives>
+        <Creative>
+          <Linear>
+            <Duration>00:00:15</Duration>
+            <TrackingEvents>
+              <Tracking event="start"><![CDATA[https://example.com/${adId}/start]]></Tracking>
+              <Tracking event="complete"><![CDATA[https://example.com/${adId}/complete]]></Tracking>
+            </TrackingEvents>
+            <VideoClicks>
+              <ClickThrough><![CDATA[https://example.com/landing/${adId}]]></ClickThrough>
+            </VideoClicks>
+            <MediaFiles>
+              <MediaFile delivery="progressive" type="video/mp4" width="640" height="360">
+                <![CDATA[${videoUrl}]]>
+              </MediaFile>
+            </MediaFiles>
+          </Linear>${nonLinearAdsXml}
+        </Creative>
+      </Creatives>
+    </InLine>
+  </Ad>
+</VAST>`;
+    }
+
+    function vastBlobUrl(xml) {
+      const blob = new Blob([xml], { type: "application/xml" });
+      return URL.createObjectURL(blob);
+    }
+
+    // --- Scenarios ---
+
+    // 1) Ad with NonLinear overlay (close button shown immediately)
+    window.playWithOverlay = function() {
+      logEl.innerHTML = "";
+      resetPlayer();
+      log("=== Ad with NonLinear Overlay (468x60) ===", "nonlinear");
+
+      const xml = buildVastXml("ad-with-overlay", adVideo, {
+        nonLinears: [
+          { width: 468, height: 60, id: "overlay-1", staticUrl: overlaySvg, clickThrough: "https://example.com/advertiser", scalable: true, maintainAspectRatio: true },
+        ],
+        nlTracking: {
+          creativeView: ["https://example.com/nonlinear/overlay-1/creativeView"],
+          acceptInvitation: ["https://example.com/nonlinear/overlay-1/acceptInvitation"],
+          close: ["https://example.com/nonlinear/overlay-1/close"],
+        },
+      });
+
+      player.use(vast({
+        tagUrl: vastBlobUrl(xml),
+        timeout: 15000,
+        adPlugins: uiPlugin.getAdPlugin(),
+      }));
+    };
+
+    // 2) Ad with NonLinear overlay and minSuggestedDuration (close button delayed)
+    window.playWithDuration = function() {
+      logEl.innerHTML = "";
+      resetPlayer();
+      log("=== Ad with NonLinear Overlay (minSuggestedDuration=5s) ===", "nonlinear");
+      log("  Close button will appear after 5 seconds.", "nonlinear");
+
+      const xml = buildVastXml("ad-with-duration", adVideo, {
+        nonLinears: [
+          { width: 468, height: 60, id: "overlay-delayed", staticUrl: overlaySvg, clickThrough: "https://example.com/advertiser", minSuggestedDuration: "00:00:05" },
+        ],
+        nlTracking: {
+          creativeView: ["https://example.com/nonlinear/overlay-delayed/creativeView"],
+          acceptInvitation: ["https://example.com/nonlinear/overlay-delayed/acceptInvitation"],
+          close: ["https://example.com/nonlinear/overlay-delayed/close"],
+        },
+      });
+
+      player.use(vast({
+        tagUrl: vastBlobUrl(xml),
+        timeout: 15000,
+        adPlugins: uiPlugin.getAdPlugin(),
+      }));
+    };
+
+    // 3) Ad without NonLinear
+    window.playWithoutNonLinear = function() {
+      logEl.innerHTML = "";
+      resetPlayer();
+      log("=== Ad without NonLinear ===", "ad");
+
+      const xml = buildVastXml("ad-no-nonlinear", adVideo);
+
+      player.use(vast({
+        tagUrl: vastBlobUrl(xml),
+        timeout: 15000,
+        adPlugins: uiPlugin.getAdPlugin(),
+      }));
+    };
+
+    log("Player ready. Click a button above to test.");
+  </script>
+</body>
+</html>

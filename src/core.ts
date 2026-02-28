@@ -284,6 +284,7 @@ export function createPlayer(el: MediaElement): Player {
 		"livestatechange",
 		"error",
 		"ad:companions",
+		"ad:nonlinears",
 		"ad:start",
 		"ad:end",
 		"ad:skip",

@@ -62,6 +62,29 @@ export interface PlayerEventMap {
 			adParameters?: string | undefined;
 		}[];
 	};
+	"ad:nonlinears": {
+		adId: string;
+		nonLinears: {
+			width: number;
+			height: number;
+			id?: string | undefined;
+			expandedWidth?: number | undefined;
+			expandedHeight?: number | undefined;
+			scalable?: boolean | undefined;
+			maintainAspectRatio?: boolean | undefined;
+			minSuggestedDuration?: number | undefined;
+			apiFramework?: string | undefined;
+			resources: Array<
+				| { type: "static"; url: string; creativeType: string }
+				| { type: "iframe"; url: string }
+				| { type: "html"; content: string }
+			>;
+			clickThrough?: string | undefined;
+			clickTracking: string[];
+			adParameters?: string | undefined;
+		}[];
+		trackingEvents: Record<string, string[]>;
+	};
 	"ad:start": { adId: string };
 	"ad:end": { adId: string };
 	"ad:skip": { adId: string };

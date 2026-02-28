@@ -4,6 +4,7 @@ import type {
 	VastAd,
 	VastCompanionAds,
 	VastLinear,
+	VastNonLinearAds,
 	VastTrackingEvents,
 } from "../../src/vast/types.js";
 
@@ -33,14 +34,21 @@ function emptyTracking(): VastTrackingEvents {
 	};
 }
 
-function makeAd(id: string, companionAds?: VastCompanionAds): VastAd {
+function makeAd(
+	id: string,
+	companionAds?: VastCompanionAds,
+	nonLinearAds?: VastNonLinearAds,
+): VastAd {
+	const hasCreatives = companionAds || nonLinearAds;
 	return {
 		id,
 		sequence: undefined,
 		adSystem: "test",
 		adTitle: `Ad ${id}`,
 		impressions: [`http://example.com/imp/${id}`],
-		creatives: companionAds ? [{ linear: null, companionAds }] : [],
+		creatives: hasCreatives
+			? [{ linear: null, companionAds, nonLinearAds }]
+			: [],
 		errors: [],
 	};
 }
@@ -402,5 +410,65 @@ describe("playSingleAd", () => {
 			(e) => e.event === "ad:companions",
 		);
 		expect(companionEvent).toBeUndefined();
+	});
+
+	it("emits ad:nonlinears when ad has nonLinear creatives", async () => {
+		const player = createMockPlayer();
+		const nonLinearAds: VastNonLinearAds = {
+			trackingEvents: {
+				creativeView: ["http://example.com/nlview"],
+			},
+			nonLinears: [
+				{
+					width: 468,
+					height: 60,
+					resources: [
+						{
+							type: "static",
+							url: "http://example.com/overlay.png",
+							creativeType: "image/png",
+						},
+					],
+					clickTracking: [],
+				},
+			],
+		};
+
+		const { promise } = playSingleAd({
+			player: player as any,
+			ad: makeAd("ad-1", undefined, nonLinearAds),
+			linear: makeLinear(),
+			source: "vast",
+		});
+
+		player.el._fire("canplay");
+		player.el._fire("ended");
+		await promise;
+
+		const nlEvent = player.emitted.find((e) => e.event === "ad:nonlinears");
+		expect(nlEvent).toBeDefined();
+		expect(nlEvent!.data).toEqual({
+			adId: "ad-1",
+			nonLinears: nonLinearAds.nonLinears,
+			trackingEvents: nonLinearAds.trackingEvents,
+		});
+	});
+
+	it("does not emit ad:nonlinears when ad has no nonLinear creatives", async () => {
+		const player = createMockPlayer();
+
+		const { promise } = playSingleAd({
+			player: player as any,
+			ad: makeAd("ad-1"),
+			linear: makeLinear(),
+			source: "vast",
+		});
+
+		player.el._fire("canplay");
+		player.el._fire("ended");
+		await promise;
+
+		const nlEvent = player.emitted.find((e) => e.event === "ad:nonlinears");
+		expect(nlEvent).toBeUndefined();
 	});
 });

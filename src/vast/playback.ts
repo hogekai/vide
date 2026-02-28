@@ -56,6 +56,18 @@ export function playSingleAd(options: PlaySingleAdOptions): {
 		}
 	}
 
+	// Emit nonlinear ads if present in any creative
+	for (const creative of ad.creatives) {
+		if (creative.nonLinearAds && creative.nonLinearAds.nonLinears.length > 0) {
+			player.emit("ad:nonlinears", {
+				adId,
+				nonLinears: creative.nonLinearAds.nonLinears,
+				trackingEvents: creative.nonLinearAds.trackingEvents,
+			});
+			break;
+		}
+	}
+
 	// --- Ad plugins lifecycle ---
 	const adPluginCleanups: (() => void)[] = [];
 	if (options.adPlugins) {

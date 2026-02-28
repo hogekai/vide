@@ -6,6 +6,7 @@ import type {
 	CompanionResource,
 	CompanionTrackingEvents,
 	InteractiveCreativeFile,
+	NonLinearAd,
 	ResolveOptions,
 	VastAd,
 	VastCompanionAd,
@@ -13,6 +14,7 @@ import type {
 	VastCreative,
 	VastLinear,
 	VastMediaFile,
+	VastNonLinearAds,
 	VastResponse,
 	VastTrackingEvents,
 } from "./types.js";
@@ -157,8 +159,9 @@ function parseCreative(creativeEl: Element): VastCreative {
 	const linear = linearEl ? parseLinear(linearEl) : null;
 
 	const companionAds = parseCompanionAds(creativeEl);
+	const nonLinearAds = parseNonLinearAds(creativeEl);
 
-	return { id, sequence, linear, companionAds };
+	return { id, sequence, linear, companionAds, nonLinearAds };
 }
 
 function parseLinear(linearEl: Element): VastLinear {
@@ -245,6 +248,26 @@ function parseInteractiveCreativeFiles(
 	return files;
 }
 
+// === Shared Resource Parsing ===
+
+function parseResources(el: Element): CompanionResource[] {
+	const resources: CompanionResource[] = [];
+	for (const staticEl of directChildren(el, "StaticResource")) {
+		const url = (staticEl.textContent ?? "").trim();
+		const creativeType = staticEl.getAttribute("creativeType") ?? "";
+		if (url) resources.push({ type: "static", url, creativeType });
+	}
+	for (const iframeEl of directChildren(el, "IFrameResource")) {
+		const url = (iframeEl.textContent ?? "").trim();
+		if (url) resources.push({ type: "iframe", url });
+	}
+	for (const htmlEl of directChildren(el, "HTMLResource")) {
+		const content = (htmlEl.textContent ?? "").trim();
+		if (content) resources.push({ type: "html", content });
+	}
+	return resources;
+}
+
 // === CompanionAds Parsing ===
 
 function parseCompanionAds(creativeEl: Element): VastCompanionAds | undefined {
@@ -294,20 +317,7 @@ function parseCompanion(companionEl: Element): VastCompanionAd | null {
 				? "default"
 				: undefined;
 
-	const resources: CompanionResource[] = [];
-	for (const staticEl of directChildren(companionEl, "StaticResource")) {
-		const url = (staticEl.textContent ?? "").trim();
-		const creativeType = staticEl.getAttribute("creativeType") ?? "";
-		if (url) resources.push({ type: "static", url, creativeType });
-	}
-	for (const iframeEl of directChildren(companionEl, "IFrameResource")) {
-		const url = (iframeEl.textContent ?? "").trim();
-		if (url) resources.push({ type: "iframe", url });
-	}
-	for (const htmlEl of directChildren(companionEl, "HTMLResource")) {
-		const content = (htmlEl.textContent ?? "").trim();
-		if (content) resources.push({ type: "html", content });
-	}
+	const resources = parseResources(companionEl);
 
 	const clickThrough =
 		textContent(companionEl, "CompanionClickThrough") || undefined;
@@ -350,6 +360,98 @@ function parseCompanionTrackingEvents(
 		if (eventName === "creativeView" && url) {
 			events.creativeView.push(url);
 		}
+	}
+	return events;
+}
+
+// === NonLinearAds Parsing ===
+
+function parseNonLinearAds(creativeEl: Element): VastNonLinearAds | undefined {
+	const nonLinearAdsEl = directChild(creativeEl, "NonLinearAds");
+	if (!nonLinearAdsEl) return undefined;
+
+	const trackingEvents = parseNonLinearTrackingEvents(nonLinearAdsEl);
+
+	const nonLinears: NonLinearAd[] = [];
+	for (const nlEl of directChildren(nonLinearAdsEl, "NonLinear")) {
+		const nl = parseNonLinear(nlEl);
+		if (nl) nonLinears.push(nl);
+	}
+
+	return nonLinears.length > 0 ? { trackingEvents, nonLinears } : undefined;
+}
+
+function parseNonLinear(nlEl: Element): NonLinearAd | null {
+	const width = safeInt(nlEl.getAttribute("width"), 0);
+	const height = safeInt(nlEl.getAttribute("height"), 0);
+	if (width === 0 || height === 0) return null;
+
+	const id = nlEl.getAttribute("id") ?? undefined;
+	const expandedWidth = safeInt(nlEl.getAttribute("expandedWidth"), undefined);
+	const expandedHeight = safeInt(
+		nlEl.getAttribute("expandedHeight"),
+		undefined,
+	);
+
+	const scalableAttr = nlEl.getAttribute("scalable");
+	const scalable =
+		scalableAttr === "true"
+			? true
+			: scalableAttr === "false"
+				? false
+				: undefined;
+
+	const maintainAspectRatioAttr = nlEl.getAttribute("maintainAspectRatio");
+	const maintainAspectRatio =
+		maintainAspectRatioAttr === "true"
+			? true
+			: maintainAspectRatioAttr === "false"
+				? false
+				: undefined;
+
+	const minSuggestedDurationStr = nlEl.getAttribute("minSuggestedDuration");
+	const minSuggestedDuration = minSuggestedDurationStr
+		? parseDuration(minSuggestedDurationStr) || undefined
+		: undefined;
+
+	const apiFramework = nlEl.getAttribute("apiFramework") ?? undefined;
+
+	const resources = parseResources(nlEl);
+
+	const clickThrough = textContent(nlEl, "NonLinearClickThrough") || undefined;
+	const clickTracking = textContents(nlEl, "NonLinearClickTracking");
+	const adParameters = textContent(nlEl, "AdParameters") || undefined;
+
+	return {
+		width,
+		height,
+		id,
+		expandedWidth,
+		expandedHeight,
+		scalable,
+		maintainAspectRatio,
+		minSuggestedDuration,
+		apiFramework,
+		resources,
+		clickThrough,
+		clickTracking,
+		adParameters,
+	};
+}
+
+function parseNonLinearTrackingEvents(
+	nonLinearAdsEl: Element,
+): Record<string, string[]> {
+	const events: Record<string, string[]> = {};
+	const trackingEventsEl = directChild(nonLinearAdsEl, "TrackingEvents");
+	if (!trackingEventsEl) return events;
+
+	for (const t of directChildren(trackingEventsEl, "Tracking")) {
+		const eventName = t.getAttribute("event");
+		const url = (t.textContent ?? "").trim();
+		if (!eventName || !url) continue;
+		if (!events[eventName]) events[eventName] = [];
+		events[eventName].push(url);
 	}
 	return events;
 }
@@ -509,6 +611,8 @@ interface WrapperAd {
 	clickTracking: string[];
 	companionAds?: VastCompanionAds | undefined;
 	companionClickTracking: string[];
+	nonLinearTrackingEvents: Record<string, string[]>;
+	nonLinearClickTracking: string[];
 }
 
 /**
@@ -599,6 +703,8 @@ function extractWrapperFromXml(xml: string): WrapperAd | null {
 		let clickTracking: string[] = [];
 		let companionAds: VastCompanionAds | undefined;
 		const companionClickTracking: string[] = [];
+		let nonLinearTrackingEvents: Record<string, string[]> = {};
+		const nonLinearClickTracking: string[] = [];
 		const creativesEl = wrapperEl.querySelector("Creatives");
 		if (creativesEl) {
 			for (const creativeEl of directChildren(creativesEl, "Creative")) {
@@ -618,6 +724,17 @@ function extractWrapperFromXml(xml: string): WrapperAd | null {
 						companionClickTracking.push(...c.clickTracking);
 					}
 				}
+
+				const nonLinearAdsEl = directChild(creativeEl, "NonLinearAds");
+				if (nonLinearAdsEl) {
+					nonLinearTrackingEvents =
+						parseNonLinearTrackingEvents(nonLinearAdsEl);
+					for (const nlEl of directChildren(nonLinearAdsEl, "NonLinear")) {
+						nonLinearClickTracking.push(
+							...textContents(nlEl, "NonLinearClickTracking"),
+						);
+					}
+				}
 			}
 		}
 
@@ -629,6 +746,8 @@ function extractWrapperFromXml(xml: string): WrapperAd | null {
 			clickTracking,
 			companionAds,
 			companionClickTracking,
+			nonLinearTrackingEvents,
+			nonLinearClickTracking,
 		};
 	}
 	return null;
@@ -741,6 +860,42 @@ function mergeWrapperIntoAd(ad: VastAd, wrapperChain: WrapperAd[]): VastAd {
 					break;
 				}
 			}
+		}
+
+		// Merge nonLinear ads tracking from wrappers
+		// NonLinear resources come ONLY from InLine (never from Wrapper)
+		// TrackingEvents and NonLinearClickTracking from wrappers merge in
+		if (creative.nonLinearAds) {
+			const wrapperNlClickTracking = wrapperChain.flatMap(
+				(w) => w.nonLinearClickTracking,
+			);
+
+			const mergedNlTracking: Record<string, string[]> = {};
+			for (const wrapper of wrapperChain) {
+				for (const [event, urls] of Object.entries(
+					wrapper.nonLinearTrackingEvents,
+				)) {
+					if (!mergedNlTracking[event]) mergedNlTracking[event] = [];
+					mergedNlTracking[event].push(...urls);
+				}
+			}
+			for (const [event, urls] of Object.entries(
+				creative.nonLinearAds.trackingEvents,
+			)) {
+				if (!mergedNlTracking[event]) mergedNlTracking[event] = [];
+				mergedNlTracking[event].push(...urls);
+			}
+
+			merged = {
+				...merged,
+				nonLinearAds: {
+					trackingEvents: mergedNlTracking,
+					nonLinears: creative.nonLinearAds.nonLinears.map((nl) => ({
+						...nl,
+						clickTracking: [...wrapperNlClickTracking, ...nl.clickTracking],
+					})),
+				},
+			};
 		}
 
 		return merged;

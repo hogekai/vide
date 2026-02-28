@@ -1,4 +1,4 @@
-import type { VastCompanionAd } from "./types.js";
+import type { VastCompanionAd, VastNonLinearAds } from "./types.js";
 
 /** Fire-and-forget tracking. Response is ignored. */
 export function track(urls: string[]): void {
@@ -79,4 +79,14 @@ export function createQuartileTracker(
  *  Call when the companion is actually displayed to the user. */
 export function trackCompanionView(companion: VastCompanionAd): void {
 	track(companion.trackingEvents.creativeView);
+}
+
+/** Fire a tracking event for a NonLinear ad container.
+ *  Looks up the event name in the container-level trackingEvents. */
+export function trackNonLinear(
+	nonLinearAds: VastNonLinearAds,
+	event: string,
+): void {
+	const urls = nonLinearAds.trackingEvents[event];
+	if (urls) track(urls);
 }

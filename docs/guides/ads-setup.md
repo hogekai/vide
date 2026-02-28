@@ -33,6 +33,52 @@ player.on("ad:pod:end", ({ completed, skipped, failed }) => {
 });
 ```
 
+### Companion Ads
+
+Companion ads (banners, sidebars) are emitted as data — display is your responsibility:
+
+```ts
+import { trackCompanionView } from "@videts/vide/vast";
+
+player.on("ad:companions", ({ companions }) => {
+  const banner = companions.find(c => c.width === 300 && c.height === 250);
+  if (!banner) return;
+  const resource = banner.resources.find(r => r.type === "static");
+  if (!resource) return;
+
+  document.getElementById("sidebar-ad")!.innerHTML =
+    `<a href="${banner.clickThrough}"><img src="${resource.url}"></a>`;
+  trackCompanionView(banner);
+});
+```
+
+### NonLinear Ads (Overlays)
+
+NonLinear ads are overlays displayed inside the player without interrupting video playback. Like companions, the plugin emits data and the integrator handles rendering:
+
+```ts
+import { trackNonLinear } from "@videts/vide/vast";
+
+player.on("ad:nonlinears", ({ nonLinears, trackingEvents }) => {
+  const nl = nonLinears[0];
+  const resource = nl.resources.find(r => r.type === "static");
+  if (!resource) return;
+
+  const overlay = document.createElement("img");
+  overlay.src = resource.url;
+  overlay.width = nl.width;
+  playerContainer.appendChild(overlay);
+  trackNonLinear({ nonLinears, trackingEvents }, "creativeView");
+
+  // Show close button after minSuggestedDuration
+  if (nl.minSuggestedDuration) {
+    setTimeout(() => showCloseButton(), nl.minSuggestedDuration * 1000);
+  }
+});
+```
+
+See the [VAST plugin docs](/plugins/vast#nonlinear-ads) for the full attribute list and tracking events.
+
 ## Scheduled Ads (VMAP)
 
 VMAP adds pre-roll, mid-roll, and post-roll scheduling:

@@ -8,6 +8,13 @@ interface CompanionDef {
 	clickTracking?: string[];
 }
 
+interface NonLinearDef {
+	width: number;
+	height: number;
+	staticUrl: string;
+	clickTracking?: string[];
+}
+
 function makeInlineVast(options?: {
 	adId?: string;
 	impressions?: string[];
@@ -16,6 +23,8 @@ function makeInlineVast(options?: {
 	clickTracking?: string[];
 	companions?: CompanionDef[];
 	companionRequired?: string;
+	nonLinears?: NonLinearDef[];
+	nonLinearTracking?: Record<string, string[]>;
 }): string {
 	const adId = options?.adId ?? "ad-001";
 	const impressions = (options?.impressions ?? ["http://example.com/imp"])
@@ -55,6 +64,32 @@ function makeInlineVast(options?: {
           </CompanionAds>`;
 	}
 
+	let nonLinearAdsXml = "";
+	if (options?.nonLinears) {
+		const nlTrackingXml = Object.entries(options.nonLinearTracking ?? {})
+			.flatMap(([event, urls]) =>
+				urls.map(
+					(u) => `<Tracking event="${event}"><![CDATA[${u}]]></Tracking>`,
+				),
+			)
+			.join("\n              ");
+		const nlsXml = options.nonLinears
+			.map(
+				(nl) => `
+            <NonLinear width="${nl.width}" height="${nl.height}">
+              <StaticResource creativeType="image/png"><![CDATA[${nl.staticUrl}]]></StaticResource>
+              ${(nl.clickTracking ?? []).map((u) => `<NonLinearClickTracking><![CDATA[${u}]]></NonLinearClickTracking>`).join("\n              ")}
+            </NonLinear>`,
+			)
+			.join("\n");
+		nonLinearAdsXml = `
+          <NonLinearAds>
+            <TrackingEvents>
+              ${nlTrackingXml}
+            </TrackingEvents>${nlsXml}
+          </NonLinearAds>`;
+	}
+
 	return `<?xml version="1.0" encoding="UTF-8"?>
 <VAST version="4.1">
   <Ad id="${adId}">
@@ -78,7 +113,7 @@ function makeInlineVast(options?: {
             <VideoClicks>
               ${clickTracking}
             </VideoClicks>
-          </Linear>${companionAdsXml}
+          </Linear>${companionAdsXml}${nonLinearAdsXml}
         </Creative>
       </Creatives>
     </InLine>
@@ -95,6 +130,8 @@ function makeWrapperVast(
 		clickTracking?: string[];
 		companions?: CompanionDef[];
 		companionRequired?: string;
+		nonLinearTracking?: Record<string, string[]>;
+		nonLinearClickTracking?: string[];
 	},
 ): string {
 	const impressions = (options?.impressions ?? [])
@@ -136,6 +173,32 @@ function makeWrapperVast(
         </Creative>`;
 	}
 
+	let nonLinearAdsXml = "";
+	if (options?.nonLinearTracking || options?.nonLinearClickTracking) {
+		const nlTrackingXml = Object.entries(options?.nonLinearTracking ?? {})
+			.flatMap(([event, urls]) =>
+				urls.map(
+					(u) => `<Tracking event="${event}"><![CDATA[${u}]]></Tracking>`,
+				),
+			)
+			.join("\n              ");
+		const nlClickTrackingXml = (options?.nonLinearClickTracking ?? [])
+			.map(
+				(u) =>
+					`<NonLinearClickTracking><![CDATA[${u}]]></NonLinearClickTracking>`,
+			)
+			.join("\n              ");
+		nonLinearAdsXml = `
+          <NonLinearAds>
+            <TrackingEvents>
+              ${nlTrackingXml}
+            </TrackingEvents>
+            <NonLinear width="468" height="60">
+              ${nlClickTrackingXml}
+            </NonLinear>
+          </NonLinearAds>`;
+	}
+
 	return `<?xml version="1.0" encoding="UTF-8"?>
 <VAST version="4.1">
   <Ad id="wrapper">
@@ -153,7 +216,7 @@ function makeWrapperVast(
             <VideoClicks>
               ${clickTracking}
             </VideoClicks>
-          </Linear>
+          </Linear>${nonLinearAdsXml}
         </Creative>${companionAdsXml}
       </Creatives>
     </Wrapper>
@@ -498,6 +561,66 @@ describe("resolveVast", () => {
 		expect(companionAds!.companions[0].clickTracking).toEqual([
 			"http://wrapper.com/comp-click",
 			"http://inline.com/comp-click",
+		]);
+	});
+
+	it("merges wrapper NonLinearClickTracking into InLine NonLinear", async () => {
+		const wrapperXml = makeWrapperVast("http://example.com/inline", {
+			nonLinearClickTracking: ["http://wrapper.com/nl-click"],
+		});
+		const inlineXml = makeInlineVast({
+			nonLinears: [
+				{
+					width: 468,
+					height: 60,
+					staticUrl: "http://inline.com/overlay.png",
+					clickTracking: ["http://inline.com/nl-click"],
+				},
+			],
+		});
+
+		fetchMock
+			.mockReturnValueOnce(mockFetchResponse(wrapperXml))
+			.mockReturnValueOnce(mockFetchResponse(inlineXml));
+
+		const result = await resolveVast("http://example.com/wrapper");
+		const nlAds = result.ads[0].creatives[0].nonLinearAds;
+		expect(nlAds).toBeDefined();
+		expect(nlAds!.nonLinears[0].clickTracking).toEqual([
+			"http://wrapper.com/nl-click",
+			"http://inline.com/nl-click",
+		]);
+	});
+
+	it("merges wrapper NonLinearAds TrackingEvents into InLine", async () => {
+		const wrapperXml = makeWrapperVast("http://example.com/inline", {
+			nonLinearTracking: {
+				creativeView: ["http://wrapper.com/nlview"],
+			},
+		});
+		const inlineXml = makeInlineVast({
+			nonLinears: [
+				{
+					width: 468,
+					height: 60,
+					staticUrl: "http://inline.com/overlay.png",
+				},
+			],
+			nonLinearTracking: {
+				creativeView: ["http://inline.com/nlview"],
+			},
+		});
+
+		fetchMock
+			.mockReturnValueOnce(mockFetchResponse(wrapperXml))
+			.mockReturnValueOnce(mockFetchResponse(inlineXml));
+
+		const result = await resolveVast("http://example.com/wrapper");
+		const nlAds = result.ads[0].creatives[0].nonLinearAds;
+		expect(nlAds).toBeDefined();
+		expect(nlAds!.trackingEvents.creativeView).toEqual([
+			"http://wrapper.com/nlview",
+			"http://inline.com/nlview",
 		]);
 	});
 });

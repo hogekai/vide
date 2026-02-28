@@ -37,6 +37,7 @@ export interface VastCreative {
 	sequence?: number | undefined;
 	linear: VastLinear | null;
 	companionAds?: VastCompanionAds | undefined;
+	nonLinearAds?: VastNonLinearAds | undefined;
 }
 
 export interface VastLinear {
@@ -145,6 +146,30 @@ export interface VastCompanionAd {
 export interface VastCompanionAds {
 	required: CompanionRequired;
 	companions: VastCompanionAd[];
+}
+
+// === VAST 4.1 NonLinearAds ===
+
+export interface NonLinearAd {
+	width: number;
+	height: number;
+	id?: string | undefined;
+	expandedWidth?: number | undefined;
+	expandedHeight?: number | undefined;
+	scalable?: boolean | undefined;
+	maintainAspectRatio?: boolean | undefined;
+	/** Minimum suggested display time in seconds, parsed from HH:MM:SS */
+	minSuggestedDuration?: number | undefined;
+	apiFramework?: string | undefined;
+	resources: CompanionResource[];
+	clickThrough?: string | undefined;
+	clickTracking: string[];
+	adParameters?: string | undefined;
+}
+
+export interface VastNonLinearAds {
+	trackingEvents: Record<string, string[]>;
+	nonLinears: NonLinearAd[];
 }
 
 // === Ad Plugin (per-ad lifecycle) ===

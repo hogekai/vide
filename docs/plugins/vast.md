@@ -76,6 +76,7 @@ const classified = classifyAds(response.ads);
 | `ad:volumeChange` | `{ adId, volume }` | Ad volume changed |
 | `ad:fullscreen` | `{ adId, fullscreen }` | Fullscreen state changed during ad |
 | `ad:companions` | `{ adId, required, companions }` | Companion ad data available (emitted with `ad:start`) |
+| `ad:nonlinears` | `{ adId, nonLinears, trackingEvents }` | NonLinear overlay ad data available (emitted with `ad:start`) |
 
 ### Pod Events
 
@@ -145,6 +146,85 @@ Each companion may contain multiple resources. The integrator picks the most sui
 ### Tracking
 
 Call `trackCompanionView(companion)` when a companion is actually displayed to fire the `creativeView` tracking beacons. The plugin does not fire these automatically since it does not control rendering.
+
+## NonLinear Ads
+
+NonLinear ads are overlay creatives displayed on top of the video during content playback — the video is not interrupted. The plugin parses `<NonLinearAds>` from the VAST response and emits data via the `ad:nonlinears` event. Display and dismissal are the integrator's responsibility.
+
+### Listening for NonLinear Ads
+
+```ts
+import { trackNonLinear } from "@videts/vide/vast";
+import type { VastNonLinearAds } from "@videts/vide/vast";
+
+let activeNonLinearAds: VastNonLinearAds | null = null;
+
+player.on("ad:nonlinears", ({ nonLinears, trackingEvents }) => {
+  activeNonLinearAds = { nonLinears, trackingEvents };
+  const nl = nonLinears[0];
+  const resource = nl.resources.find(r => r.type === "static");
+  if (!resource) return;
+
+  const overlay = document.createElement("div");
+  overlay.innerHTML = `<a href="${nl.clickThrough}"><img src="${resource.url}" width="${nl.width}" height="${nl.height}"></a>`;
+  playerContainer.appendChild(overlay);
+
+  // Fire creativeView tracking
+  trackNonLinear(activeNonLinearAds, "creativeView");
+
+  // Show close button after minSuggestedDuration
+  if (nl.minSuggestedDuration) {
+    setTimeout(() => {
+      const btn = document.createElement("button");
+      btn.textContent = "×";
+      btn.onclick = () => {
+        overlay.remove();
+        trackNonLinear(activeNonLinearAds!, "close");
+      };
+      overlay.appendChild(btn);
+    }, nl.minSuggestedDuration * 1000);
+  }
+});
+```
+
+### NonLinear vs Companion
+
+| | NonLinear | Companion |
+|-|----------|-----------|
+| Display location | Inside the player (overlay) | Outside the player (sidebar, etc.) |
+| Content playback | Continues playing | Continues playing |
+| `minSuggestedDuration` | Yes | No |
+| Tracking events | Multiple (creativeView, acceptInvitation, close, etc.) | creativeView only |
+
+### Attributes
+
+Each `NonLinearAd` object contains:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `width` | `number` | Display width in pixels |
+| `height` | `number` | Display height in pixels |
+| `minSuggestedDuration` | `number \| undefined` | Minimum display time in seconds. Don't show a close button before this. |
+| `scalable` | `boolean \| undefined` | Whether the creative can be resized |
+| `maintainAspectRatio` | `boolean \| undefined` | Whether to preserve aspect ratio on resize |
+| `resources` | `CompanionResource[]` | Same resource types as companions (static, iframe, html) |
+| `clickThrough` | `string \| undefined` | Click destination URL |
+| `clickTracking` | `string[]` | Click tracking URLs |
+
+### Tracking
+
+NonLinear ads support multiple tracking events (unlike companions which only have `creativeView`). Call `trackNonLinear()` with the event name when the corresponding action occurs:
+
+```ts
+import { trackNonLinear } from "@videts/vide/vast";
+
+trackNonLinear(nonLinearAds, "creativeView");       // overlay is displayed
+trackNonLinear(nonLinearAds, "acceptInvitation");    // user clicked/tapped the overlay
+trackNonLinear(nonLinearAds, "close");               // user closed the overlay
+trackNonLinear(nonLinearAds, "collapse");            // user minimized the overlay
+trackNonLinear(nonLinearAds, "adExpand");            // user expanded the overlay
+trackNonLinear(nonLinearAds, "adCollapse");          // user collapsed the expanded overlay
+```
 
 ## Notes
 
