@@ -21,17 +21,17 @@ async function initPlayer() {
     const link = document.createElement("link");
     link.id = linkId;
     link.rel = "stylesheet";
-    link.href = "https://esm.sh/@videts/vide@0.8/ui/theme.css";
+    link.href = "https://esm.sh/@videts/vide@0.9/ui/theme.css";
     document.head.appendChild(link);
   }
 
   const imports: Promise<any>[] = [
-    import("https://esm.sh/@videts/vide@0.8"),
-    import("https://esm.sh/@videts/vide@0.8/hls"),
-    import("https://esm.sh/@videts/vide@0.8/ui"),
+    import("https://esm.sh/@videts/vide@0.9"),
+    import("https://esm.sh/@videts/vide@0.9/hls"),
+    import("https://esm.sh/@videts/vide@0.9/ui"),
   ];
   if (props.vast) {
-    imports.push(import("https://esm.sh/@videts/vide@0.8/vast"));
+    imports.push(import("https://esm.sh/@videts/vide@0.9/vast"));
   }
 
   const modules = await Promise.all(imports);
