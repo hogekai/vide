@@ -98,6 +98,39 @@ player.use(ui({ container: document.getElementById("player-container")! }));
 player.src = "https://example.com/stream.m3u8";
 ```
 
+## UI Options
+
+Vide supports three levels of UI integration:
+
+### No UI
+
+Core only. No visual controls rendered. Build your own UI or go headless.
+
+```ts
+const player = createPlayer(document.querySelector("video")!);
+player.use(hls());
+// No ui() plugin. No components. You handle everything.
+```
+
+### Headless UI
+
+UI components with behavior wired — no default styling. Bring your own CSS.
+
+```ts
+player.use(ui({ container: el }));
+// Components render with BEM classes (vide-play, vide-progress, …)
+// but no visual styles. Style them yourself.
+```
+
+### Themed
+
+Headless components + the default skin. One import and it looks good.
+
+```ts
+player.use(ui({ container: el }));
+import "@videts/vide/ui/theme.css";
+```
+
 ## Player API
 
 ```ts

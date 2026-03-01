@@ -10,10 +10,12 @@ Requires Svelte 5 (runes).
 
 ## Quick Start
 
-Core only — no UI, no plugins:
+### No UI
+
+Core only — no visual controls. Build everything yourself or use your own components.
 
 ```svelte
-<script>
+<script lang="ts">
   import { createVidePlayer, VideVideo } from "@videts/vide/svelte";
 
   const player = createVidePlayer();
@@ -22,16 +24,46 @@ Core only — no UI, no plugins:
 <VideVideo src="video.mp4" />
 ```
 
-With headless UI components and HLS streaming:
+### Headless UI
+
+UI components with behavior — no default styling. Bring your own CSS.
 
 ```svelte
-<script>
+<script lang="ts">
   import {
     createVidePlayer, useHls,
     VideUI, VideVideo, VideControls, PlayButton, Progress,
+    TimeDisplay, Volume, FullscreenButton,
   } from "@videts/vide/svelte";
-  // Optional — default theme. Omit to style from scratch.
-  import "@videts/vide/ui/theme.css";
+
+  const player = createVidePlayer();
+  useHls(player);
+</script>
+
+<VideUI>
+  <VideVideo src="stream.m3u8" />
+  <VideControls>
+    <PlayButton class="my-play-btn" />
+    <Progress class="my-progress" />
+    <TimeDisplay />
+    <Volume />
+    <FullscreenButton />
+  </VideControls>
+</VideUI>
+```
+
+### Themed
+
+Headless components + the default skin. Add one CSS import.
+
+```svelte
+<script lang="ts">
+  import {
+    createVidePlayer, useHls,
+    VideUI, VideVideo, VideControls, PlayButton, Progress,
+    TimeDisplay, Volume, FullscreenButton,
+  } from "@videts/vide/svelte";
+  import "@videts/vide/ui/theme.css"; // ← this line
 
   const player = createVidePlayer();
   useHls(player);
@@ -42,6 +74,9 @@ With headless UI components and HLS streaming:
   <VideControls>
     <PlayButton />
     <Progress />
+    <TimeDisplay />
+    <Volume />
+    <FullscreenButton />
   </VideControls>
 </VideUI>
 ```

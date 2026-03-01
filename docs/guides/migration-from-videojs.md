@@ -1,5 +1,7 @@
 # Migrating from video.js
 
+video.js has been the standard open-source video player for over a decade, powering countless production deployments. Vide takes a different approach — not better or worse, but optimized for a different set of priorities.
+
 Vide takes a different approach to video playback: instead of bundling everything into a monolithic core, it wraps the native `<video>` element with a typed event bus and state machine, and leaves everything else to explicit plugins. The result is a smaller, tree-shakeable player where you only load what you use.
 
 If you're coming from video.js 7.x or 8.x, this guide maps the APIs you already know to their Vide equivalents.
@@ -53,7 +55,7 @@ video.js uses dual-purpose methods — `player.currentTime()` returns the value,
 | `player.el()` | `player.el` | Property, not method |
 | `player.on("timeupdate", fn)` | `player.on("timeupdate", fn)` | Same API |
 | `player.ready(fn)` | `player.on("statechange", fn)` | Check `player.state` for current state |
-| — | `player.state` | No video.js equivalent — use the [state machine](#state-machine) |
+| N/A | `player.state` | No video.js equivalent — use the [state machine](#state-machine) |
 
 ### State Machine
 
@@ -490,11 +492,11 @@ In React, Vue, and Svelte, the framework hooks (`useVidePlayer` / `createVidePla
 | VHS (built-in in 8.x) / `videojs-contrib-dash` | `@videts/vide/dash` | 1.3 KB (+ dashjs) |
 | `videojs-contrib-eme` | `@videts/vide/drm` | 1.6 KB |
 | `videojs-contrib-ads` + `videojs-ima` | `@videts/vide/vast` | 6.6 KB |
-| — | `@videts/vide/vmap` | 7.1 KB |
-| — | `@videts/vide/ssai` | 1.9 KB |
-| — | `@videts/vide/omid` | 1.7 KB |
-| — | `@videts/vide/simid` | 2.4 KB |
-| Built-in | `@videts/vide/ui` | 5.4 KB + 4.3 KB CSS |
+| N/A (ad SDK handles) | `@videts/vide/vmap` | 7.1 KB |
+| N/A (ad SDK handles) | `@videts/vide/ssai` | 1.9 KB |
+| N/A (ad SDK handles) | `@videts/vide/omid` | 1.7 KB |
+| N/A (ad SDK handles) | `@videts/vide/simid` | 2.4 KB |
+| Built-in | `@videts/vide/ui` | 5.5 KB + 4.4 KB CSS |
 
 video.js bundles streaming, UI, and core into one package. Vide ships each as a separate entry point — import only what you use.
 
@@ -502,8 +504,8 @@ video.js bundles streaming, UI, and core into one package. Vide ships each as a 
 
 | | video.js 8.x | Vide (core + HLS + UI) |
 |-|-------------|------------------------|
-| JS | ~690 KB min (~200 KB gzip) | ~9.5 KB gzip |
-| CSS | ~30 KB min | 4.3 KB gzip |
+| JS | [~690 KB min (~200 KB gzip)](https://bundlephobia.com/package/video.js@8) | ~9.6 KB gzip |
+| CSS | ~30 KB min | 4.4 KB gzip |
 
 Core player alone is 2.8 KB gzip. Each plugin adds only what it needs.
 

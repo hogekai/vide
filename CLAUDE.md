@@ -33,8 +33,8 @@ TypeScript strict · ESM · tsup · vitest · Biome · pnpm
 
 Single package, multiple entry points via `exports` field:
 - `vide` — core (createPlayer + EventBus + StateMachine)
-- `vide/ui` — Headless UI plugin (16 components, optional theme.css)
-- `vide/vast` — VAST 4.1 Linear Ad plugin
+- `vide/ui` — Headless UI plugin (17 components, optional theme.css)
+- `vide/vast` — VAST 4.2 Linear Ad plugin
 - `vide/vmap` — VMAP plugin (depends on vast internally)
 - `vide/hls` — HLS streaming plugin (wraps hls.js, optional peer dep)
 - `vide/dash` — DASH streaming plugin (wraps dashjs, optional peer dep)
@@ -42,4 +42,8 @@ Single package, multiple entry points via `exports` field:
 - `vide/ssai` — SSAI plugin (server-side ad insertion, reads HLS/DASH metadata)
 - `vide/omid` — OM SDK (Open Measurement) viewability plugin
 - `vide/simid` — SIMID (Secure Interactive Media Interface) plugin
+- `vide/vpaid` — VPAID 2.0 interactive ads plugin
 - `vide/ima` — Google IMA SDK plugin (delegates ad lifecycle to IMA)
+- `vide/react` — React hooks and components (peer dep: react, react-dom)
+- `vide/vue` — Vue 3 composables and components (peer dep: vue)
+- `vide/svelte` — Svelte 5 functions and components (peer dep: svelte)

@@ -8,7 +8,9 @@ npm install @videts/vide react react-dom
 
 ## Quick Start
 
-Core only — no UI, no plugins:
+### No UI
+
+Core only — no visual controls. Build everything yourself or use your own components.
 
 ```tsx
 import { useVidePlayer, Vide } from "@videts/vide/react";
@@ -24,12 +26,43 @@ function Player() {
 }
 ```
 
-With headless UI components and HLS streaming:
+### Headless UI
+
+UI components with behavior — no default styling. Bring your own CSS.
 
 ```tsx
 import { useVidePlayer, useHls, Vide } from "@videts/vide/react";
-// Optional — default theme. Omit to style from scratch.
-import "@videts/vide/ui/theme.css";
+
+function Player() {
+  const player = useVidePlayer();
+  useHls(player);
+
+  return (
+    <Vide.Root player={player}>
+      <Vide.UI>
+        <Vide.Video src="stream.m3u8" />
+        <Vide.Controls>
+          <Vide.PlayButton className="my-play-btn" />
+          <Vide.Progress className="my-progress" />
+          <Vide.TimeDisplay className="my-time" />
+          <Vide.Volume className="my-volume" />
+          <Vide.FullscreenButton className="my-fs" />
+        </Vide.Controls>
+      </Vide.UI>
+    </Vide.Root>
+  );
+}
+```
+
+Components render with BEM classes (`vide-play`, `vide-progress`, …) but no visual styles.
+
+### Themed
+
+Headless components + the default skin. Add one CSS import.
+
+```tsx
+import { useVidePlayer, useHls, Vide } from "@videts/vide/react";
+import "@videts/vide/ui/theme.css"; // ← this line
 
 function Player() {
   const player = useVidePlayer();
@@ -42,6 +75,9 @@ function Player() {
         <Vide.Controls>
           <Vide.PlayButton />
           <Vide.Progress />
+          <Vide.TimeDisplay />
+          <Vide.Volume />
+          <Vide.FullscreenButton />
         </Vide.Controls>
       </Vide.UI>
     </Vide.Root>
@@ -280,16 +316,6 @@ useVast(player, { tagUrl: "..." });
 ```
 
 Use hooks when the plugin is always needed. Use components when you need conditional rendering.
-
-### Headless (no UI)
-
-```tsx
-<Vide.Root player={player}>
-  <Vide.UI>
-    <Vide.Video src="video.mp4" />
-  </Vide.UI>
-</Vide.Root>
-```
 
 ### Direct Player Access
 

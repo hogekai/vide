@@ -8,10 +8,12 @@ npm install @videts/vide vue
 
 ## Quick Start
 
-Core only — no UI, no plugins:
+### No UI
+
+Core only — no visual controls. Build everything yourself or use your own components.
 
 ```vue
-<script setup>
+<script setup lang="ts">
 import { useVidePlayer, VideVideo } from "@videts/vide/vue";
 
 const player = useVidePlayer();
@@ -22,16 +24,48 @@ const player = useVidePlayer();
 </template>
 ```
 
-With headless UI components and HLS streaming:
+### Headless UI
+
+UI components with behavior — no default styling. Bring your own CSS.
 
 ```vue
-<script setup>
+<script setup lang="ts">
 import {
   useVidePlayer, useHls,
   VideUI, VideVideo, VideControls, VidePlayButton, VideProgress,
+  VideTimeDisplay, VideVolume, VideFullscreenButton,
 } from "@videts/vide/vue";
-// Optional — default theme. Omit to style from scratch.
-import "@videts/vide/ui/theme.css";
+
+const player = useVidePlayer();
+useHls(player);
+</script>
+
+<template>
+  <VideUI>
+    <VideVideo src="stream.m3u8" />
+    <VideControls>
+      <VidePlayButton class="my-play-btn" />
+      <VideProgress class="my-progress" />
+      <VideTimeDisplay />
+      <VideVolume />
+      <VideFullscreenButton />
+    </VideControls>
+  </VideUI>
+</template>
+```
+
+### Themed
+
+Headless components + the default skin. Add one CSS import.
+
+```vue
+<script setup lang="ts">
+import {
+  useVidePlayer, useHls,
+  VideUI, VideVideo, VideControls, VidePlayButton, VideProgress,
+  VideTimeDisplay, VideVolume, VideFullscreenButton,
+} from "@videts/vide/vue";
+import "@videts/vide/ui/theme.css"; // ← this line
 
 const player = useVidePlayer();
 useHls(player);
@@ -43,6 +77,9 @@ useHls(player);
     <VideControls>
       <VidePlayButton />
       <VideProgress />
+      <VideTimeDisplay />
+      <VideVolume />
+      <VideFullscreenButton />
     </VideControls>
   </VideUI>
 </template>
