@@ -694,7 +694,7 @@
 	letter-spacing: 0.03em;
 	line-height: var(--vide-line-height);
 	color: var(--vide-text-dim);
-	text-shadow: 0 0 3px rgba(0, 0, 0, 0.6);
+	text-shadow: 0 0 1px rgba(0, 0, 0, 0.6);
 	transition: transform 0.25s var(--vide-ease), bottom 0.25s var(--vide-ease);
 }
 
@@ -723,7 +723,7 @@
 	font-weight: 400;
 	line-height: var(--vide-line-height);
 	color: var(--vide-text-dim);
-	text-shadow: 0 0 3px rgba(0, 0, 0, 0.6);
+	text-shadow: 0 0 1px rgba(0, 0, 0, 0.6);
 	font-variant-numeric: tabular-nums;
 	white-space: nowrap;
 	transition: transform 0.25s var(--vide-ease), bottom 0.25s var(--vide-ease);
