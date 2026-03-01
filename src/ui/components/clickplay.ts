@@ -32,9 +32,8 @@ export function createClickPlay(excluded: Set<UIComponentName>): UIComponent {
 	function onClick(): void {
 		if (!player) return;
 
-		// During ad states, forward click to video for ad:click tracking
+		// During ad states, just toggle play/pause (no ad:click — that's for CTA/overlay)
 		if (isAdState(player.state)) {
-			player.el.click();
 			togglePlay();
 			return;
 		}

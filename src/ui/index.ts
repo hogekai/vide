@@ -71,7 +71,7 @@ function mountAndConnect(
 
 /** Components that default to off (require explicit `include` to enable). */
 const DEFAULT_EXCLUDED: ReadonlySet<UIComponentName> = new Set([
-	"ad-learn-more",
+	"ad-overlay",
 ]);
 
 /** Create the UI convenience plugin. Mounts all components (minus excluded). */

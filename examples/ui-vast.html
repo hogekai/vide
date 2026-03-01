@@ -52,7 +52,7 @@
     window.player = player;
 
     // Create UI plugin
-    const uiPlugin = ui({ container, include: ['ad-learn-more'], exclude: ['ad-overlay'] });
+    const uiPlugin = ui({ container });
     player.use(uiPlugin);
 
     // Google IMA sample VAST tag (pre-roll, linear, skippable)

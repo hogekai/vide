@@ -51,10 +51,10 @@ export interface UiPluginOptions {
 	/** Container element to mount UI controls into. */
 	container: HTMLElement;
 
-	/** Components to exclude (default: none — all enabled). */
+	/** Components to exclude (default: `ad-overlay`). */
 	exclude?: UIComponentName[] | undefined;
 
-	/** Components to opt-in (overrides default exclusions like `ad-learn-more`). */
+	/** Components to opt-in (overrides default exclusions like `ad-overlay`). */
 	include?: UIComponentName[] | undefined;
 
 	/** Poster image URL. */
