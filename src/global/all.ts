@@ -11,6 +11,7 @@ export {
 	ERR_DRM_DETECTION,
 	ERR_DRM_LICENSE,
 	ERR_DRM_CERTIFICATE,
+	ERR_IMA_SDK_LOAD,
 } from "../errors.js";
 
 // Plugins
@@ -36,6 +37,7 @@ export {
 export { omid } from "../omid/index.js";
 export { simid } from "../simid/index.js";
 export { vpaid } from "../vpaid/index.js";
+export { ima } from "../ima/index.js";
 export {
 	ui,
 	createPlayButton,

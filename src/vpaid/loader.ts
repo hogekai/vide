@@ -92,7 +92,8 @@ function loadViaDirect(url: string, timeout: number): Promise<VpaidLoadResult> {
 			}
 			try {
 				const adUnit = win.getVPAIDAd();
-				win.getVPAIDAd = undefined;
+				// biome-ignore lint/performance/noDelete: cleaning up global VPAID factory
+				delete win.getVPAIDAd;
 				resolve({ adUnit, destroy: () => script.remove() });
 			} catch (err) {
 				script.remove();

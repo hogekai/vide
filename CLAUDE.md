@@ -42,3 +42,4 @@ Single package, multiple entry points via `exports` field:
 - `vide/ssai` — SSAI plugin (server-side ad insertion, reads HLS/DASH metadata)
 - `vide/omid` — OM SDK (Open Measurement) viewability plugin
 - `vide/simid` — SIMID (Secure Interactive Media Interface) plugin
+- `vide/ima` — Google IMA SDK plugin (delegates ad lifecycle to IMA)

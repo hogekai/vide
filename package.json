@@ -30,6 +30,10 @@
       "types": "./dist/vpaid/index.d.ts",
       "import": "./dist/vpaid/index.mjs"
     },
+    "./ima": {
+      "types": "./dist/ima/index.d.ts",
+      "import": "./dist/ima/index.mjs"
+    },
     "./hls": {
       "types": "./dist/hls/index.d.ts",
       "import": "./dist/hls/index.mjs"

@@ -2,6 +2,10 @@
 
 VAST 4.2 client-side video ad support. Pure-function parser, beacon-based tracking, quartile events.
 
+::: tip Need Google IMA SDK?
+If your ad server requires Google IMA SDK, use the [IMA plugin](/plugins/ima) instead. IMA SDK handles ad fetching, playback, and tracking internally.
+:::
+
 ## Usage
 
 ```ts

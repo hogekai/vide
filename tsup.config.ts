@@ -11,6 +11,7 @@ const esmConfig: Options = {
 		"omid/index": "src/omid/index.ts",
 		"simid/index": "src/simid/index.ts",
 		"vpaid/index": "src/vpaid/index.ts",
+		"ima/index": "src/ima/index.ts",
 		"hls/index": "src/hls/index.ts",
 		"dash/index": "src/dash/index.ts",
 		"drm/index": "src/drm/index.ts",
@@ -98,5 +99,6 @@ export default defineConfig([
 	iifeConfig("vide.omid.global", "src/global/omid.ts"),
 	iifeConfig("vide.simid.global", "src/global/simid.ts"),
 	iifeConfig("vide.vpaid.global", "src/global/vpaid.ts"),
+	iifeConfig("vide.ima.global", "src/global/ima.ts"),
 	iifeConfig("vide.ui.global", "src/global/ui.ts"),
 ]);
