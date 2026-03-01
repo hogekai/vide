@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+## [0.9.4] - 2026-03-01
+
+### Changed
+- Ad components (React, Vue, Svelte): `AdLearnMore` now matches vanilla UI structure (icon, title, hostname)
+- Ad components (React, Vue, Svelte): `AdSkip` now renders `span.vide-skip__label` + skip icon matching vanilla
+- Ad component ordering in docs/examples: `AdOverlay` replaced by `AdLearnMore` as default
+- Removed `showTitle` prop from `AdLearnMore` (title auto-displays when available)
+
+### Fixed
+- `AdLabel`/`AdCountdown` no longer float above controls when `AdLearnMore` (CTA) is absent
+- Svelte `VideUI`: fixed `bind:this` on `const` variable (changed to `let`)
+
+### Added
+- Icons: `IconExternalLink`, `IconSkipForward` for React, Vue, Svelte
+- React docs: `useUi` vs `<Vide.UI>` clarification
+- React docs: custom components guide with `useVideContext()` and `useVideEvent()` examples
+
 ## [0.9.2] - 2026-03-01
 
 ### Fixed
