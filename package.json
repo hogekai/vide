@@ -1,6 +1,6 @@
 {
   "name": "@videts/vide",
-  "version": "0.8.5",
+  "version": "0.9.0",
   "description": "Zero-config, web-standard-first modular video player. VAST, VMAP, HLS, DASH, DRM, SSAI, OMID, SIMID — all as plugins. Core under 2KB gzip.",
   "type": "module",
   "unpkg": "dist/vide.global.js",
