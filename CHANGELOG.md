@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+## [0.9.6] - 2026-03-01
+
+### Added
+- `PluginPlayer` interface for type-safe plugin state control
+- VAST ads support in `ended` state for on-demand ad insertion (post-roll)
+- ARIA attributes and accessibility improvements across all UI implementations (React, Vue, Svelte)
+- Custom Components section to Vue and Svelte docs
+- Styling section to React docs
+
+### Fixed
+- Post-roll ad: restore content source and use player interface after ad ends
+- Post-roll ad skip leaving ad media still playing
+- Text shadow intensity in theme.css for improved readability
+- Vue/Svelte `VideVideo`: align with React by removing div wrapper and slot support
+- video.js migration guide inaccuracies
+- Biome lint and format issues from accessibility changes
+- Ad-learn-more tests to match updated component structure
+
 ## [0.9.5] - 2026-03-01
 
 ### Fixed

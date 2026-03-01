@@ -1,6 +1,6 @@
 {
   "name": "@videts/vide",
-  "version": "0.9.5",
+  "version": "0.9.6",
   "description": "Modular, headless video player. Ads, streaming, DRM — use only what you need. Core under 3KB gzip.",
   "type": "module",
   "unpkg": "dist/vide.global.js",
