@@ -34,15 +34,8 @@ export function App() {
 	});
 
 	return (
-		<div
-			style={{
-				fontFamily: "system-ui, sans-serif",
-				maxWidth: 800,
-				margin: "2rem auto",
-				padding: "0 1rem",
-			}}
-		>
-			<h1>vide — React</h1>
+		<div>
+			<h2>VAST + HLS</h2>
 			<p>
 				State: <code>{state}</code>
 			</p>

@@ -34,6 +34,7 @@ export function createImaBridge(options: BridgeOptions): () => void {
 		contentResumed = false;
 		setState("ad:loading");
 		player.emit("ad:breakStart", { breakId: undefined, managedUI: true });
+		player.el.pause();
 	}
 
 	function onLoaded(event: ImaAdEvent): void {
@@ -220,9 +221,7 @@ export function createImaBridge(options: BridgeOptions): () => void {
 	// IMA uses a separate video element for ads, so content video's native
 	// play/pause events don't fire. We wrap player.play()/pause() instead.
 	let adActive = false;
-	function onAdStateChange({
-		to,
-	}: { from: string; to: string }): void {
+	function onAdStateChange({ to }: { from: string; to: string }): void {
 		adActive = to.startsWith("ad:");
 	}
 	player.on("statechange", onAdStateChange);

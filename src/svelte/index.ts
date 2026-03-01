@@ -10,6 +10,7 @@ export {
 	useVmap,
 	useSsai,
 	useUi,
+	useIma,
 } from "./use-plugin.svelte.js";
 
 export { VIDE_PLAYER_KEY, useVideContext } from "./context.js";
@@ -23,6 +24,8 @@ export { default as DrmPlugin } from "./DrmPlugin.svelte";
 export { default as VastPlugin } from "./VastPlugin.svelte";
 export { default as VmapPlugin } from "./VmapPlugin.svelte";
 export { default as SsaiPlugin } from "./SsaiPlugin.svelte";
+export { default as Ima } from "./Ima.svelte";
+export { default as ImaPlugin } from "./ImaPlugin.svelte";
 
 export { default as VideUI } from "./VideUI.svelte";
 export { default as VideControls } from "./VideControls.svelte";

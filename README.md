@@ -77,6 +77,8 @@ Plugins are explicit opt-in. Import only what you need.
 | `@videts/vide/ssai` | SSAI (server-side ads) | 2.0 KB |
 | `@videts/vide/omid` | Open Measurement | 1.7 KB |
 | `@videts/vide/simid` | Interactive ads | 2.4 KB |
+| `@videts/vide/vpaid` | VPAID 2.0 ads | 1.8 KB |
+| `@videts/vide/ima` | Google IMA SDK bridge | 3.5 KB |
 | `@videts/vide/ui` | Headless UI | 5.3 KB |
 | `@videts/vide/ui/theme.css` | Default theme | 3.5 KB |
 

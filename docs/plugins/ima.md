@@ -2,8 +2,10 @@
 
 Google IMA SDK (Interactive Media Ads) plugin. Delegates ad fetching, playback, and tracking entirely to the IMA SDK. Use this when the ad server or supply-side platform requires IMA SDK integration.
 
-::: tip Difference from the VAST plugin
-The [VAST plugin](/plugins/vast) parses and plays VAST XML directly. The IMA plugin delegates everything to Google's IMA SDK. If your ad server does not require IMA, the VAST plugin is lighter.
+::: tip VAST plugin vs IMA plugin
+The [VAST plugin](/plugins/vast) parses and plays VAST XML directly using vide's own ad player. It is lighter (no external SDK), gives you full control over ad rendering and behavior, and integrates seamlessly with vide's UI components (skip button, countdown, learn more, etc.). Choose the VAST plugin when you can — it is simpler to customize, easier to debug, and has zero external dependencies.
+
+The IMA plugin delegates everything to Google's IMA SDK. Use it only when your ad server or SSP **requires** IMA SDK integration (e.g., Google Ad Manager, AdSense for Video). IMA controls its own ad UI, ad rendering, and tracking — vide acts as a thin bridge.
 :::
 
 ## Usage
@@ -72,6 +74,24 @@ player.use(ima({
 ```
 
 The wrapper must have `position: relative` (or `absolute`/`fixed`) so IMA's absolutely-positioned overlay elements are contained correctly.
+
+### Layout Structure
+
+IMA SDK, the video element, and vide UI all share the same container. The container sets the size, and everything else fills it:
+
+```html
+<div id="player-container" style="position: relative; aspect-ratio: 16/9;">
+  <video style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></video>
+  <!-- .vide-ui appended by ui() plugin — fills container via width/height: 100% -->
+  <!-- IMA overlay appended by ima() plugin — position: absolute -->
+</div>
+```
+
+The video is positioned absolutely within the container. The `.vide-ui` element (created by the UI plugin) fills the container with `width: 100%; height: 100%` and provides the stacking context for controls. IMA's overlay is also absolutely positioned inside the container.
+
+::: warning UI does not wrap the video
+Unlike the VAST example where `<Vide.UI>` wraps the `<video>`, IMA requires the video and UI to be **siblings** inside a shared container. The container must have explicit dimensions (e.g., `aspect-ratio: 16/9`) since the video is absolutely positioned and does not contribute to layout flow.
+:::
 
 ::: tip Mobile
 Add `playsinline` to the `<video>` element for skippable ads on iOS.
@@ -176,6 +196,103 @@ player.use(ima({ adTagUrl: "...", adContainer: container }));
 ```
 
 During IMA ads, the `vide-ui--managed-ad` class is added to the UI root, hiding `div.vide-ad`. When the ad break ends, the class is removed. VAST ads played through the VAST plugin are unaffected — vide's ad UI shows normally for those.
+
+## Framework Components
+
+Each framework provides two component variants and a hook/composable:
+
+| | Wrapping | Ref-based (invisible) | Hook / Composable |
+|---|---|---|---|
+| **React** | `<Vide.Ima>` | `<Vide.ImaPlugin>` | `useIma()` |
+| **Vue** | `<VideIma>` | `<VideImaPlugin>` | `useIma()` |
+| **Svelte** | `<Ima>` | `<ImaPlugin>` | `useIma()` |
+
+**Wrapping** renders a `<div>` (with `position: relative`) that acts as both the ad container and the children wrapper. Simplest usage — no ref needed:
+
+::: code-group
+
+```tsx [React]
+<Vide.Root player={player}>
+  <Vide.Ima adTagUrl="..." autoplayAdBreaks style={{ aspectRatio: "16/9", background: "#000" }}>
+    <Vide.Video src="content.mp4" style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }} />
+    <Vide.UI ref={uiRef}>
+      <Vide.Controls>...</Vide.Controls>
+    </Vide.UI>
+  </Vide.Ima>
+</Vide.Root>
+```
+
+```vue [Vue]
+<VideRoot :player="player">
+  <VideIma ad-tag-url="..." autoplay-ad-breaks :style="{ aspectRatio: '16/9', background: '#000' }">
+    <VideVideo src="content.mp4" :style="{ position: 'absolute', inset: 0, width: '100%', height: '100%' }" />
+    <VideUI ref="uiRef">
+      <VideControls>...</VideControls>
+    </VideUI>
+  </VideIma>
+</VideRoot>
+```
+
+```svelte [Svelte]
+<Ima adTagUrl="..." autoplayAdBreaks style="aspect-ratio:16/9; background:#000">
+  <VideVideo src="content.mp4" style="position:absolute; inset:0; width:100%; height:100%" />
+  <VideUI bind:this={uiEl}>
+    <VideControls>...</VideControls>
+  </VideUI>
+</Ima>
+```
+
+:::
+
+**Ref-based (invisible)** renders nothing. You provide your own container ref. Supports conditional rendering — toggling the component on/off does not unmount the video or UI:
+
+::: code-group
+
+```tsx [React]
+<Vide.Root player={player}>
+  <div ref={containerRef} style={{ position: "relative", aspectRatio: "16/9", background: "#000" }}>
+    <Vide.Video src="content.mp4" style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }} />
+    {enableAds && <Vide.ImaPlugin adTagUrl="..." adContainer={containerRef} autoplayAdBreaks />}
+    <Vide.UI ref={uiRef}>
+      <Vide.Controls>...</Vide.Controls>
+    </Vide.UI>
+  </div>
+</Vide.Root>
+```
+
+```vue [Vue]
+<VideRoot :player="player">
+  <div ref="containerRef" :style="{ position: 'relative', aspectRatio: '16/9', background: '#000' }">
+    <VideVideo src="content.mp4" :style="{ position: 'absolute', inset: 0, width: '100%', height: '100%' }" />
+    <VideImaPlugin v-if="enableAds" ad-tag-url="..." :ad-container="containerRef" autoplay-ad-breaks />
+    <VideUI ref="uiRef">
+      <VideControls>...</VideControls>
+    </VideUI>
+  </div>
+</VideRoot>
+```
+
+```svelte [Svelte]
+<div bind:this={containerEl} style="position:relative; aspect-ratio:16/9; background:#000">
+  <VideVideo src="content.mp4" style="position:absolute; inset:0; width:100%; height:100%" />
+  {#if enableAds}
+    <ImaPlugin adTagUrl="..." adContainer={containerEl} autoplayAdBreaks />
+  {/if}
+  <VideUI bind:this={uiEl}>
+    <VideControls>...</VideControls>
+  </VideUI>
+</div>
+```
+
+:::
+
+::: warning Wrapping variant and conditional rendering
+Toggling the wrapping variant (`<Vide.Ima>` / `<VideIma>` / `<Ima>`) unmounts **all children** including the video element and UI. Use the ref-based variant (`ImaPlugin`) if you need to conditionally enable/disable ads without disrupting playback.
+:::
+
+::: warning Plugin removal does not pause content
+Unmounting `ImaPlugin` destroys the IMA ads manager and cleans up the ad overlay, but does **not** pause the content video. If you need to stop playback when disabling ads, call `player.pause()` explicitly.
+:::
 
 ## Notes
 

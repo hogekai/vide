@@ -32,7 +32,7 @@ const player = createVidePlayer();
 useHls(player);
 useVast(player, { tagUrl: VAST_TAG });
 
-let uiEl: HTMLDivElement | null = $state(null);
+const uiEl: HTMLDivElement | null = $state(null);
 useAutohide(() => uiEl, player);
 useKeyboard(() => uiEl, player);
 

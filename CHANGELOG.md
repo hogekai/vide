@@ -6,9 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+## [0.9.8] - 2026-03-02
+
 ### Added
+- Google IMA SDK plugin (`vide/ima`) — delegates ad lifecycle to IMA SDK
+- IMA framework components: `Ima` (wrapping), `ImaPlugin` (ref-based), `useIma` hook for React, Vue, Svelte
+- IMA plugin documentation with layout structure guide and framework usage examples
 - VPAID 2.0 plugin (`vide/vpaid`) for JavaScript-based interactive ad creatives
 - VAST parser: `apiFramework` on `VastMediaFile`, `adParameters` on `VastLinear`
+- IMA and VPAID to plugin tables in README, docs index, and demo page
+- IMA to docs sidebar navigation
+- React IMA example with three usage patterns (wrap, ref, hook)
+
+### Fixed
+- IMA: content video not pausing during ad breaks (`CONTENT_PAUSE_REQUESTED` now pauses content)
+- IMA: plugin cleanup during ad break now resumes content playback and resets player state
 
 ## [0.9.7] - 2026-03-01
 

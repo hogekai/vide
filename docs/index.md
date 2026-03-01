@@ -37,5 +37,7 @@ features:
 | `@videts/vide/ssai` | SSAI (server-side ads) | 1.9 KB |
 | `@videts/vide/omid` | Open Measurement | 1.7 KB |
 | `@videts/vide/simid` | Interactive ads | 2.4 KB |
+| `@videts/vide/vpaid` | VPAID 2.0 ads | 1.8 KB |
+| `@videts/vide/ima` | Google IMA SDK bridge | 3.5 KB |
 | `@videts/vide/ui` | Headless UI | 5.4 KB |
 | `@videts/vide/ui/theme.css` | Default theme | 4.3 KB |

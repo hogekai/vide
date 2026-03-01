@@ -4,6 +4,8 @@ import { drm } from "../drm/index.js";
 import type { DrmPluginOptions } from "../drm/types.js";
 import { hls } from "../hls/index.js";
 import type { HlsPluginOptions } from "../hls/types.js";
+import { ima } from "../ima/index.js";
+import type { ImaPluginOptions } from "../ima/types.js";
 import { ssai } from "../ssai/index.js";
 import type { SsaiPluginOptions } from "../ssai/types.js";
 import type { Plugin, PluginPlayer } from "../types.js";
@@ -75,4 +77,20 @@ export function useSsai(
 
 export function useUi(getPlayer: PlayerGetter, options: UiPluginOptions): void {
 	usePlugin(getPlayer, ui, options);
+}
+
+export function useIma(
+	getPlayer: PlayerGetter,
+	getOptions: () => ImaPluginOptions | null,
+): void {
+	$effect(() => {
+		const p = getPlayer();
+		const opts = getOptions();
+		if (!p || !opts) return;
+		const plugin = ima(opts);
+		const cleanup = plugin.setup(p as PluginPlayer);
+		return () => {
+			cleanup?.();
+		};
+	});
 }

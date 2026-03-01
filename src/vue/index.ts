@@ -12,6 +12,8 @@ export {
 	useUi,
 } from "./use-plugin.js";
 
+export { VideIma, VideImaPlugin, useIma } from "./ima.js";
+
 export { VIDE_PLAYER_KEY, useVideContext } from "./context.js";
 
 export { VideVideo } from "./video.js";
@@ -68,6 +70,7 @@ import { VidePoster } from "./components/poster.js";
 import { VideProgress } from "./components/progress.js";
 import { VideTimeDisplay } from "./components/time-display.js";
 import { VideVolume } from "./components/volume.js";
+import { VideIma, VideImaPlugin } from "./ima.js";
 import {
 	VideDashPlugin,
 	VideDrmPlugin,
@@ -87,6 +90,8 @@ export const Vide = {
 	VastPlugin: VideVastPlugin,
 	VmapPlugin: VideVmapPlugin,
 	SsaiPlugin: VideSsaiPlugin,
+	Ima: VideIma,
+	ImaPlugin: VideImaPlugin,
 	PlayButton: VidePlayButton,
 	MuteButton: VideMuteButton,
 	Progress: VideProgress,

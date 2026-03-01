@@ -167,9 +167,7 @@ export function ui(options: UiPluginOptions): UiPlugin {
 			const stateCleanup = connectStateClasses(root, player);
 
 			// Hide ad UI when an external SDK manages the ad (e.g. IMA)
-			function onManagedUI({
-				managedUI,
-			}: { managedUI?: boolean }): void {
+			function onManagedUI({ managedUI }: { managedUI?: boolean }): void {
 				if (managedUI) root.classList.add("vide-ui--managed-ad");
 			}
 			function onAdBreakEnd(): void {

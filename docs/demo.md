@@ -109,5 +109,7 @@ pnpm build
 | SSAI | 2.0 KB |
 | OMID | 1.7 KB |
 | SIMID | 2.4 KB |
+| VPAID | 1.8 KB |
+| IMA | 3.5 KB |
 | UI | 5.3 KB |
 | theme.css | 3.5 KB |

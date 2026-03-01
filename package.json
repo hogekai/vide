@@ -1,6 +1,6 @@
 {
 	"name": "@videts/vide",
-	"version": "0.9.7",
+	"version": "0.9.8",
 	"description": "Modular, headless video player. Ads, streaming, DRM — use only what you need. Core under 3KB gzip.",
 	"type": "module",
 	"unpkg": "dist/vide.global.js",
@@ -69,7 +69,9 @@
 			"default": "./dist/svelte/index.js"
 		}
 	},
-	"files": ["dist"],
+	"files": [
+		"dist"
+	],
 	"sideEffects": false,
 	"scripts": {
 		"build": "tsup && pnpm build:svelte",
@@ -151,6 +153,9 @@
 		"node": ">=18"
 	},
 	"pnpm": {
-		"onlyBuiltDependencies": ["@biomejs/biome", "esbuild"]
+		"onlyBuiltDependencies": [
+			"@biomejs/biome",
+			"esbuild"
+		]
 	}
 }

@@ -79,8 +79,7 @@ export function ima(options: ImaPluginOptions): Plugin {
 				const overlayZ = isTouchDevice ? 10 : 2;
 				imaOverlay = document.createElement("div");
 				imaOverlay.setAttribute("data-vide-ima", "");
-				imaOverlay.style.cssText =
-					`position:absolute;top:0;left:0;width:100%;height:100%;z-index:${overlayZ};`;
+				imaOverlay.style.cssText = `position:absolute;top:0;left:0;width:100%;height:100%;z-index:${overlayZ};`;
 				options.adContainer.appendChild(imaOverlay);
 				const adContainerEl = imaOverlay;
 				debug(
@@ -367,6 +366,9 @@ export function ima(options: ImaPluginOptions): Plugin {
 				if (contentEndedHandler) {
 					player.off("ended", contentEndedHandler);
 				}
+
+				// If destroyed during an ad break, resume content playback
+				const wasInAd = player.state.startsWith("ad:");
 				if (bridgeCleanup) {
 					bridgeCleanup();
 					bridgeCleanup = null;
@@ -374,6 +376,11 @@ export function ima(options: ImaPluginOptions): Plugin {
 				if (adsManagerRef) {
 					adsManagerRef.destroy();
 					adsManagerRef = null;
+				}
+				if (wasInAd) {
+					player.setState("playing");
+					player.emit("ad:breakEnd", { breakId: undefined });
+					player.play().catch(() => {});
 				}
 				imaOverlay?.remove();
 			};

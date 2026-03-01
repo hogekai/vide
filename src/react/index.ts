@@ -16,6 +16,9 @@ export {
 	useUi,
 } from "./use-plugin.js";
 
+export { Ima, ImaPlugin, useIma } from "./ima.js";
+export type { ImaProps, ImaPluginProps } from "./ima.js";
+
 export { VideContext, useVideContext } from "./context.js";
 export type { VideContextValue } from "./context.js";
 
@@ -95,6 +98,7 @@ import { Poster } from "./components/poster.js";
 import { Progress } from "./components/progress.js";
 import { TimeDisplay } from "./components/time-display.js";
 import { Volume } from "./components/volume.js";
+import { Ima, ImaPlugin } from "./ima.js";
 import {
 	DashPlugin,
 	DrmPlugin,
@@ -118,6 +122,8 @@ export const Vide = {
 	VastPlugin,
 	VmapPlugin,
 	SsaiPlugin,
+	Ima,
+	ImaPlugin,
 	PlayButton,
 	MuteButton,
 	Progress,

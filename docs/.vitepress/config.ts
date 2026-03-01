@@ -40,6 +40,7 @@ export default defineConfig({
 					{ text: "SSAI", link: "/plugins/ssai" },
 					{ text: "VAST", link: "/plugins/vast" },
 					{ text: "VMAP", link: "/plugins/vmap" },
+					{ text: "IMA", link: "/plugins/ima" },
 					{ text: "UI", link: "/plugins/ui" },
 					{ text: "OMID", link: "/plugins/omid" },
 					{ text: "SIMID", link: "/plugins/simid" },
