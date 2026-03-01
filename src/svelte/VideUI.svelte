@@ -13,7 +13,7 @@ interface Props {
 
 const { class: className, children, onmount }: Props = $props();
 
-const rootEl: HTMLDivElement | undefined = $state();
+let rootEl: HTMLDivElement | undefined = $state();
 
 $effect(() => {
 	if (rootEl && onmount) onmount(rootEl);
