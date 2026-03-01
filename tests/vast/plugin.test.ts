@@ -408,10 +408,11 @@ describe("vast plugin — ended state (post-roll)", () => {
 		vi.restoreAllMocks();
 	});
 
-	it("transitions to ended state after ad finishes (no content restore)", async () => {
+	it("restores content source and transitions to ended after ad finishes", async () => {
 		const container = document.createElement("div");
 		const el = document.createElement("video");
 		stubMediaMethods(el);
+		el.setAttribute("src", "https://example.com/content.mp4");
 		container.appendChild(el);
 		document.body.appendChild(container);
 
@@ -426,8 +427,12 @@ describe("vast plugin — ended state (post-roll)", () => {
 		triggerAdPlaying(el);
 		await vi.waitFor(() => expect(player.state).toBe("ad:playing"));
 
-		// Ad finishes
+		// Ad finishes → content source restored → loading → ready → ended
 		el.dispatchEvent(new Event("ended"));
+		expect(player.state).toBe("playing");
+		// Simulate content source loading
+		el.dispatchEvent(new Event("loadstart"));
+		el.dispatchEvent(new Event("canplay"));
 		expect(player.state).toBe("ended");
 
 		player.destroy();
@@ -435,10 +440,11 @@ describe("vast plugin — ended state (post-roll)", () => {
 		vi.restoreAllMocks();
 	});
 
-	it("transitions to ended state after ad is skipped and stops ad media", async () => {
+	it("restores content source and transitions to ended after ad is skipped", async () => {
 		const container = document.createElement("div");
 		const el = document.createElement("video");
 		stubMediaMethods(el);
+		el.setAttribute("src", "https://example.com/content.mp4");
 		container.appendChild(el);
 		document.body.appendChild(container);
 
@@ -453,10 +459,13 @@ describe("vast plugin — ended state (post-roll)", () => {
 		triggerAdPlaying(el);
 		await vi.waitFor(() => expect(player.state).toBe("ad:playing"));
 
-		// Skip the ad
+		// Skip the ad → content source restored → loading → ready → ended
 		player.emit("ad:skip", { adId: "ad-1" });
+		expect(player.state).toBe("playing");
+		// Simulate content source loading
+		el.dispatchEvent(new Event("loadstart"));
+		el.dispatchEvent(new Event("canplay"));
 		expect(player.state).toBe("ended");
-		expect(el.pause).toHaveBeenCalled();
 
 		player.destroy();
 		container.remove();

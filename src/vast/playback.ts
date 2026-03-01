@@ -125,7 +125,7 @@ export function playSingleAd(options: PlaySingleAdOptions): {
 	}
 
 	// Mute/unmute tracking
-	let wasMuted = player.el.muted || player.el.volume === 0;
+	let wasMuted = player.muted || player.volume === 0;
 
 	// Fullscreen tracking
 	let wasFullscreen = !!document.fullscreenElement;
@@ -187,14 +187,14 @@ export function playSingleAd(options: PlaySingleAdOptions): {
 
 	// --- Time update: quartiles + progress ---
 	function onAdTimeUpdate(): void {
-		quartileTracker(player.el.currentTime);
-		checkProgress(player.el.currentTime);
+		quartileTracker(player.currentTime);
+		checkProgress(player.currentTime);
 	}
 
 	// --- Mute / Unmute ---
 	function onAdVolumeChange(): void {
 		if (adEnding) return;
-		const nowMuted = player.el.muted || player.el.volume === 0;
+		const nowMuted = player.muted || player.volume === 0;
 		if (nowMuted && !wasMuted) {
 			track(linear.trackingEvents.mute);
 			player.emit("ad:mute", { adId });
@@ -205,7 +205,7 @@ export function playSingleAd(options: PlaySingleAdOptions): {
 		wasMuted = nowMuted;
 		player.emit("ad:volumeChange", {
 			adId,
-			volume: player.el.muted ? 0 : player.el.volume,
+			volume: player.muted ? 0 : player.volume,
 		});
 	}
 
@@ -256,9 +256,9 @@ export function playSingleAd(options: PlaySingleAdOptions): {
 		track(linear.trackingEvents.creativeView);
 		player.emit("ad:loaded", { adId });
 		setState("ad:playing");
-		player.el.play().catch(() => {
-			player.el.muted = true;
-			player.el.play().catch(() => {});
+		player.play().catch(() => {
+			player.muted = true;
+			player.play().catch(() => {});
 		});
 	}
 

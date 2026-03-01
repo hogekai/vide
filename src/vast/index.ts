@@ -83,7 +83,7 @@ export function vast(options: VastPluginOptions): Plugin {
 					}
 
 					// Save content state for restoration after ads
-					const originalTime = player.el.currentTime;
+					const originalTime = player.currentTime;
 					const prevSrc = player.src;
 
 					// Detach any active source handler (e.g. hls.js) before
@@ -95,14 +95,13 @@ export function vast(options: VastPluginOptions): Plugin {
 					// event so that player.state updates are visible synchronously.
 					function onAdsDone(): void {
 						if (aborted) return;
-						// Always transition through "playing" first (valid from ad states),
-						// then to "ended" for post-roll.
+						// Pause while still in ad state so core's onPause
+						// (which sets "paused") is skipped via isAdState().
+						player.pause();
+						// Always transition through "playing" first (valid from ad states).
 						setState("playing");
 						if (wasEnded) {
-							// Stop ad media without restoring content (it already ended).
-							player.el.pause();
-							player.src = "";
-							setState("ended");
+							restoreContentEnded(player, setState, prevSrc, originalTime);
 						} else {
 							restoreContent(player, prevSrc, originalTime);
 						}
@@ -207,13 +206,33 @@ function restoreContent(
 		if (to !== "ready") return;
 		player.off("statechange", onReady);
 		if (originalTime > 0) {
-			player.el.currentTime = originalTime;
+			player.currentTime = originalTime;
 		}
 		player.play().catch(() => {
-			player.el.muted = true;
+			player.muted = true;
 			player.play().catch(() => {});
 		});
 	}
 	player.on("statechange", onReady);
 	player.src = prevSrc;
 }
+
+/** Restore content source after a post-roll ad without resuming playback. */
+function restoreContentEnded(
+	player: Player,
+	setState: (s: PlayerState) => void,
+	prevSrc: string,
+	originalTime: number,
+): void {
+	function onReady({ to }: { from: string; to: string }): void {
+		if (to !== "ready") return;
+		player.off("statechange", onReady);
+		if (originalTime > 0) {
+			player.currentTime = originalTime;
+		}
+		setState("ended");
+	}
+	player.on("statechange", onReady);
+	player.src = prevSrc;
+}
+
