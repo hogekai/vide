@@ -27,7 +27,7 @@ const transitions: Record<PlayerState, PlayerState[]> = {
 	"ad:loading": ["ad:playing", "playing", "error"],
 	"ad:playing": ["ad:paused", "ad:loading", "playing", "error"],
 	"ad:paused": ["ad:playing", "ad:loading", "playing", "error"],
-	ended: ["idle", "loading", "error"],
+	ended: ["idle", "loading", "ad:loading", "error"],
 	error: ["idle", "loading"],
 };
 

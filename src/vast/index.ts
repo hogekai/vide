@@ -59,6 +59,9 @@ export function vast(options: VastPluginOptions): Plugin {
 			async function loadAndPlayAd(): Promise<void> {
 				if (aborted) return;
 
+				const wasEnded = player.state === "ended";
+				const resumeState = wasEnded ? "ended" : "playing";
+
 				try {
 					const fetchOptions =
 						options.timeout !== undefined
@@ -69,13 +72,13 @@ export function vast(options: VastPluginOptions): Plugin {
 
 					const response = parseVast(xml);
 					if (response.ads.length === 0) {
-						setState("playing");
+						setState(resumeState);
 						return;
 					}
 
 					const classified = classifyAds(response.ads);
 					if (classified.ads.length === 0) {
-						setState("playing");
+						setState(resumeState);
 						return;
 					}
 
@@ -92,8 +95,14 @@ export function vast(options: VastPluginOptions): Plugin {
 					// event so that player.state updates are visible synchronously.
 					function onAdsDone(): void {
 						if (aborted) return;
+						// Always transition through "playing" first (valid from ad states),
+						// then to "ended" for post-roll.
 						setState("playing");
-						restoreContent(player, prevSrc, originalTime);
+						if (wasEnded) {
+							setState("ended");
+						} else {
+							restoreContent(player, prevSrc, originalTime);
+						}
 					}
 
 					switch (classified.type) {
@@ -149,7 +158,7 @@ export function vast(options: VastPluginOptions): Plugin {
 						source: "vast",
 						vastErrorCode,
 					});
-					setState("playing");
+					setState(resumeState);
 				}
 			}
 
@@ -167,7 +176,8 @@ export function vast(options: VastPluginOptions): Plugin {
 			if (
 				player.state === "ready" ||
 				player.state === "playing" ||
-				player.state === "paused"
+				player.state === "paused" ||
+				player.state === "ended"
 			) {
 				loadAndPlayAd();
 			} else {

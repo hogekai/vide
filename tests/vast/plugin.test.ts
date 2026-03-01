@@ -371,6 +371,71 @@ describe("vast plugin — content restoration after ad", () => {
 	});
 });
 
+describe("vast plugin — ended state (post-roll)", () => {
+	beforeEach(() => {
+		vi.spyOn(tracker, "track");
+		vi.stubGlobal("navigator", { sendBeacon: vi.fn() });
+	});
+
+	/** Drive a player to ended state. */
+	function driveToEnded(el: HTMLVideoElement): void {
+		el.dispatchEvent(new Event("loadstart"));
+		el.dispatchEvent(new Event("canplay"));
+		el.dispatchEvent(new Event("play"));
+		el.dispatchEvent(new Event("ended"));
+	}
+
+	it("loads ad immediately when player is in ended state", async () => {
+		const container = document.createElement("div");
+		const el = document.createElement("video");
+		stubMediaMethods(el);
+		container.appendChild(el);
+		document.body.appendChild(container);
+
+		const player = createPlayer(el);
+		driveToEnded(el);
+		expect(player.state).toBe("ended");
+
+		mockedFetchVast.mockResolvedValueOnce(makeVastXml());
+
+		player.use(vast({ tagUrl: "https://example.com/vast.xml" }));
+		await vi.waitFor(() => expect(player.state).toBe("ad:loading"));
+		triggerAdPlaying(el);
+		await vi.waitFor(() => expect(player.state).toBe("ad:playing"));
+
+		player.destroy();
+		container.remove();
+		vi.restoreAllMocks();
+	});
+
+	it("transitions to ended state after ad finishes (no content restore)", async () => {
+		const container = document.createElement("div");
+		const el = document.createElement("video");
+		stubMediaMethods(el);
+		container.appendChild(el);
+		document.body.appendChild(container);
+
+		const player = createPlayer(el);
+		driveToEnded(el);
+		expect(player.state).toBe("ended");
+
+		mockedFetchVast.mockResolvedValueOnce(makeVastXml());
+
+		player.use(vast({ tagUrl: "https://example.com/vast.xml" }));
+		await vi.waitFor(() => expect(player.state).toBe("ad:loading"));
+		triggerAdPlaying(el);
+		await vi.waitFor(() => expect(player.state).toBe("ad:playing"));
+
+		// Ad finishes
+		el.dispatchEvent(new Event("ended"));
+		expect(player.state).toBe("ended");
+
+		player.destroy();
+		container.remove();
+		vi.restoreAllMocks();
+	});
+});
+
 describe("vast plugin — ad error recovery", () => {
 	beforeEach(() => {
 		vi.spyOn(tracker, "track");

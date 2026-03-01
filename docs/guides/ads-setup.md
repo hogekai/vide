@@ -79,9 +79,54 @@ player.on("ad:nonlinears", ({ nonLinears, trackingEvents }) => {
 
 See the [VAST plugin docs](/plugins/vast#nonlinear-ads) for the full attribute list and tracking events.
 
+## On-Demand Ad Insertion
+
+The VAST plugin loads and plays ads based on **when** you call `player.use(vast(...))`. This gives you full control over ad timing without needing VMAP:
+
+### Pre-roll
+
+```ts
+const player = createPlayer(document.querySelector("video")!);
+player.use(vast({ tagUrl: "https://example.com/vast.xml" }));
+```
+
+The plugin waits for the player to reach "ready" state, then plays the ad before content.
+
+### Mid-roll
+
+```ts
+player.on("timeupdate", function onMidroll({ currentTime }) {
+  if (currentTime >= 300) { // 5 minutes
+    player.off("timeupdate", onMidroll);
+    player.use(vast({ tagUrl: "https://example.com/midroll.xml" }));
+  }
+});
+```
+
+Since the player is already in "playing" state, the ad loads immediately.
+
+### Post-roll
+
+```ts
+player.on("ended", () => {
+  player.use(vast({ tagUrl: "https://example.com/postroll.xml" }));
+});
+```
+
+After the ad finishes, the player returns to "ended" state (content is not restored).
+
+### When does the ad trigger?
+
+| Player state when `use(vast(...))` is called | Behavior |
+|-----------------------------------------------|----------|
+| `ready`, `playing`, `paused`, `ended` | Ad loads immediately |
+| `idle`, `loading`, `buffering` | Waits for `ready` state, then loads |
+
+> For standardized scheduling via XML (pre-roll, mid-roll, post-roll positions defined server-side), use [VMAP](#scheduled-ads-vmap) instead.
+
 ## Scheduled Ads (VMAP)
 
-VMAP adds pre-roll, mid-roll, and post-roll scheduling:
+When ad break positions are defined server-side in a VMAP document, the VMAP plugin handles scheduling automatically:
 
 ```ts
 import { vmap } from "@videts/vide/vmap";

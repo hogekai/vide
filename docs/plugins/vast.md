@@ -21,6 +21,29 @@ player.use(vast({ tagUrl: "https://example.com/vast.xml" }));
 | `allowSkip` | `boolean` | `true` | Honor skip offsets from the VAST response |
 | `adPlugins` | `(ad: VastAd) => AdPlugin[]` | — | Per-ad plugin factory (e.g. OMID, SIMID, UI ad components) |
 
+## When Ads Trigger
+
+The plugin determines when to load the ad based on the player's current state at the time `player.use(vast(...))` is called:
+
+- **`ready`, `playing`, `paused`, or `ended`** — the ad loads immediately. The plugin saves the current content source and time position, plays the ad, then restores the content. When called in `ended` state, the player returns to `ended` after the ad (content is not restored).
+- **`idle`, `loading`, or `buffering`** — the plugin waits for the player to reach the `ready` state before loading the ad. This is the typical pre-roll pattern.
+
+### Manual scheduling
+
+Since `player.use()` can be called at any time, you can implement ad scheduling without VMAP:
+
+```ts
+// Mid-roll at 5 minutes
+player.on("timeupdate", function onMidroll({ currentTime }) {
+  if (currentTime >= 300) {
+    player.off("timeupdate", onMidroll);
+    player.use(vast({ tagUrl: "https://example.com/midroll.xml" }));
+  }
+});
+```
+
+See the [Ads Setup guide](/guides/ads-setup#on-demand-ad-insertion) for more patterns including post-roll.
+
 ## Ad Pods and Waterfall
 
 When a VAST response contains multiple `<Ad>` elements, the plugin automatically classifies and plays them:

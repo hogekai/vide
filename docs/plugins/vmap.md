@@ -1,6 +1,6 @@
 # VMAP
 
-VMAP ad break scheduling. Fetches a VMAP document and plays VAST ads at the specified time offsets.
+Standardized ad break scheduling via VMAP XML. Fetches a VMAP document and automatically plays VAST ads at server-defined time offsets (pre-roll, mid-roll, post-roll). For application-controlled ad timing, you can also [schedule ads manually](/guides/ads-setup#on-demand-ad-insertion) using the VAST plugin directly.
 
 ## Usage
 
