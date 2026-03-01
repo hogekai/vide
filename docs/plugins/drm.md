@@ -101,4 +101,4 @@ player.on("error", (e) => {
 - Standalone EME handles encrypted MP4 directly. When hls.js or dash.js is active, DRM defers to the streaming library.
 - Widevine: Chrome, Firefox, Edge. FairPlay: Safari, iOS Safari.
 - Custom headers are useful for auth tokens on license requests.
-- Size: **0.8 KB** gzip.
+- Size: **1.7 KB** gzip.

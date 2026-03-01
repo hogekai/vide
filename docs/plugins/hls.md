@@ -99,4 +99,4 @@ The HLS plugin emits `qualitiesavailable` when the manifest is parsed and `quali
 - On Safari/iOS where native HLS is supported, hls.js is not imported at all.
 - The hls.js instance is exposed via `player.getPluginData("hls")` for advanced use cases.
 - Works with the [DRM plugin](/plugins/drm) — plugin order doesn't matter.
-- Size: **0.6 KB** gzip (wrapper only, hls.js is a separate peer dependency).
+- Size: **1.4 KB** gzip (wrapper only, hls.js is a separate peer dependency).

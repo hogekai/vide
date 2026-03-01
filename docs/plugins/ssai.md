@@ -116,4 +116,4 @@ Each quartile fires exactly once per ad break. If the viewer seeks past a quarti
 - The plugin reads the hls.js or dash.js instance via `getPluginData()`.
 - Tracking pixels are fired via the same beacon mechanism as VAST.
 - Quartile calculation reuses the same logic as the VAST plugin.
-- Size: **~1.6 KB** gzip.
+- Size: **2.0 KB** gzip.

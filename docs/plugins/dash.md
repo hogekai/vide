@@ -103,4 +103,4 @@ The DASH plugin emits `qualitiesavailable` when the stream initializes and `qual
 - The dash.js instance is exposed via `player.getPluginData("dash")` for advanced use cases.
 - Works with the [DRM plugin](/plugins/drm) — plugin order doesn't matter.
 - **Not supported on Safari/iOS** — Safari lacks full MSE support required by dash.js.
-- Size: **0.6 KB** gzip (wrapper only, dashjs is a separate peer dependency).
+- Size: **1.4 KB** gzip (wrapper only, dashjs is a separate peer dependency).

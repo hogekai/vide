@@ -64,7 +64,7 @@ const classified = classifyAds(response.ads);
 | Event | Payload | Description |
 |-------|---------|-------------|
 | `ad:loaded` | `{ adId }` | VAST response parsed, ad ready |
-| `ad:start` | `{ adId }` | Ad playback started |
+| `ad:start` | `{ adId, clickThrough?, skipOffset?, duration?, adTitle? }` | Ad playback started |
 | `ad:end` | `{ adId }` | Ad playback ended |
 | `ad:skip` | `{ adId }` | Ad skipped by user |
 | `ad:click` | `{ clickThrough, clickTracking }` | Ad clicked |

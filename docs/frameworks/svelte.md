@@ -14,8 +14,8 @@ Requires Svelte 5 (runes).
 <script>
   import { createVidePlayer, useHls, VideVideo } from "@videts/vide/svelte";
 
-  const { player } = createVidePlayer();
-  useHls(() => player);
+  const player = createVidePlayer();
+  useHls(player);
 </script>
 
 <VideVideo src="stream.m3u8" />
@@ -28,11 +28,12 @@ Requires Svelte 5 (runes).
 Creates and manages a player instance. Provides it to child components via `setContext`.
 
 ```ts
-const { player } = createVidePlayer();
+const player = createVidePlayer();
 ```
 
-- `player` — `Player | null`. `null` until `<VideVideo>` mounts.
-- Calls `player.destroy()` automatically when the component is destroyed.
+- Returns a `PlayerGetter` (`() => Player | null`). Call `player()` to access the current player instance.
+- `player()` returns `null` until `<VideVideo>` mounts.
+- Calls `player().destroy()` automatically when the component is destroyed.
 - Must be called in a parent component's `<script>` block before `<VideVideo>` is used.
 
 ### useHls / useDash / useDrm / useVast / useVmap / useSsai / useUi
@@ -40,29 +41,29 @@ const { player } = createVidePlayer();
 Plugin functions. Call `plugin.setup()` when player becomes available, clean up on destroy.
 
 ```ts
-useHls(() => player);
-useHls(() => player, { hlsConfig: { maxBufferLength: 30 } });
+useHls(player);
+useHls(player, { hlsConfig: { maxBufferLength: 30 } });
 
-useDash(() => player);
-useDrm(() => player, { widevine: { licenseUrl: "..." } });
-useVast(() => player, { tagUrl: "https://..." });
-useVmap(() => player, { url: "https://..." });
-useSsai(() => player);
-useUi(() => player, { container: containerEl });
+useDash(player);
+useDrm(player, { widevine: { licenseUrl: "..." } });
+useVast(player, { tagUrl: "https://..." });
+useVmap(player, { url: "https://..." });
+useSsai(player);
+useUi(player, { container: containerEl });
 ```
 
-All functions take a getter `() => Player | null` as the first argument to preserve reactivity. Safe to call before mount (`player === null`).
+All functions take a `PlayerGetter` (`() => Player | null`) as the first argument. Since `createVidePlayer()` returns a getter, pass it directly. Safe to call before mount.
 
 ### useVideEvent(getPlayer, event, handler)
 
 Subscribe to player events with automatic cleanup.
 
 ```ts
-useVideEvent(() => player, "statechange", ({ from, to }) => {
+useVideEvent(player, "statechange", ({ from, to }) => {
   console.log(`${from} → ${to}`);
 });
 
-useVideEvent(() => player, "ad:start", ({ adId }) => {
+useVideEvent(player, "ad:start", ({ adId }) => {
   console.log("Ad started:", adId);
 });
 ```
@@ -167,8 +168,8 @@ const { active, meta } = useAdState(getPlayer);
 **Functions** — always active, configure in `<script>`:
 
 ```ts
-useHls(() => player);
-useVast(() => player, { tagUrl: "..." });
+useHls(player);
+useVast(player, { tagUrl: "..." });
 ```
 
 **Components** — conditional activation via `{#if}`:
@@ -183,19 +184,19 @@ Use functions when the plugin is always needed. Use components when you need con
 
 ### Direct Player Access
 
-`player` is returned from `createVidePlayer()`, so you can control it directly:
+`createVidePlayer()` returns a getter function. Call `player()` to access the underlying `Player` instance:
 
 ```svelte
 <script>
   import { createVidePlayer, useHls, VideVideo } from "@videts/vide/svelte";
 
-  const { player } = createVidePlayer();
-  useHls(() => player);
+  const player = createVidePlayer();
+  useHls(player);
 </script>
 
 <VideVideo src="video.mp4" />
-<button onclick={() => player?.pause()}>Pause</button>
-<button onclick={() => { if (player) player.currentTime = 0 }}>
+<button onclick={() => player()?.pause()}>Pause</button>
+<button onclick={() => { if (player()) player()!.currentTime = 0 }}>
   Restart
 </button>
 ```
@@ -208,7 +209,7 @@ Use functions when the plugin is always needed. Use components when you need con
 import { omid } from "@videts/vide/omid";
 import { simid } from "@videts/vide/simid";
 
-useVast(() => player, {
+useVast(player, {
   tagUrl: "https://...",
   adPlugins: (ad) => [
     omid({ partner: { name: "myapp", version: "1.0" } }),
@@ -240,12 +241,12 @@ import {
     AdOverlay, AdLabel, AdCountdown, AdSkip,
   } from "@videts/vide/svelte";
 
-  const { player } = createVidePlayer();
-  useHls(() => player);
+  const player = createVidePlayer();
+  useHls(player);
 
   let showAds = $state(true);
 
-  useVideEvent(() => player, "statechange", ({ from, to }) => {
+  useVideEvent(player, "statechange", ({ from, to }) => {
     console.log(`${from} → ${to}`);
   });
 </script>

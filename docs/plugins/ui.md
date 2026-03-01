@@ -121,7 +121,7 @@ const uiPlugin = ui({ container: el, include: ["ad-learn-more"] });
 import "@videts/vide/ui/theme.css";
 ```
 
-Provides a complete default skin (**3.4 KB** gzip) with CSS custom properties. Override any token to retheme the player.
+Provides a complete default skin (**3.5 KB** gzip) with CSS custom properties. Override any token to retheme the player.
 
 ### Design Tokens
 
@@ -348,4 +348,4 @@ The UI does not use Shadow DOM — all classes are global. Target them directly 
 - The UI plugin does not render into a Shadow DOM — styles are global.
 - Keyboard shortcuts: Space (play/pause), Left/Right (seek ±5s), Up/Down (volume), M (mute), F (fullscreen), 0-9 (seek to percentage).
 - Touch: click/double-click handling for play/pause and fullscreen on mobile.
-- Size: **4.7 KB** gzip (JS), **3.4 KB** gzip (theme.css).
+- Size: **5.3 KB** gzip (JS), **3.5 KB** gzip (theme.css).

@@ -6,7 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-03-01
+
 ### Added
+- Ad UI components: `AdLearnMore`, `AdCountdown`, `AdLabel`, `AdSkip`, `AdOverlay` (vanilla, React, Vue, Svelte)
+- `ad:start` event payload expanded: `clickThrough`, `skipOffset`, `duration`, `adTitle`
+- `useAdState` hook/composable for React, Vue, Svelte (`AdState` with `active`, `meta`)
+- `AdMeta` type for framework ad state
+- UI `include` option for opt-in components (`ad-learn-more` defaults to off)
 - Ad Pod sequence playback: multiple `<Ad>` elements with `sequence` attributes are played sequentially
 - Waterfall ad fallback: multiple `<Ad>` elements without `sequence` are tried in order until one succeeds
 - Pod events: `ad:pod:start`, `ad:pod:end`, `ad:pod:adstart`, `ad:pod:adend`
@@ -14,6 +21,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 - `allowMultipleAds` enforcement in VMAP (when `false`, only first ad is played)
 - New exports: `classifyAds`, `playSingleAd`, `playPod`, `playWaterfall`, `selectMediaFile`
 - New types: `ClassifiedAds`, `PlayableAd`, `PodResult`, `PlaySingleAdOptions`, `SingleAdResult`
+- HTML examples: `index.html`, `vast-debug.html`, `without-ui.html`, `ad-pod.html`, `cdn-ads.html`, `cdn-all.html`, `cdn-individual.html`, `companion-ads.html`, `nonlinear-ads.html`, `ui-standalone.html`, `wrapper.html`
+
+### Changed
+- Svelte: `createVidePlayer()` returns `PlayerGetter` directly instead of `{ player }` object
+
+### Fixed
+- React context returns `Player | null` instead of throwing
+- CSS class name: `vide-ad-skip` → `vide-skip` to match theme.css
+- Svelte/Vue: cross-entry imports, CSS classes, child element structure
 
 ## [0.8.0] - 2026-02-28
 
