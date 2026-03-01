@@ -15,7 +15,10 @@ export function ErrorDisplay({ className }: ErrorDisplayProps) {
 	});
 
 	return (
-		<div role="alert" className={["vide-error", className].filter(Boolean).join(" ")}>
+		<div
+			role="alert"
+			className={["vide-error", className].filter(Boolean).join(" ")}
+		>
 			<span className="vide-error__message">{message}</span>
 		</div>
 	);

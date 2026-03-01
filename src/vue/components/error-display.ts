@@ -34,8 +34,10 @@ export const VideErrorDisplay = defineComponent({
 		});
 
 		return () =>
-			h("div", { class: cx("vide-error", attrs.class as string), role: "alert" }, [
-				h("span", { class: "vide-error__message" }, message.value),
-			]);
+			h(
+				"div",
+				{ class: cx("vide-error", attrs.class as string), role: "alert" },
+				[h("span", { class: "vide-error__message" }, message.value)],
+			);
 	},
 });

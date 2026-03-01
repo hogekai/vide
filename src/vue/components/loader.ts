@@ -11,7 +11,11 @@ export const VideLoader = defineComponent({
 		return () =>
 			h(
 				"div",
-				{ class: cx("vide-loader", attrs.class as string), role: "status", "aria-label": "Loading" },
+				{
+					class: cx("vide-loader", attrs.class as string),
+					role: "status",
+					"aria-label": "Loading",
+				},
 				[h("div", { class: "vide-loader__spinner" })],
 			);
 	},
