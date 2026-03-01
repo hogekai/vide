@@ -7,7 +7,8 @@ export default defineWorkspace([
     test: {
       name: "unit",
       environment: "jsdom",
-      exclude: ["tests/e2e/**", "tests/svelte/**", "node_modules/**"],
+      include: ["tests/**/*.test.{ts,js}"],
+      exclude: ["tests/e2e/**", "tests/svelte/**"],
       setupFiles: ["vitest.setup.ts"],
     },
   },
