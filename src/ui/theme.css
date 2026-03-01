@@ -681,8 +681,8 @@
 	transition: transform 0.25s var(--vide-ease), bottom 0.25s var(--vide-ease);
 }
 
-/* Push label/countdown above CTA when it's present */
-.vide-ui:has(.vide-ad-cta) .vide-ad-label {
+/* Push label/countdown above CTA when it's visible */
+.vide-ui:has(.vide-ad-cta:not([hidden])) .vide-ad-label {
 	bottom: calc(var(--vide-controls-height) + var(--vide-ad-overlay-gap) + 52px);
 }
 
@@ -712,7 +712,7 @@
 	transition: transform 0.25s var(--vide-ease), bottom 0.25s var(--vide-ease);
 }
 
-.vide-ui:has(.vide-ad-cta) .vide-ad-countdown {
+.vide-ui:has(.vide-ad-cta:not([hidden])) .vide-ad-countdown {
 	bottom: calc(var(--vide-controls-height) + var(--vide-ad-overlay-gap) + 52px);
 }
 
@@ -929,12 +929,12 @@
 
 	/* Label/countdown → bottom-left (above controls, CTA moves to top) */
 	.vide-ad-label,
-	.vide-ui:has(.vide-ad-cta) .vide-ad-label {
+	.vide-ui:has(.vide-ad-cta:not([hidden])) .vide-ad-label {
 		bottom: calc(var(--vide-controls-height) + var(--vide-ad-overlay-gap));
 	}
 
 	.vide-ad-countdown,
-	.vide-ui:has(.vide-ad-cta) .vide-ad-countdown {
+	.vide-ui:has(.vide-ad-cta:not([hidden])) .vide-ad-countdown {
 		bottom: calc(var(--vide-controls-height) + var(--vide-ad-overlay-gap));
 	}
 

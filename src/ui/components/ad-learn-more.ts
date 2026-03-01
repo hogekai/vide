@@ -33,7 +33,7 @@ export function createAdLearnMore(adState: AdUIStateRef): UIComponent {
 		const url = state?.clickThrough;
 
 		// Hide entirely when no clickThrough
-		root.style.display = url ? "" : "none";
+		root.hidden = !url;
 
 		if (titleEl) {
 			titleEl.textContent = state?.adTitle ?? "";
@@ -66,7 +66,7 @@ export function createAdLearnMore(adState: AdUIStateRef): UIComponent {
 			container.appendChild(root);
 
 			// Hidden by default until ad state arrives
-			root.style.display = "none";
+			root.hidden = true;
 		},
 		connect(p: Player): void {
 			player = p;
