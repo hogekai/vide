@@ -8,6 +8,7 @@ export function createProgress(): UIComponent {
 	let bar: HTMLDivElement | null = null;
 	let buffered: HTMLDivElement | null = null;
 	let handle: HTMLDivElement | null = null;
+	let uiRoot: HTMLElement | null = null;
 	let player: Player | null = null;
 	let dragging = false;
 
@@ -20,7 +21,9 @@ export function createProgress(): UIComponent {
 
 	function updateBar(ratio: number): void {
 		if (!root) return;
-		root.style.setProperty("--vide-progress", String(ratio));
+		const v = String(ratio);
+		root.style.setProperty("--vide-progress", v);
+		uiRoot?.style.setProperty("--vide-progress", v);
 	}
 
 	function updateBuffered(): void {
@@ -102,6 +105,7 @@ export function createProgress(): UIComponent {
 			root.appendChild(bar);
 			root.appendChild(handle);
 			container.appendChild(root);
+			uiRoot = container.closest(".vide-ui") as HTMLElement | null;
 		},
 		connect(p: Player): void {
 			player = p;
@@ -128,6 +132,7 @@ export function createProgress(): UIComponent {
 				player.off("statechange", onStateChange);
 				player = null;
 			}
+			uiRoot = null;
 		},
 	};
 }

@@ -57,7 +57,7 @@ describe("createAdCountdown", () => {
 		player.emit("timeupdate", { currentTime: 10, duration: 30 });
 
 		const root = container.querySelector(".vide-ad-countdown") as Element;
-		expect(root.textContent).toBe("Ad \u00b7 20s");
+		expect(root.textContent).toBe("20s");
 		comp.destroy();
 	});
 
@@ -79,7 +79,7 @@ describe("createAdCountdown", () => {
 		player.emit("timeupdate", { currentTime: 5, duration: 20 });
 
 		const root = container.querySelector(".vide-ad-countdown") as Element;
-		expect(root.textContent).toBe("Ad \u00b7 15s");
+		expect(root.textContent).toBe("15s");
 		comp.destroy();
 	});
 

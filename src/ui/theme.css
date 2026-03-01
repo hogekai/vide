@@ -62,10 +62,10 @@
 	--vide-ad-overlay-gap: 12px;
 
 	/* ── Skip ── */
-	--vide-skip-bg: rgba(24, 24, 28, 0.85);
+	--vide-skip-bg: rgba(24, 24, 28, 0.5);
 	--vide-skip-border: rgba(255, 255, 255, 0.22);
 	--vide-skip-color: #fff;
-	--vide-skip-padding-y: 10px;
+	--vide-skip-padding-y: 7px;
 	--vide-skip-padding-x: 16px;
 	--vide-skip-font-size: 14px;
 	--vide-skip-gap: 6px;
@@ -91,6 +91,7 @@
 	outline: none;
 	overflow: hidden;
 	box-sizing: border-box;
+	container-type: inline-size;
 }
 
 .vide-ui:fullscreen {
@@ -104,6 +105,36 @@
 .vide-ui *::before,
 .vide-ui *::after {
 	box-sizing: border-box;
+}
+
+/* ── Mini progress bar (always visible at bottom) ── */
+
+.vide-ui::after {
+	content: "";
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	height: 2px;
+	background: var(--vide-accent);
+	transform: scaleX(var(--vide-progress, 0));
+	transform-origin: left;
+	z-index: 3;
+	opacity: 0;
+	transition: opacity 0.3s var(--vide-ease);
+	pointer-events: none;
+}
+
+.vide-ui--autohide::after,
+.vide-ui--playing:not(:hover)::after,
+.vide-ui--ad-playing:not(:hover)::after {
+	opacity: 1;
+}
+
+.vide-ui--ad-loading::after,
+.vide-ui--ad-playing::after,
+.vide-ui--ad-paused::after {
+	background: var(--vide-accent-ad);
 }
 
 /* ═══════════════════════════════════════════
@@ -121,6 +152,18 @@
 
 .vide-ui--autohide .vide-bigplay {
 	display: none;
+}
+
+/* Slide ad elements down when controls fade out */
+.vide-ui--autohide .vide-skip,
+.vide-ui--autohide .vide-ad-cta,
+.vide-ui--autohide .vide-ad-label,
+.vide-ui--autohide .vide-ad-countdown,
+.vide-ui--ad-playing:not(:hover) .vide-skip,
+.vide-ui--ad-playing:not(:hover) .vide-ad-cta,
+.vide-ui--ad-playing:not(:hover) .vide-ad-label,
+.vide-ui--ad-playing:not(:hover) .vide-ad-countdown {
+	transform: translateY(calc(var(--vide-controls-height) - 12px));
 }
 
 /* ═══════════════════════════════════════════
@@ -153,7 +196,8 @@
 .vide-ui:hover .vide-controls,
 .vide-ui--paused .vide-controls,
 .vide-ui--ready .vide-controls,
-.vide-ui--ended .vide-controls {
+.vide-ui--ended .vide-controls,
+.vide-ui--ad-paused .vide-controls {
 	opacity: 1;
 	pointer-events: auto;
 }
@@ -619,73 +663,53 @@
 
 .vide-ad-label {
 	position: absolute;
-	top: var(--vide-ad-overlay-gap);
-	left: var(--vide-ad-overlay-gap);
-	z-index: 4;
-
-	display: inline-flex;
-	align-items: stretch;
-	overflow: hidden;
-	margin: 0;
-
-	background: var(--vide-chip);
-	border-radius: var(--vide-radius-sm);
-	padding: var(--vide-ad-label-pad-y) var(--vide-ad-label-pad-x)
-		var(--vide-ad-label-pad-y) 0;
-
-	font-family: var(--vide-font);
-	font-size: var(--vide-font-size-sm);
-	font-weight: 600;
-	letter-spacing: 0.03em;
-	line-height: var(--vide-line-height);
-	color: var(--vide-text);
-	gap: 7px;
-}
-
-/* Yellow left stripe */
-.vide-ad-label::before {
-	content: "";
-	display: block;
-	width: var(--vide-ad-label-stripe);
-	min-height: 100%;
-	margin: 0;
-	padding: 0;
-	background: var(--vide-accent-ad);
-	flex-shrink: 0;
-}
-
-/* ─────────────────────────────────────────
-   Ad Countdown
-   Stacked below label. Same chip language.
-   ───────────────────────────────────────── */
-
-.vide-ad-countdown {
-	position: absolute;
-	top: calc(var(--vide-ad-overlay-gap) + 30px);
+	bottom: calc(var(--vide-controls-height) + var(--vide-ad-overlay-gap) + 52px);
 	left: var(--vide-ad-overlay-gap);
 	z-index: 4;
 
 	display: inline-flex;
 	align-items: center;
-	gap: 4px;
 	margin: 0;
 
-	background: var(--vide-chip-light);
-	border-radius: var(--vide-radius-sm);
-	padding: 5px 9px;
+	font-family: var(--vide-font);
+	font-size: var(--vide-font-size-xs);
+	font-weight: 500;
+	letter-spacing: 0.03em;
+	line-height: var(--vide-line-height);
+	color: var(--vide-text-dim);
+	text-shadow: 0 0 3px rgba(0, 0, 0, 0.6);
+	transition: transform 0.25s var(--vide-ease);
+}
+
+/* ─────────────────────────────────────────
+   Ad Countdown
+   Inline next to label with separator.
+   ───────────────────────────────────────── */
+
+.vide-ad-countdown {
+	position: absolute;
+	bottom: calc(var(--vide-controls-height) + var(--vide-ad-overlay-gap) + 52px);
+	left: calc(var(--vide-ad-overlay-gap) + 28px);
+	z-index: 4;
+
+	display: inline-flex;
+	align-items: center;
+	margin: 0;
 
 	font-family: var(--vide-font-mono);
-	font-size: var(--vide-font-size-sm);
+	font-size: var(--vide-font-size-xs);
 	font-weight: 400;
 	line-height: var(--vide-line-height);
 	color: var(--vide-text-dim);
+	text-shadow: 0 0 3px rgba(0, 0, 0, 0.6);
 	font-variant-numeric: tabular-nums;
 	white-space: nowrap;
+	transition: transform 0.25s var(--vide-ease);
 }
 
-.vide-ad-countdown strong {
-	color: var(--vide-text);
-	font-weight: 600;
+.vide-ad-countdown::before {
+	content: "\00b7";
+	margin-right: 5px;
 }
 
 /* ─────────────────────────────────────────
@@ -706,10 +730,10 @@
 	border: 1px solid var(--vide-skip-border);
 	background: var(--vide-skip-bg);
 	color: var(--vide-skip-color);
-	border-radius: var(--vide-radius-sm);
+	border-radius: 999px;
 
 	padding: var(--vide-skip-padding-y) var(--vide-skip-padding-x);
-	min-height: 40px;
+	min-height: 36px;
 	min-width: 0;
 
 	font-family: var(--vide-font);
@@ -725,7 +749,7 @@
 	gap: var(--vide-skip-gap);
 
 	transition: background var(--vide-duration-fast), border-color
-		var(--vide-duration-fast);
+		var(--vide-duration-fast), transform 0.25s var(--vide-ease);
 }
 
 .vide-skip svg {
@@ -740,7 +764,7 @@
 }
 
 .vide-skip:hover {
-	background: rgba(60, 60, 68, 0.95);
+	background: rgba(40, 40, 46, 0.8);
 	border-color: rgba(255, 255, 255, 0.48);
 }
 
@@ -776,7 +800,7 @@
 	gap: 8px;
 	margin: 0;
 
-	background: var(--vide-chip);
+	background: rgba(0, 0, 0, 0.7);
 	border: 1px solid rgba(255, 255, 255, 0.06);
 	border-radius: var(--vide-radius);
 	padding: 8px 12px;
@@ -786,10 +810,12 @@
 	text-decoration: none;
 	color: var(--vide-text);
 
-	transition: border-color var(--vide-duration-fast);
+	transition: background var(--vide-duration-fast), border-color var(--vide-duration-fast),
+		transform 0.25s var(--vide-ease);
 }
 
 .vide-ad-cta:hover {
+	background: rgba(0, 0, 0, 0.85);
 	border-color: rgba(255, 255, 255, 0.14);
 }
 
@@ -823,6 +849,8 @@
 	margin: 0;
 	padding: 0;
 	text-align: left;
+	min-width: 0;
+	overflow: hidden;
 }
 
 .vide-ad-cta__title {
@@ -833,6 +861,9 @@
 	font-weight: 500;
 	line-height: 1.3;
 	color: var(--vide-text);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 
 .vide-ad-cta__url {
@@ -843,6 +874,9 @@
 	font-weight: 400;
 	line-height: 1.2;
 	color: var(--vide-text-dim);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 
 /* ── Ad progress accent ── */
@@ -869,4 +903,54 @@
 .vide-ui--ad-playing .vide-progress__buffered,
 .vide-ui--ad-paused .vide-progress__buffered {
 	opacity: 0.25;
+}
+
+/* ═══════════════════════════════════════════
+   RESPONSIVE — small player (<480px)
+   ═══════════════════════════════════════════ */
+
+@container (max-width: 480px) {
+	/* Learn More → top-left */
+	.vide-ad-cta {
+		top: var(--vide-ad-overlay-gap);
+		bottom: auto;
+		left: var(--vide-ad-overlay-gap);
+		max-width: 60%;
+	}
+
+	/* Label/countdown → bottom-left (above controls) */
+	.vide-ad-label {
+		bottom: calc(var(--vide-controls-height) + var(--vide-ad-overlay-gap));
+	}
+
+	.vide-ad-countdown {
+		bottom: calc(var(--vide-controls-height) + var(--vide-ad-overlay-gap));
+	}
+
+	/* Skip → stays bottom-right, smaller */
+	.vide-skip {
+		padding: 5px 12px;
+		min-height: 32px;
+		font-size: 12px;
+	}
+
+	.vide-skip svg {
+		width: 14px;
+		height: 14px;
+		min-width: 14px;
+		min-height: 14px;
+	}
+
+	/* Disable slide-down for top-positioned CTA */
+	.vide-ui--ad-playing:not(:hover) .vide-ad-cta {
+		transform: none;
+	}
+}
+
+/* Non-fullscreen: slightly smaller skip */
+@container (max-width: 800px) {
+	.vide-skip {
+		padding: var(--vide-skip-padding-y) 14px;
+		font-size: 13px;
+	}
 }

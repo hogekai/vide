@@ -7,26 +7,26 @@ function makeVideo(): HTMLVideoElement {
 }
 
 describe("ui() include option", () => {
-	it("ad-learn-more excluded by default", () => {
+	it("ad-overlay excluded by default", () => {
 		const el = makeVideo();
 		const player = createPlayer(el);
 		const container = document.createElement("div");
 
 		player.use(ui({ container }));
 		const root = container.querySelector(".vide-ui") as Element;
-		expect(root.querySelector(".vide-ad-cta")).toBeNull();
+		expect(root.querySelector(".vide-ad-overlay")).toBeNull();
 
 		player.destroy();
 	});
 
-	it("ad-learn-more included with include option", () => {
+	it("ad-overlay included with include option", () => {
 		const el = makeVideo();
 		const player = createPlayer(el);
 		const container = document.createElement("div");
 
-		player.use(ui({ container, include: ["ad-learn-more"] }));
+		player.use(ui({ container, include: ["ad-overlay"] }));
 		const root = container.querySelector(".vide-ui") as Element;
-		expect(root.querySelector(".vide-ad-cta")).not.toBeNull();
+		expect(root.querySelector(".vide-ad-overlay")).not.toBeNull();
 
 		player.destroy();
 	});
@@ -39,12 +39,12 @@ describe("ui() include option", () => {
 		player.use(
 			ui({
 				container,
-				include: ["ad-learn-more"],
-				exclude: ["ad-learn-more"],
+				include: ["ad-overlay"],
+				exclude: ["ad-overlay"],
 			}),
 		);
 		const root = container.querySelector(".vide-ui") as Element;
-		expect(root.querySelector(".vide-ad-cta")).toBeNull();
+		expect(root.querySelector(".vide-ad-overlay")).toBeNull();
 
 		player.destroy();
 	});

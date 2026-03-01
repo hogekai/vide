@@ -39,7 +39,7 @@ describe("ui() convenience plugin", () => {
 
 		// Ad
 		expect(root.querySelector(".vide-ad")).not.toBeNull();
-		expect(root.querySelector(".vide-ad-overlay")).not.toBeNull();
+		expect(root.querySelector(".vide-ad-cta")).not.toBeNull();
 		expect(root.querySelector(".vide-ad-label")).not.toBeNull();
 		expect(root.querySelector(".vide-ad-countdown")).not.toBeNull();
 		expect(root.querySelector(".vide-skip")).not.toBeNull();
@@ -155,7 +155,7 @@ describe("ui() convenience plugin", () => {
 		expect(controls?.querySelector(".vide-play")).not.toBeNull();
 
 		// Ad components are inside ad container
-		expect(ad?.querySelector(".vide-ad-overlay")).not.toBeNull();
+		expect(ad?.querySelector(".vide-ad-cta")).not.toBeNull();
 		expect(ad?.querySelector(".vide-skip")).not.toBeNull();
 
 		player.destroy();

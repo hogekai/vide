@@ -123,10 +123,10 @@ player.use(vast({
 
 ### Include Option
 
-The `ad-learn-more` CTA button is off by default. Enable it with the `include` option:
+The `ad-overlay` full-area click-through overlay is off by default. Enable it with the `include` option:
 
 ```ts
-const uiPlugin = ui({ container: el, include: ["ad-learn-more"] });
+const uiPlugin = ui({ container: el, include: ["ad-overlay"] });
 ```
 
 ### Framework Ad Components

@@ -32,7 +32,7 @@ player.use(ui({ container: document.getElementById("player-container")! }));
 
 `play`, `progress`, `time`, `volume`, `fullscreen`, `loader`, `error`, `bigplay`, `poster`, `keyboard`, `clickplay`, `autohide`, `ad-countdown`, `ad-skip`, `ad-overlay`, `ad-label`, `ad-learn-more`
 
-The `ad-learn-more` component is off by default and needs `include: ["ad-learn-more"]` to enable.
+The `ad-overlay` component is off by default and needs `include: ["ad-overlay"]` to enable.
 
 ```ts
 player.use(ui({
@@ -60,9 +60,9 @@ player.use(ui({
 | `autohide` | Auto-hide controls after inactivity |
 | `ad-countdown` | Ad remaining time countdown |
 | `ad-skip` | Skip ad button (after skipOffset) |
-| `ad-overlay` | Ad click-through overlay |
+| `ad-overlay` | Ad click-through overlay (opt-in, default off) |
 | `ad-label` | "Ad" label during ad playback |
-| `ad-learn-more` | CTA "Learn More" button (opt-in, default off) |
+| `ad-learn-more` | CTA "Learn More" button |
 
 ## Standalone Components
 
@@ -109,8 +109,8 @@ player.use(vast({
 ```
 
 ```ts
-// Enable the "Learn More" CTA button (off by default)
-const uiPlugin = ui({ container: el, include: ["ad-learn-more"] });
+// Enable the full-area ad overlay (off by default)
+const uiPlugin = ui({ container: el, include: ["ad-overlay"] });
 ```
 
 ## Styling

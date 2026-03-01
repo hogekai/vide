@@ -15,7 +15,7 @@ export function createAdCountdown(adState: AdUIStateRef): UIComponent {
 			(Number.isFinite(player.el.duration) ? player.el.duration : 0);
 		const current = player.el.currentTime;
 		const remaining = Math.max(0, Math.ceil(duration - current));
-		root.textContent = `Ad \u00b7 ${remaining}s`;
+		root.textContent = `${remaining}s`;
 	}
 
 	return {
