@@ -36,6 +36,8 @@ export const VideAdCountdown = defineComponent({
 				"div",
 				{
 					class: cx("vide-ad-countdown", attrs.class as string),
+					"aria-label": "Ad countdown",
+					"aria-live": "off",
 				},
 				props.format
 					? props.format(remaining.value)

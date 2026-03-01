@@ -8,6 +8,8 @@ export function createLoader(): UIComponent {
 	return {
 		mount(container: HTMLElement): void {
 			root = el("div", "vide-loader");
+			root.setAttribute("role", "status");
+			root.setAttribute("aria-label", "Loading");
 			const spinner = el("div", "vide-loader__spinner");
 			root.appendChild(spinner);
 			container.appendChild(root);

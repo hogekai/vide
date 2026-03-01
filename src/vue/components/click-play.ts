@@ -75,6 +75,7 @@ export const VideClickPlay = defineComponent({
 		return () =>
 			h("div", {
 				class: cx("vide-clickplay", attrs.class as string),
+				role: "presentation",
 				onClick,
 			});
 	},

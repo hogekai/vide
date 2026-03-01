@@ -14,6 +14,7 @@ export function createErrorDisplay(): UIComponent {
 	return {
 		mount(container: HTMLElement): void {
 			root = el("div", "vide-error");
+			root.setAttribute("role", "alert");
 			messageEl = el("span", "vide-error__message");
 			root.appendChild(messageEl);
 			container.appendChild(root);

@@ -13,6 +13,7 @@ describe("createErrorDisplay", () => {
 		comp.mount(container);
 		expect(container.querySelector(".vide-error")).not.toBeNull();
 		expect(container.querySelector(".vide-error__message")).not.toBeNull();
+		expect(container.querySelector(".vide-error")?.getAttribute("role")).toBe("alert");
 		comp.destroy();
 	});
 

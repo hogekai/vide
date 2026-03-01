@@ -29,9 +29,11 @@ export function createAdSkip(adState: AdUIStateRef): UIComponent {
 		const current = player.el.currentTime;
 		if (current >= skipOffset) {
 			button.classList.remove("vide-skip--disabled");
+			button.removeAttribute("aria-disabled");
 			label.textContent = "Skip Ad";
 		} else {
 			button.classList.add("vide-skip--disabled");
+			button.setAttribute("aria-disabled", "true");
 			const remaining = Math.max(0, Math.ceil(skipOffset - current));
 			label.textContent = `Skip in ${remaining}s`;
 		}
@@ -43,6 +45,7 @@ export function createAdSkip(adState: AdUIStateRef): UIComponent {
 		if (!isAdState(to)) {
 			button.style.display = "none";
 			button.classList.add("vide-skip--disabled");
+			button.setAttribute("aria-disabled", "true");
 			label.textContent = "";
 		}
 	}
@@ -52,6 +55,7 @@ export function createAdSkip(adState: AdUIStateRef): UIComponent {
 			button = el("button", "vide-skip vide-skip--disabled");
 			button.type = "button";
 			button.setAttribute("aria-label", "Skip ad");
+			button.setAttribute("aria-disabled", "true");
 			button.style.display = "none";
 			label = el("span", "vide-skip__label");
 			button.appendChild(label);

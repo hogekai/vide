@@ -6,8 +6,11 @@ describe("createLoader", () => {
 		const container = document.createElement("div");
 		const comp = createLoader();
 		comp.mount(container);
-		expect(container.querySelector(".vide-loader")).not.toBeNull();
+		const loader = container.querySelector(".vide-loader");
+		expect(loader).not.toBeNull();
 		expect(container.querySelector(".vide-loader__spinner")).not.toBeNull();
+		expect(loader?.getAttribute("role")).toBe("status");
+		expect(loader?.getAttribute("aria-label")).toBe("Loading");
 		comp.destroy();
 	});
 

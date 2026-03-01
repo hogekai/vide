@@ -31,7 +31,7 @@ $effect(() => {
 </script>
 
 {#if adState.active}
-	<div class={["vide-ad-countdown", className].filter(Boolean).join(" ")}>
+	<div aria-label="Ad countdown" aria-live="off" class={["vide-ad-countdown", className].filter(Boolean).join(" ")}>
 		{format ? format(remaining) : `Ad \u00b7 ${remaining}s`}
 	</div>
 {/if}

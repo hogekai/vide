@@ -21,6 +21,8 @@ export function createAdCountdown(adState: AdUIStateRef): UIComponent {
 	return {
 		mount(container: HTMLElement): void {
 			root = el("div", "vide-ad-countdown");
+			root.setAttribute("aria-label", "Ad countdown");
+			root.setAttribute("aria-live", "off");
 			container.appendChild(root);
 		},
 		connect(p: Player): void {

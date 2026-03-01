@@ -24,7 +24,7 @@ export function AdCountdown({ className, format }: AdCountdownProps) {
 	if (!player || !active) return null;
 
 	return (
-		<div className={["vide-ad-countdown", className].filter(Boolean).join(" ")}>
+		<div aria-label="Ad countdown" aria-live="off" className={["vide-ad-countdown", className].filter(Boolean).join(" ")}>
 			{format ? format(remaining) : `Ad \u00b7 ${remaining}s`}
 		</div>
 	);

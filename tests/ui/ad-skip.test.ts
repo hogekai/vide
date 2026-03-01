@@ -30,6 +30,7 @@ describe("createAdSkip", () => {
 		const btn = container.querySelector(".vide-skip") as HTMLElement;
 		expect(btn).not.toBeNull();
 		expect(btn.classList.contains("vide-skip--disabled")).toBe(true);
+		expect(btn.getAttribute("aria-disabled")).toBe("true");
 		expect(btn.style.display).toBe("none");
 		comp.destroy();
 	});
@@ -58,6 +59,7 @@ describe("createAdSkip", () => {
 		const btn = container.querySelector(".vide-skip") as Element;
 		expect(btn.textContent).toBe("Skip in 3s");
 		expect(btn.classList.contains("vide-skip--disabled")).toBe(true);
+		expect(btn.getAttribute("aria-disabled")).toBe("true");
 		comp.destroy();
 	});
 
@@ -85,6 +87,7 @@ describe("createAdSkip", () => {
 		const btn = container.querySelector(".vide-skip") as Element;
 		expect(btn.textContent).toBe("Skip Ad");
 		expect(btn.classList.contains("vide-skip--disabled")).toBe(false);
+		expect(btn.hasAttribute("aria-disabled")).toBe(false);
 		comp.destroy();
 	});
 

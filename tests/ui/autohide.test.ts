@@ -18,10 +18,13 @@ function setup() {
 	const player = createPlayer(videoEl);
 	const root = document.createElement("div");
 	root.className = "vide-ui";
+	const controls = document.createElement("div");
+	controls.className = "vide-controls";
+	root.appendChild(controls);
 	const comp = createAutohide();
 	comp.mount(root);
 	comp.connect(player);
-	return { videoEl, player, root, comp };
+	return { videoEl, player, root, controls, comp };
 }
 
 describe("createAutohide", () => {
@@ -34,21 +37,25 @@ describe("createAutohide", () => {
 	});
 
 	it("adds idle class after 3s of inactivity when playing", () => {
-		const { videoEl, root, comp } = setup();
+		const { videoEl, root, controls, comp } = setup();
 		driveToPlaying(videoEl);
 		expect(root.classList.contains("vide-ui--autohide")).toBe(false);
+		expect(controls.inert).toBe(false);
 		vi.advanceTimersByTime(3000);
 		expect(root.classList.contains("vide-ui--autohide")).toBe(true);
+		expect(controls.inert).toBe(true);
 		comp.destroy();
 	});
 
 	it("removes idle class on mousemove", () => {
-		const { videoEl, root, comp } = setup();
+		const { videoEl, root, controls, comp } = setup();
 		driveToPlaying(videoEl);
 		vi.advanceTimersByTime(3000);
 		expect(root.classList.contains("vide-ui--autohide")).toBe(true);
+		expect(controls.inert).toBe(true);
 		root.dispatchEvent(new MouseEvent("mousemove"));
 		expect(root.classList.contains("vide-ui--autohide")).toBe(false);
+		expect(controls.inert).toBe(false);
 		comp.destroy();
 	});
 

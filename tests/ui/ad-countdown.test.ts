@@ -27,7 +27,10 @@ describe("createAdCountdown", () => {
 		const container = document.createElement("div");
 		const comp = createAdCountdown(adState);
 		comp.mount(container);
-		expect(container.querySelector(".vide-ad-countdown")).not.toBeNull();
+		const countdown = container.querySelector(".vide-ad-countdown");
+		expect(countdown).not.toBeNull();
+		expect(countdown?.getAttribute("aria-label")).toBe("Ad countdown");
+		expect(countdown?.getAttribute("aria-live")).toBe("off");
 		comp.destroy();
 	});
 

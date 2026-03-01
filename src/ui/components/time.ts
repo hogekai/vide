@@ -19,6 +19,7 @@ export function createTimeDisplay(): UIComponent {
 	return {
 		mount(container: HTMLElement): void {
 			root = el("div", "vide-time");
+			root.setAttribute("aria-label", "Playback time");
 			currentEl = el("span", "vide-time__current");
 			const sep = el("span", "vide-time__separator");
 			durationEl = el("span", "vide-time__duration");

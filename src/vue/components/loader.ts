@@ -9,8 +9,10 @@ export const VideLoader = defineComponent({
 	inheritAttrs: false,
 	setup(_, { attrs }) {
 		return () =>
-			h("div", { class: cx("vide-loader", attrs.class as string) }, [
-				h("div", { class: "vide-loader__spinner" }),
-			]);
+			h(
+				"div",
+				{ class: cx("vide-loader", attrs.class as string), role: "status", "aria-label": "Loading" },
+				[h("div", { class: "vide-loader__spinner" })],
+			);
 	},
 });

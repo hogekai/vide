@@ -56,6 +56,7 @@ export function createClickPlay(excluded: Set<UIComponentName>): UIComponent {
 	return {
 		mount(container: HTMLElement): void {
 			root = el("div", "vide-clickplay");
+			root.setAttribute("role", "presentation");
 			fsTarget = container.closest(".vide-ui")?.parentElement ?? container;
 			container.appendChild(root);
 		},

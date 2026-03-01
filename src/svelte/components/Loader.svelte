@@ -6,6 +6,6 @@ interface Props {
 const { class: className }: Props = $props();
 </script>
 
-<div class={["vide-loader", className].filter(Boolean).join(" ")}>
+<div role="status" aria-label="Loading" class={["vide-loader", className].filter(Boolean).join(" ")}>
 	<div class="vide-loader__spinner"></div>
 </div>

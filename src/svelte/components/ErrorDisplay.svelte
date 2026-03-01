@@ -22,6 +22,6 @@ $effect(() => {
 });
 </script>
 
-<div class={["vide-error", className].filter(Boolean).join(" ")}>
+<div role="alert" class={["vide-error", className].filter(Boolean).join(" ")}>
 	<span class="vide-error__message">{message}</span>
 </div>

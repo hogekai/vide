@@ -138,6 +138,23 @@
 }
 
 /* ═══════════════════════════════════════════
+   FOCUS
+   ═══════════════════════════════════════════ */
+
+.vide-ui :focus-visible {
+	outline: 2px solid var(--vide-accent);
+	outline-offset: 2px;
+}
+
+.vide-bigplay:focus-visible {
+	outline-offset: 4px;
+}
+
+.vide-ui :focus:not(:focus-visible) {
+	outline: none;
+}
+
+/* ═══════════════════════════════════════════
    AUTOHIDE (mouse-idle during playback)
    ═══════════════════════════════════════════ */
 
@@ -963,5 +980,60 @@
 	.vide-skip {
 		padding: var(--vide-skip-padding-y) 14px;
 		font-size: 13px;
+	}
+}
+
+/* ═══════════════════════════════════════════
+   SCREEN READER ONLY
+   ═══════════════════════════════════════════ */
+
+.vide-sr-only {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+/* ═══════════════════════════════════════════
+   REDUCED MOTION
+   ═══════════════════════════════════════════ */
+
+@media (prefers-reduced-motion: reduce) {
+	.vide-loader__spinner {
+		animation-duration: 4s;
+	}
+
+	.vide-controls,
+	.vide-bigplay,
+	.vide-progress__bar,
+	.vide-progress__handle,
+	.vide-progress__buffered,
+	.vide-volume__slider,
+	.vide-skip,
+	.vide-ad-label,
+	.vide-ad-countdown,
+	.vide-ad-cta {
+		transition-duration: 0.01ms !important;
+	}
+}
+
+/* ═══════════════════════════════════════════
+   HIGH CONTRAST
+   ═══════════════════════════════════════════ */
+
+@media (prefers-contrast: more) {
+	:root {
+		--vide-text-mid: rgba(255, 255, 255, 0.9);
+		--vide-text-dim: rgba(255, 255, 255, 0.7);
+		--vide-skip-border: rgba(255, 255, 255, 0.5);
+	}
+
+	.vide-ui :focus-visible {
+		outline-width: 3px;
 	}
 }
