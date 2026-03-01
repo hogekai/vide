@@ -8,9 +8,30 @@ npm install @videts/vide vue
 
 ## Quick Start
 
+Core only — no UI, no plugins:
+
 ```vue
 <script setup>
-import { useVidePlayer, useHls, VideUI, VideVideo } from "@videts/vide/vue";
+import { useVidePlayer, VideVideo } from "@videts/vide/vue";
+
+const player = useVidePlayer();
+</script>
+
+<template>
+  <VideVideo src="video.mp4" />
+</template>
+```
+
+With headless UI components and HLS streaming:
+
+```vue
+<script setup>
+import {
+  useVidePlayer, useHls,
+  VideUI, VideVideo, VideControls, VidePlayButton, VideProgress,
+} from "@videts/vide/vue";
+// Optional — default theme. Omit to style from scratch.
+import "@videts/vide/ui/theme.css";
 
 const player = useVidePlayer();
 useHls(player);
@@ -19,6 +40,10 @@ useHls(player);
 <template>
   <VideUI>
     <VideVideo src="stream.m3u8" />
+    <VideControls>
+      <VidePlayButton />
+      <VideProgress />
+    </VideControls>
   </VideUI>
 </template>
 ```
@@ -350,22 +375,62 @@ const { active } = useAdState(player);
 | `useAutohide(containerRef, player)` | Auto-hide controls on inactivity |
 | `useKeyboard(containerRef, player)` | Keyboard shortcuts (space, arrows, etc.) |
 
-### Ad Plugins (OMID, SIMID)
+### Ad Plugins (OMID, SIMID, VPAID)
 
-`omid()` and `simid()` are ad-level plugins, not player-level. Pass them via the `adPlugins` option:
+`omid()`, `simid()`, and `vpaid()` are ad-level plugins, not player-level. Pass them via the `adPlugins` option:
 
 ```ts
 import { omid } from "@videts/vide/omid";
 import { simid } from "@videts/vide/simid";
+import { vpaid } from "@videts/vide/vpaid";
 
 useVast(player, {
   tagUrl: "https://...",
   adPlugins: (ad) => [
     omid({ partner: { name: "myapp", version: "1.0" } }),
-    simid({ container: containerRef.value! }),
+    vpaid({ container: adContainerRef.value! }),
+    simid({ container: adContainerRef.value! }),
   ],
 });
 ```
+
+### Ad Container {#ad-container}
+
+VPAID and SIMID render interactive content inside a `container` element that must overlay the player. When using the UI plugin, the container needs `z-index: 3` to sit above the UI's click overlay:
+
+```vue
+<script setup>
+import { ref } from "vue";
+import { useVidePlayer, useVast, VideUI, VideVideo, VideControls } from "@videts/vide/vue";
+import { vpaid } from "@videts/vide/vpaid";
+
+const player = useVidePlayer();
+const adContainerRef = ref<HTMLElement | null>(null);
+
+useVast(player, {
+  tagUrl: "https://...",
+  adPlugins: () => [
+    vpaid({ container: adContainerRef.value! }),
+  ],
+});
+</script>
+
+<template>
+  <div style="position: relative">
+    <VideUI>
+      <VideVideo src="video.mp4" />
+      <VideControls>...</VideControls>
+    </VideUI>
+    <div
+      ref="adContainerRef"
+      style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+             z-index: 3; pointer-events: none;"
+    />
+  </div>
+</template>
+```
+
+> The ad container children need `pointer-events: auto` — the VPAID/SIMID plugins set this on their slot elements automatically.
 
 ## Import Styles
 

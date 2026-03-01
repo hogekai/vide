@@ -8,8 +8,27 @@ npm install @videts/vide react react-dom
 
 ## Quick Start
 
+Core only — no UI, no plugins:
+
+```tsx
+import { useVidePlayer, Vide } from "@videts/vide/react";
+
+function Player() {
+  const player = useVidePlayer();
+
+  return (
+    <Vide.Root player={player}>
+      <Vide.Video src="video.mp4" />
+    </Vide.Root>
+  );
+}
+```
+
+With headless UI components and HLS streaming:
+
 ```tsx
 import { useVidePlayer, useHls, Vide } from "@videts/vide/react";
+// Optional — default theme. Omit to style from scratch.
 import "@videts/vide/ui/theme.css";
 
 function Player() {
@@ -295,22 +314,62 @@ return (
 );
 ```
 
-### Ad Plugins (OMID, SIMID)
+### Ad Plugins (OMID, SIMID, VPAID)
 
-`omid()` and `simid()` are ad-level plugins, not player-level. Pass them via the `adPlugins` option:
+`omid()`, `simid()`, and `vpaid()` are ad-level plugins, not player-level. Pass them via the `adPlugins` option:
 
 ```tsx
 import { omid } from "@videts/vide/omid";
 import { simid } from "@videts/vide/simid";
+import { vpaid } from "@videts/vide/vpaid";
 
 useVast(player, {
   tagUrl: "https://...",
   adPlugins: (ad) => [
     omid({ partner: { name: "myapp", version: "1.0" } }),
-    simid({ container: containerRef.current! }),
+    vpaid({ container: adContainerRef.current! }),
+    simid({ container: adContainerRef.current! }),
   ],
 });
 ```
+
+### Ad Container {#ad-container}
+
+VPAID and SIMID render interactive content inside a `container` element that must overlay the player. When using the UI plugin, the container needs `z-index: 3` to sit above the UI's click overlay:
+
+```tsx
+function Player() {
+  const player = useVidePlayer();
+  const adContainerRef = useRef<HTMLDivElement>(null);
+
+  useVast(player, {
+    tagUrl: "https://...",
+    adPlugins: () => [
+      vpaid({ container: adContainerRef.current! }),
+    ],
+  });
+
+  return (
+    <Vide.Root player={player}>
+      <Vide.UI>
+        <Vide.Video src="video.mp4" />
+        <Vide.Controls>...</Vide.Controls>
+      </Vide.UI>
+      <div
+        ref={adContainerRef}
+        style={{
+          position: "absolute",
+          top: 0, left: 0, width: "100%", height: "100%",
+          zIndex: 3,
+          pointerEvents: "none",
+        }}
+      />
+    </Vide.Root>
+  );
+}
+```
+
+> The ad container children need `pointer-events: auto` — the VPAID/SIMID plugins set this on their slot elements automatically.
 
 ### Custom Components
 

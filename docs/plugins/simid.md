@@ -7,8 +7,21 @@ SIMID 1.2 (Secure Interactive Media Interface Definition) for interactive ad cre
 SIMID is used as an AdPlugin within VAST:
 
 ```html
-<video src="video.mp4"></video>
-<div id="ad-container"></div>
+<style>
+  #player-container { position: relative; }
+  #ad-container {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    z-index: 3;
+    pointer-events: none;
+  }
+  #ad-container > * { pointer-events: auto; }
+</style>
+
+<div id="player-container">
+  <video src="video.mp4"></video>
+  <div id="ad-container"></div>
+</div>
 ```
 
 ```ts
@@ -24,6 +37,23 @@ player.use(vast({
   ],
 }));
 ```
+
+## Ad Container Setup {#ad-container-setup}
+
+The `container` element is where the SIMID creative iframe is rendered. It must overlay the player area with the following CSS requirements:
+
+| Property | Value | Why |
+|----------|-------|-----|
+| `position: absolute` | Cover the player area | Creative iframe renders inside this container |
+| `z-index: 3` | Above UI click overlay | The UI plugin's click-to-play overlay uses `z-index: 2` during ad states — the container must be higher |
+| `pointer-events: none` | On the container | Non-ad clicks pass through to the player/UI below |
+| `pointer-events: auto` | On children (`> *`) | The creative's interactive elements receive clicks |
+
+The parent element (`#player-container`) must have `position: relative` to establish the positioning context.
+
+::: warning Without the UI plugin
+If you're not using the UI plugin (no click-to-play overlay), `z-index` is not required — only `position: absolute` and the `pointer-events` setup matter.
+:::
 
 ## Options
 

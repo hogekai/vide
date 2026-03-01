@@ -35,6 +35,7 @@ export {
 } from "../ssai/index.js";
 export { omid } from "../omid/index.js";
 export { simid } from "../simid/index.js";
+export { vpaid } from "../vpaid/index.js";
 export {
 	ui,
 	createPlayButton,

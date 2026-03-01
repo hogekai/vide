@@ -231,6 +231,8 @@ function parseLinear(linearEl: Element): VastLinear {
 		? textContents(videoClicksEl, "ClickTracking")
 		: [];
 
+	const adParameters = textContent(linearEl, "AdParameters") || undefined;
+
 	return {
 		duration,
 		skipOffset,
@@ -239,6 +241,7 @@ function parseLinear(linearEl: Element): VastLinear {
 		trackingEvents,
 		clickThrough,
 		clickTracking,
+		adParameters,
 	};
 }
 
@@ -261,6 +264,7 @@ function parseMediaFiles(linearEl: Element): VastMediaFile[] {
 			height: safeInt(mf.getAttribute("height"), 0),
 			bitrate: safeInt(mf.getAttribute("bitrate"), undefined),
 			delivery: deliveryAttr === "streaming" ? "streaming" : "progressive",
+			apiFramework: mf.getAttribute("apiFramework") ?? undefined,
 		});
 	}
 

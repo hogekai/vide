@@ -229,9 +229,24 @@ player.use(vast({
 }));
 ```
 
+## Interactive Ads (VPAID)
+
+Add VPAID 2.0 interactive ad creatives:
+
+```ts
+import { vpaid } from "@videts/vide/vpaid";
+
+player.use(vast({
+  tagUrl: "https://example.com/vast.xml",
+  adPlugins: () => [
+    vpaid({ container: document.getElementById("ad-container")! }),
+  ],
+}));
+```
+
 ## Interactive Ads (SIMID)
 
-Add interactive creative overlays:
+Add SIMID interactive creative overlays:
 
 ```ts
 import { simid } from "@videts/vide/simid";
@@ -244,6 +259,32 @@ player.use(vast({
 }));
 ```
 
+## Ad Container Setup {#ad-container-setup}
+
+Both VPAID and SIMID render interactive content inside a `container` element. When using the UI plugin alongside these ad plugins, the container needs specific CSS to ensure the creative's interactive elements are clickable above the UI's overlay layers:
+
+```html
+<div id="player-container">
+  <video id="player" src="video.mp4"></video>
+  <div id="ad-container"></div>
+</div>
+```
+
+```css
+#player-container { position: relative; }
+#ad-container {
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  z-index: 3;            /* above UI's click overlay (z-index: 2) */
+  pointer-events: none;  /* let non-ad clicks pass through */
+}
+#ad-container > * {
+  pointer-events: auto;  /* ad content itself is interactive */
+}
+```
+
+In framework components, use a ref for the container element — see [React](/frameworks/react#ad-container), [Vue](/frameworks/vue#ad-container), or [Svelte](/frameworks/svelte#ad-container).
+
 ## Combining Everything
 
 ```ts
@@ -253,6 +294,7 @@ import { ui } from "@videts/vide/ui";
 import { vast } from "@videts/vide/vast";
 import { omid } from "@videts/vide/omid";
 import { simid } from "@videts/vide/simid";
+import { vpaid } from "@videts/vide/vpaid";
 import "@videts/vide/ui/theme.css";
 
 const player = createPlayer(document.querySelector("video")!);
@@ -266,6 +308,7 @@ player.use(vast({
   adPlugins: (ad) => [
     ...uiPlugin.getAdPlugin()(ad),
     omid({ partner: { name: "my-company", version: "1.0.0" } }),
+    vpaid({ container: adContainer }),
     simid({ container: adContainer }),
   ],
 }));

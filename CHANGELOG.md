@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+### Added
+- VPAID 2.0 plugin (`vide/vpaid`) for JavaScript-based interactive ad creatives
+- VAST parser: `apiFramework` on `VastMediaFile`, `adParameters` on `VastLinear`
+
 ## [0.9.7] - 2026-03-01
 
 ### Fixed

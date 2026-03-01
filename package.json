@@ -26,6 +26,10 @@
       "types": "./dist/simid/index.d.ts",
       "import": "./dist/simid/index.mjs"
     },
+    "./vpaid": {
+      "types": "./dist/vpaid/index.d.ts",
+      "import": "./dist/vpaid/index.mjs"
+    },
     "./hls": {
       "types": "./dist/hls/index.d.ts",
       "import": "./dist/hls/index.mjs"

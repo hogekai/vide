@@ -486,15 +486,15 @@ In React, Vue, and Svelte, the framework hooks (`useVidePlayer` / `createVidePla
 
 | video.js | Vide | Size |
 |----------|------|------|
-| VHS (built-in in 8.x) / `videojs-http-streaming` | `@videts/vide/hls` | 0.6 KB (+ hls.js) |
-| VHS (built-in in 8.x) / `videojs-contrib-dash` | `@videts/vide/dash` | 0.6 KB (+ dashjs) |
-| `videojs-contrib-eme` | `@videts/vide/drm` | 0.8 KB |
-| `videojs-contrib-ads` + `videojs-ima` | `@videts/vide/vast` | 1.5 KB |
-| — | `@videts/vide/vmap` | 2.6 KB |
-| — | `@videts/vide/ssai` | SSAI monitoring |
-| — | `@videts/vide/omid` | OM SDK viewability |
-| — | `@videts/vide/simid` | SIMID interactive ads |
-| Built-in | `@videts/vide/ui` | 5.3 KB + 3.5 KB CSS |
+| VHS (built-in in 8.x) / `videojs-http-streaming` | `@videts/vide/hls` | 1.3 KB (+ hls.js) |
+| VHS (built-in in 8.x) / `videojs-contrib-dash` | `@videts/vide/dash` | 1.3 KB (+ dashjs) |
+| `videojs-contrib-eme` | `@videts/vide/drm` | 1.6 KB |
+| `videojs-contrib-ads` + `videojs-ima` | `@videts/vide/vast` | 6.6 KB |
+| — | `@videts/vide/vmap` | 7.1 KB |
+| — | `@videts/vide/ssai` | 1.9 KB |
+| — | `@videts/vide/omid` | 1.7 KB |
+| — | `@videts/vide/simid` | 2.4 KB |
+| Built-in | `@videts/vide/ui` | 5.4 KB + 4.3 KB CSS |
 
 video.js bundles streaming, UI, and core into one package. Vide ships each as a separate entry point — import only what you use.
 
@@ -502,10 +502,10 @@ video.js bundles streaming, UI, and core into one package. Vide ships each as a 
 
 | | video.js 8.x | Vide (core + HLS + UI) |
 |-|-------------|------------------------|
-| JS | ~690 KB min (~200 KB gzip) | ~7 KB gzip |
-| CSS | ~30 KB min | 3.4 KB gzip |
+| JS | ~690 KB min (~200 KB gzip) | ~9.5 KB gzip |
+| CSS | ~30 KB min | 4.3 KB gzip |
 
-Core player alone is 1.7 KB gzip. Each plugin adds only what it needs.
+Core player alone is 2.8 KB gzip. Each plugin adds only what it needs.
 
 ## Migration Checklist
 

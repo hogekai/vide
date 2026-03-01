@@ -10,9 +10,28 @@ Requires Svelte 5 (runes).
 
 ## Quick Start
 
+Core only — no UI, no plugins:
+
 ```svelte
 <script>
-  import { createVidePlayer, useHls, VideUI, VideVideo } from "@videts/vide/svelte";
+  import { createVidePlayer, VideVideo } from "@videts/vide/svelte";
+
+  const player = createVidePlayer();
+</script>
+
+<VideVideo src="video.mp4" />
+```
+
+With headless UI components and HLS streaming:
+
+```svelte
+<script>
+  import {
+    createVidePlayer, useHls,
+    VideUI, VideVideo, VideControls, PlayButton, Progress,
+  } from "@videts/vide/svelte";
+  // Optional — default theme. Omit to style from scratch.
+  import "@videts/vide/ui/theme.css";
 
   const player = createVidePlayer();
   useHls(player);
@@ -20,6 +39,10 @@ Requires Svelte 5 (runes).
 
 <VideUI>
   <VideVideo src="stream.m3u8" />
+  <VideControls>
+    <PlayButton />
+    <Progress />
+  </VideControls>
 </VideUI>
 ```
 
@@ -349,22 +372,59 @@ Use `useAdState()` for components that react to ad playback.
 | `useAutohide(getContainer, getPlayer)` | Auto-hide controls on inactivity |
 | `useKeyboard(getContainer, getPlayer)` | Keyboard shortcuts (space, arrows, etc.) |
 
-### Ad Plugins (OMID, SIMID)
+### Ad Plugins (OMID, SIMID, VPAID)
 
-`omid()` and `simid()` are ad-level plugins, not player-level. Pass them via the `adPlugins` option:
+`omid()`, `simid()`, and `vpaid()` are ad-level plugins, not player-level. Pass them via the `adPlugins` option:
 
 ```ts
 import { omid } from "@videts/vide/omid";
 import { simid } from "@videts/vide/simid";
+import { vpaid } from "@videts/vide/vpaid";
 
 useVast(player, {
   tagUrl: "https://...",
   adPlugins: (ad) => [
     omid({ partner: { name: "myapp", version: "1.0" } }),
-    simid({ container: containerEl }),
+    vpaid({ container: adContainerEl }),
+    simid({ container: adContainerEl }),
   ],
 });
 ```
+
+### Ad Container {#ad-container}
+
+VPAID and SIMID render interactive content inside a `container` element that must overlay the player. When using the UI plugin, the container needs `z-index: 3` to sit above the UI's click overlay:
+
+```svelte
+<script>
+  import { createVidePlayer, useVast, VideUI, VideVideo, VideControls } from "@videts/vide/svelte";
+  import { vpaid } from "@videts/vide/vpaid";
+
+  const player = createVidePlayer();
+  let adContainerEl;
+
+  useVast(player, {
+    tagUrl: "https://...",
+    adPlugins: () => [
+      vpaid({ container: adContainerEl }),
+    ],
+  });
+</script>
+
+<div style="position: relative">
+  <VideUI>
+    <VideVideo src="video.mp4" />
+    <VideControls>...</VideControls>
+  </VideUI>
+  <div
+    bind:this={adContainerEl}
+    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+           z-index: 3; pointer-events: none;"
+  />
+</div>
+```
+
+> The ad container children need `pointer-events: auto` — the VPAID/SIMID plugins set this on their slot elements automatically.
 
 ## Import Styles
 

@@ -43,6 +43,7 @@ export default defineConfig({
 					{ text: "UI", link: "/plugins/ui" },
 					{ text: "OMID", link: "/plugins/omid" },
 					{ text: "SIMID", link: "/plugins/simid" },
+					{ text: "VPAID", link: "/plugins/vpaid" },
 				],
 			},
 			{

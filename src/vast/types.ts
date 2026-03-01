@@ -61,6 +61,7 @@ export interface VastLinear {
 	trackingEvents: VastTrackingEvents;
 	clickThrough?: string | undefined;
 	clickTracking: string[];
+	adParameters?: string | undefined;
 }
 
 export interface VastMediaFile {
@@ -70,6 +71,7 @@ export interface VastMediaFile {
 	height: number;
 	bitrate?: number | undefined;
 	delivery: "progressive" | "streaming";
+	apiFramework?: string | undefined;
 }
 
 export interface InteractiveCreativeFile {
