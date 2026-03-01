@@ -196,6 +196,117 @@ useHls(player);
 </template>
 ```
 
+### Custom Components
+
+Build your own player components using `useVideContext()` and `useVideEvent()`. All built-in components follow this same pattern.
+
+#### Basics
+
+`useVideContext()` returns `ShallowRef<Player | null>` from context. Must be inside a component tree where `useVidePlayer()` was called.
+
+```vue
+<script setup>
+import { ref } from "vue";
+import { useVideContext, useVideEvent } from "@videts/vide/vue";
+
+const player = useVideContext();
+const time = ref(0);
+
+useVideEvent(player, "timeupdate", ({ currentTime }) => {
+  time.value = currentTime;
+});
+</script>
+
+<template>
+  <span>{{ Math.floor(time) }}s</span>
+</template>
+```
+
+Use it inside `<VideVideo>` (or anywhere within the provider tree):
+
+```vue
+<VideVideo src="video.mp4">
+  <VidePlayButton />
+  <CurrentTime />
+</VideVideo>
+```
+
+#### Subscribing to State Changes
+
+```vue
+<script setup>
+import { ref } from "vue";
+import { useVideContext, useVideEvent } from "@videts/vide/vue";
+
+const player = useVideContext();
+const state = ref("idle");
+
+useVideEvent(player, "statechange", ({ to }) => {
+  state.value = to;
+});
+</script>
+
+<template>
+  <div class="my-state-badge">{{ state }}</div>
+</template>
+```
+
+#### Calling Player Methods
+
+Access `player.value` directly for actions. Guard with `if (!player.value)` since it's `null` before mount.
+
+```vue
+<script setup>
+import { useVideContext } from "@videts/vide/vue";
+
+const props = withDefaults(defineProps<{ seconds?: number }>(), {
+  seconds: 10,
+});
+
+const player = useVideContext();
+
+function onClick() {
+  const p = player.value;
+  if (!p) return;
+  p.currentTime = Math.min(
+    p.currentTime + props.seconds,
+    p.el.duration,
+  );
+}
+</script>
+
+<template>
+  <button @click="onClick">+{{ seconds }}s</button>
+</template>
+```
+
+#### Ad-Aware Components
+
+Use `useAdState()` for components that react to ad playback.
+
+```vue
+<script setup>
+import { useVideContext, useAdState } from "@videts/vide/vue";
+
+const player = useVideContext();
+const { active } = useAdState(player);
+</script>
+
+<template>
+  <div v-if="!active" class="my-overlay">...</div>
+</template>
+```
+
+#### Available Composables
+
+| Composable | Purpose |
+|------------|---------|
+| `useVideContext()` | Get `ShallowRef<Player \| null>` from context |
+| `useVideEvent(player, event, handler)` | Subscribe to player events with auto-cleanup |
+| `useAdState(player)` | Get `{ active: Ref<boolean>, meta: ShallowRef<AdMeta \| null> }` for ad state |
+| `useAutohide(containerRef, player)` | Auto-hide controls on inactivity |
+| `useKeyboard(containerRef, player)` | Keyboard shortcuts (space, arrows, etc.) |
+
 ### Ad Plugins (OMID, SIMID)
 
 `omid()` and `simid()` are ad-level plugins, not player-level. Pass them via the `adPlugins` option:

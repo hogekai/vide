@@ -201,6 +201,111 @@ Use functions when the plugin is always needed. Use components when you need con
 </button>
 ```
 
+### Custom Components
+
+Build your own player components using `useVideContext()` and `useVideEvent()`. All built-in components follow this same pattern.
+
+#### Basics
+
+`useVideContext()` returns a `PlayerGetter` (`() => Player | null`) from context. Must be inside a component tree where `createVidePlayer()` was called.
+
+```svelte
+<script>
+  import { useVideContext, useVideEvent } from "@videts/vide/svelte";
+
+  const player = useVideContext();
+  let time = $state(0);
+
+  useVideEvent(player, "timeupdate", ({ currentTime }) => {
+    time = currentTime;
+  });
+</script>
+
+<span>{Math.floor(time)}s</span>
+```
+
+Use it inside `<VideVideo>` (or anywhere within the provider tree):
+
+```svelte
+<VideVideo src="video.mp4">
+  <PlayButton />
+  <CurrentTime />
+</VideVideo>
+```
+
+#### Subscribing to State Changes
+
+```svelte
+<script>
+  import { useVideContext, useVideEvent } from "@videts/vide/svelte";
+
+  const player = useVideContext();
+  let state = $state("idle");
+
+  useVideEvent(player, "statechange", ({ to }) => {
+    state = to;
+  });
+</script>
+
+<div class="my-state-badge">{state}</div>
+```
+
+#### Calling Player Methods
+
+Call `player()` to access the player instance for actions. Guard with a null check since it returns `null` before mount.
+
+```svelte
+<script>
+  import { useVideContext } from "@videts/vide/svelte";
+
+  interface Props {
+    seconds?: number;
+  }
+
+  const { seconds = 10 }: Props = $props();
+
+  const player = useVideContext();
+
+  function onClick() {
+    const p = player();
+    if (!p) return;
+    p.currentTime = Math.min(
+      p.currentTime + seconds,
+      p.el.duration,
+    );
+  }
+</script>
+
+<button onclick={onClick}>+{seconds}s</button>
+```
+
+#### Ad-Aware Components
+
+Use `useAdState()` for components that react to ad playback.
+
+```svelte
+<script>
+  import { useVideContext, useAdState } from "@videts/vide/svelte";
+
+  const player = useVideContext();
+  const { active } = useAdState(player);
+</script>
+
+{#if !active}
+  <div class="my-overlay">...</div>
+{/if}
+```
+
+#### Available Functions
+
+| Function | Purpose |
+|----------|---------|
+| `useVideContext()` | Get `PlayerGetter` (`() => Player \| null`) from context |
+| `useVideEvent(getPlayer, event, handler)` | Subscribe to player events with auto-cleanup |
+| `useAdState(getPlayer)` | Get `{ active: boolean, meta: AdMeta \| null }` for ad state (reactive via runes) |
+| `useAutohide(getContainer, getPlayer)` | Auto-hide controls on inactivity |
+| `useKeyboard(getContainer, getPlayer)` | Keyboard shortcuts (space, arrows, etc.) |
+
 ### Ad Plugins (OMID, SIMID)
 
 `omid()` and `simid()` are ad-level plugins, not player-level. Pass them via the `adPlugins` option:
