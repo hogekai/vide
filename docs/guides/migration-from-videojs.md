@@ -2,7 +2,7 @@
 
 video.js has been the standard open-source video player for over a decade, powering countless production deployments. Vide takes a different approach — not better or worse, but optimized for a different set of priorities.
 
-Vide takes a different approach to video playback: instead of bundling everything into a monolithic core, it wraps the native `<video>` element with a typed event bus and state machine, and leaves everything else to explicit plugins. The result is a smaller, tree-shakeable player where you only load what you use.
+Instead of bundling everything into a monolithic core, Vide wraps the native `<video>` element with a typed event bus and state machine, and leaves everything else to explicit plugins. The result is a smaller, tree-shakeable player where you only load what you use.
 
 If you're coming from video.js 7.x or 8.x, this guide maps the APIs you already know to their Vide equivalents.
 

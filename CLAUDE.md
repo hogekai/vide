@@ -1,6 +1,6 @@
 # vide
 
-Lightweight video player library. Web standards first, zero config, explicit plugin opt-in.
+Lightweight video player library. Web standards first, explicit plugin opt-in.
 
 ## Philosophy
 
