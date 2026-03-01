@@ -81,7 +81,7 @@ if (player.state === "playing") { /* ... */ }
 | `player.one("event", fn)` | `player.once("event", fn)` | Renamed |
 | `player.off("event", fn)` | `player.off("event", fn)` | Same |
 | `player.trigger("custom")` | `player.emit("custom", data)` | Renamed, requires data argument |
-| `player.on("statechanged", fn)` | `player.on("statechange", fn)` | Different event name |
+| `component.on("statechanged", fn)` | `player.on("statechange", fn)` | video.js uses per-event (`play`, `pause`, etc.); Vide unifies via state machine |
 | `player.on("loadedmetadata", fn)` | `player.on("loadedmetadata", fn)` | Native events work with `on()` |
 
 Vide's `on()` handles both custom events (`statechange`, `error`, ad events) and native `<video>` events (`loadedmetadata`, `volumechange`, etc.). You can also use `player.addEventListener()` for native events — both work.
@@ -123,7 +123,7 @@ video.js 7+ includes VHS (Video.js HTTP Streaming) in core, which handles both H
 const player = videojs("my-video");
 player.src({ src: "stream.m3u8", type: "application/x-mpegURL" });
 
-// Quality levels (requires videojs-contrib-quality-levels)
+// Quality levels (built-in since 8.x via videojs-contrib-quality-levels)
 const levels = player.qualityLevels();
 levels.on("addqualitylevel", (event) => {
   console.log(event.qualityLevel);
@@ -340,7 +340,7 @@ A single design token controls all accent uses across the player:
 | `.vjs-ended` | `.vide-ui--ended` |
 | `.vjs-waiting` | `.vide-ui--buffering` |
 | `.vjs-error` | `.vide-ui--error` |
-| `.vjs-ad-playing` | `.vide-ui--ad-playing` |
+| `.vjs-ad-playing` (contrib-ads) | `.vide-ui--ad-playing` |
 
 See [UI Design Tokens](/plugins/ui#design-tokens) for the full reference.
 
@@ -488,9 +488,9 @@ video.js bundles streaming, UI, and core into one package. Vide ships each as a 
 
 ## Bundle Size
 
-| | video.js | Vide (core + HLS + UI) |
-|-|----------|------------------------|
-| JS | ~300 KB min | ~7 KB gzip |
+| | video.js 8.x | Vide (core + HLS + UI) |
+|-|-------------|------------------------|
+| JS | ~690 KB min (~200 KB gzip) | ~7 KB gzip |
 | CSS | ~30 KB min | 3.4 KB gzip |
 
 Core player alone is 1.7 KB gzip. Each plugin adds only what it needs.
