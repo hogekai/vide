@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from "vue";
+import { onBeforeUnmount, onMounted, ref } from "vue";
 
 const props = defineProps<{
-  vast?: boolean;
+	vast?: boolean;
 }>();
 
 const container = ref<HTMLDivElement>();
@@ -12,72 +12,76 @@ let observer: IntersectionObserver | null = null;
 let initialized = false;
 
 async function initPlayer() {
-  if (initialized || !video.value || !container.value) return;
-  initialized = true;
+	if (initialized || !video.value || !container.value) return;
+	initialized = true;
 
-  // Load theme.css from CDN
-  const linkId = "vide-theme-css";
-  if (!document.getElementById(linkId)) {
-    const link = document.createElement("link");
-    link.id = linkId;
-    link.rel = "stylesheet";
-    link.href = "https://esm.sh/@videts/vide@0.9/ui/theme.css";
-    document.head.appendChild(link);
-  }
+	// Load theme.css from CDN
+	const linkId = "vide-theme-css";
+	if (!document.getElementById(linkId)) {
+		const link = document.createElement("link");
+		link.id = linkId;
+		link.rel = "stylesheet";
+		link.href = "https://esm.sh/@videts/vide@0.9/ui/theme.css";
+		document.head.appendChild(link);
+	}
 
-  const imports: Promise<any>[] = [
-    import("https://esm.sh/@videts/vide@0.9"),
-    import("https://esm.sh/@videts/vide@0.9/hls"),
-    import("https://esm.sh/@videts/vide@0.9/ui"),
-  ];
-  if (props.vast) {
-    imports.push(import("https://esm.sh/@videts/vide@0.9/vast"));
-  }
+	const imports: Promise<any>[] = [
+		import("https://esm.sh/@videts/vide@0.9"),
+		import("https://esm.sh/@videts/vide@0.9/hls"),
+		import("https://esm.sh/@videts/vide@0.9/ui"),
+	];
+	if (props.vast) {
+		imports.push(import("https://esm.sh/@videts/vide@0.9/vast"));
+	}
 
-  const modules = await Promise.all(imports);
-  const { createPlayer } = modules[0];
-  const { hls } = modules[1];
-  const { ui } = modules[2];
+	const modules = await Promise.all(imports);
+	const { createPlayer } = modules[0];
+	const { hls } = modules[1];
+	const { ui } = modules[2];
 
-  player = createPlayer(video.value);
-  player.use(hls());
+	player = createPlayer(video.value);
+	player.use(hls());
 
-  const uiPlugin = ui({ container: container.value });
-  player.use(uiPlugin);
+	const uiPlugin = ui({ container: container.value });
+	player.use(uiPlugin);
 
-  if (props.vast && modules[3]) {
-    const { vast } = modules[3];
-    player.use(vast({
-      tagUrl: "https://pubads.g.doubleclick.net/gampad/ads?iu=/21775744923/external/single_preroll_skippable&sz=640x480&ciu_szs=300x250,728x90&gdfp_req=1&output=vast&unviewed_position_start=1&env=vp&impl=s&correlator=" + Date.now(),
-      adPlugins: uiPlugin.getAdPlugin(),
-    }));
-  }
+	if (props.vast && modules[3]) {
+		const { vast } = modules[3];
+		player.use(
+			vast({
+				tagUrl:
+					"https://pubads.g.doubleclick.net/gampad/ads?iu=/21775744923/external/single_preroll_skippable&sz=640x480&ciu_szs=300x250,728x90&gdfp_req=1&output=vast&unviewed_position_start=1&env=vp&impl=s&correlator=" +
+					Date.now(),
+				adPlugins: uiPlugin.getAdPlugin(),
+			}),
+		);
+	}
 
-  player.src = "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8";
+	player.src = "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8";
 }
 
 onMounted(() => {
-  if (!container.value) return;
+	if (!container.value) return;
 
-  observer = new IntersectionObserver(
-    (entries) => {
-      if (entries[0].isIntersecting) {
-        initPlayer();
-        observer?.disconnect();
-        observer = null;
-      }
-    },
-    { threshold: 0.25 },
-  );
-  observer.observe(container.value);
+	observer = new IntersectionObserver(
+		(entries) => {
+			if (entries[0].isIntersecting) {
+				initPlayer();
+				observer?.disconnect();
+				observer = null;
+			}
+		},
+		{ threshold: 0.25 },
+	);
+	observer.observe(container.value);
 });
 
 onBeforeUnmount(() => {
-  observer?.disconnect();
-  observer = null;
-  player?.destroy();
-  player = null;
-  initialized = false;
+	observer?.disconnect();
+	observer = null;
+	player?.destroy();
+	player = null;
+	initialized = false;
 });
 </script>
 

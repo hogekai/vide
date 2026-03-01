@@ -1,6 +1,6 @@
 import { resolve } from "node:path";
-import { defineConfig, type Options } from "tsup";
 import type { Plugin as EsbuildPlugin } from "esbuild";
+import { type Options, defineConfig } from "tsup";
 
 // ── ESM build (existing, unchanged) ──────────────────────────────
 const esmConfig: Options = {
@@ -22,7 +22,15 @@ const esmConfig: Options = {
 	},
 	onSuccess:
 		"mkdir -p dist/ui && cp src/ui/theme.css dist/ui/theme.css && cp src/ui/theme.css dist/vide.ui.css && for f in dist/index.mjs dist/*/index.mjs; do d=$(dirname $f); cp $f $d/index.js; done",
-	external: ["hls.js", "dashjs", "react", "react-dom", "react/jsx-runtime", "vue", "svelte"],
+	external: [
+		"hls.js",
+		"dashjs",
+		"react",
+		"react-dom",
+		"react/jsx-runtime",
+		"vue",
+		"svelte",
+	],
 	esbuildOptions(options) {
 		options.jsx = "automatic";
 	},

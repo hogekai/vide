@@ -64,9 +64,7 @@ export default defineConfig({
 			},
 		],
 
-		socialLinks: [
-			{ icon: "github", link: "https://github.com/hogekai/vide" },
-		],
+		socialLinks: [{ icon: "github", link: "https://github.com/hogekai/vide" }],
 
 		search: {
 			provider: "local",

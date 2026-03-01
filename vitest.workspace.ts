@@ -3,22 +3,22 @@ import { svelteTesting } from "@testing-library/svelte/vite";
 import { defineWorkspace } from "vitest/config";
 
 export default defineWorkspace([
-  {
-    test: {
-      name: "unit",
-      environment: "jsdom",
-      include: ["tests/**/*.test.{ts,js}"],
-      exclude: ["tests/e2e/**", "tests/svelte/**"],
-      setupFiles: ["vitest.setup.ts"],
-    },
-  },
-  {
-    plugins: [svelte({ hot: false }), svelteTesting({ autoCleanup: false })],
-    test: {
-      name: "svelte",
-      environment: "jsdom",
-      include: ["tests/svelte/**/*.test.ts"],
-      setupFiles: ["vitest.setup.svelte.ts"],
-    },
-  },
+	{
+		test: {
+			name: "unit",
+			environment: "jsdom",
+			include: ["tests/**/*.test.{ts,js}"],
+			exclude: ["tests/e2e/**", "tests/svelte/**"],
+			setupFiles: ["vitest.setup.ts"],
+		},
+	},
+	{
+		plugins: [svelte({ hot: false }), svelteTesting({ autoCleanup: false })],
+		test: {
+			name: "svelte",
+			environment: "jsdom",
+			include: ["tests/svelte/**/*.test.ts"],
+			setupFiles: ["vitest.setup.svelte.ts"],
+		},
+	},
 ]);
