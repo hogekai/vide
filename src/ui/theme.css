@@ -663,7 +663,7 @@
 
 .vide-ad-label {
 	position: absolute;
-	bottom: calc(var(--vide-controls-height) + var(--vide-ad-overlay-gap) + 52px);
+	bottom: calc(var(--vide-controls-height) + var(--vide-ad-overlay-gap));
 	left: var(--vide-ad-overlay-gap);
 	z-index: 4;
 
@@ -678,7 +678,12 @@
 	line-height: var(--vide-line-height);
 	color: var(--vide-text-dim);
 	text-shadow: 0 0 3px rgba(0, 0, 0, 0.6);
-	transition: transform 0.25s var(--vide-ease);
+	transition: transform 0.25s var(--vide-ease), bottom 0.25s var(--vide-ease);
+}
+
+/* Push label/countdown above CTA when it's present */
+.vide-ui:has(.vide-ad-cta) .vide-ad-label {
+	bottom: calc(var(--vide-controls-height) + var(--vide-ad-overlay-gap) + 52px);
 }
 
 /* ─────────────────────────────────────────
@@ -688,7 +693,7 @@
 
 .vide-ad-countdown {
 	position: absolute;
-	bottom: calc(var(--vide-controls-height) + var(--vide-ad-overlay-gap) + 52px);
+	bottom: calc(var(--vide-controls-height) + var(--vide-ad-overlay-gap));
 	left: calc(var(--vide-ad-overlay-gap) + 28px);
 	z-index: 4;
 
@@ -704,7 +709,11 @@
 	text-shadow: 0 0 3px rgba(0, 0, 0, 0.6);
 	font-variant-numeric: tabular-nums;
 	white-space: nowrap;
-	transition: transform 0.25s var(--vide-ease);
+	transition: transform 0.25s var(--vide-ease), bottom 0.25s var(--vide-ease);
+}
+
+.vide-ui:has(.vide-ad-cta) .vide-ad-countdown {
+	bottom: calc(var(--vide-controls-height) + var(--vide-ad-overlay-gap) + 52px);
 }
 
 .vide-ad-countdown::before {
@@ -918,12 +927,14 @@
 		max-width: 60%;
 	}
 
-	/* Label/countdown → bottom-left (above controls) */
-	.vide-ad-label {
+	/* Label/countdown → bottom-left (above controls, CTA moves to top) */
+	.vide-ad-label,
+	.vide-ui:has(.vide-ad-cta) .vide-ad-label {
 		bottom: calc(var(--vide-controls-height) + var(--vide-ad-overlay-gap));
 	}
 
-	.vide-ad-countdown {
+	.vide-ad-countdown,
+	.vide-ui:has(.vide-ad-cta) .vide-ad-countdown {
 		bottom: calc(var(--vide-controls-height) + var(--vide-ad-overlay-gap));
 	}
 

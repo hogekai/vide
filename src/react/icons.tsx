@@ -73,3 +73,11 @@ export function IconExternalLink() {
 		</svg>
 	);
 }
+
+export function IconSkipForward() {
+	return (
+		<svg {...defaults} aria-hidden="true">
+			<path d="M5 18l10-6L5 6v12zm12-12v12h2V6h-2z" />
+		</svg>
+	);
+}

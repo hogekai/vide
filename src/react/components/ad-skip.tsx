@@ -1,5 +1,6 @@
 import { type ReactNode, useCallback, useState } from "react";
 import { useVideContext } from "../context.js";
+import { IconSkipForward } from "../icons.js";
 import { useAdState } from "../use-ad-state.js";
 import { useVideEvent } from "../use-vide-event.js";
 
@@ -41,7 +42,14 @@ export function AdSkip({ className, children }: AdSkipProps) {
 			onClick={onClick}
 			disabled={!canSkip}
 		>
-			{canSkip ? (children ?? "Skip Ad") : `Skip in ${countdown}s`}
+			{children ?? (
+				<>
+					<span className="vide-skip__label">
+						{canSkip ? "Skip Ad" : `Skip in ${countdown}s`}
+					</span>
+					<IconSkipForward />
+				</>
+			)}
 		</button>
 	);
 }
