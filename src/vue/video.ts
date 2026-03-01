@@ -1,19 +1,10 @@
-import {
-	type SlotsType,
-	type VNode,
-	defineComponent,
-	h,
-	inject,
-	onMounted,
-	ref,
-} from "vue";
+import { defineComponent, h, inject, onMounted, ref } from "vue";
 import { VIDE_REGISTER_KEY } from "./context.js";
 
 export const VideVideo = defineComponent({
 	name: "VideVideo",
 	inheritAttrs: false,
-	slots: Object as SlotsType<{ default?: () => VNode[] }>,
-	setup(_, { attrs, slots, expose }) {
+	setup(_, { attrs, expose }) {
 		const videoRef = ref<HTMLVideoElement | null>(null);
 		const registerEl = inject(VIDE_REGISTER_KEY);
 
@@ -25,12 +16,6 @@ export const VideVideo = defineComponent({
 			}
 		});
 
-		return () => {
-			const { class: className, ...videoAttrs } = attrs;
-			return h("div", { class: className }, [
-				h("video", { ...videoAttrs, ref: videoRef }),
-				slots.default?.(),
-			]);
-		};
+		return () => h("video", { ...attrs, ref: videoRef });
 	},
 });

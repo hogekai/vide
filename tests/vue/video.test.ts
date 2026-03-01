@@ -11,7 +11,7 @@ import {
 import { VideVideo } from "../../src/vue/video.js";
 
 describe("VideVideo", () => {
-	it("renders a video element inside a wrapper div", () => {
+	it("renders a video element", () => {
 		const Parent = defineComponent({
 			setup() {
 				const player = shallowRef<Player | null>(null);
@@ -23,7 +23,6 @@ describe("VideVideo", () => {
 
 		const wrapper = mount(Parent);
 		expect(wrapper.find("video").exists()).toBe(true);
-		expect(wrapper.find("div").exists()).toBe(true);
 	});
 
 	it("passes HTML attributes to the video element", () => {
@@ -42,7 +41,7 @@ describe("VideVideo", () => {
 		expect(video.attributes("src")).toBe("video.mp4");
 	});
 
-	it("applies class to wrapper div, not video", () => {
+	it("applies class to the video element", () => {
 		const Parent = defineComponent({
 			setup() {
 				const player = shallowRef<Player | null>(null);
@@ -53,24 +52,7 @@ describe("VideVideo", () => {
 		});
 
 		const wrapper = mount(Parent);
-		expect(wrapper.find("div").classes()).toContain("my-player");
-	});
-
-	it("renders children in default slot", () => {
-		const Parent = defineComponent({
-			setup() {
-				const player = shallowRef<Player | null>(null);
-				provide(VIDE_PLAYER_KEY, player);
-				provide(VIDE_REGISTER_KEY, () => {});
-				return () =>
-					h(VideVideo, null, {
-						default: () => h("span", { "data-testid": "child" }, "hello"),
-					});
-			},
-		});
-
-		const wrapper = mount(Parent);
-		expect(wrapper.find("[data-testid='child']").text()).toBe("hello");
+		expect(wrapper.find("video").classes()).toContain("my-player");
 	});
 
 	it("calls registerEl on mount", () => {

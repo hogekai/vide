@@ -1,17 +1,15 @@
 <script lang="ts">
 import { getContext, onMount } from "svelte";
-import type { Snippet } from "svelte";
 import { type RegisterFn, VIDE_REGISTER_KEY } from "./context.js";
 import type { MediaElement } from "./helpers.js";
 
 interface Props {
 	src?: string;
 	class?: string;
-	children?: Snippet;
 	[key: string]: unknown;
 }
 
-const { class: className, children, ...videoAttrs }: Props = $props();
+const { ...videoAttrs }: Props = $props();
 let videoEl: HTMLVideoElement;
 
 const registerEl = getContext<RegisterFn>(VIDE_REGISTER_KEY);
@@ -23,9 +21,4 @@ onMount(() => {
 });
 </script>
 
-<div class={className}>
-	<video bind:this={videoEl} {...videoAttrs}></video>
-	{#if children}
-		{@render children()}
-	{/if}
-</div>
+<video bind:this={videoEl} {...videoAttrs}></video>

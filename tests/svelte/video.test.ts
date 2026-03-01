@@ -4,10 +4,9 @@ import type { Player } from "../../src/types.js";
 import VideoTestHost from "./VideoTestHost.svelte";
 
 describe("VideVideo", () => {
-	it("renders a video element inside a wrapper div", () => {
+	it("renders a video element", () => {
 		const { container } = render(VideoTestHost);
 		expect(container.querySelector("video")).not.toBeNull();
-		expect(container.querySelector("div")).not.toBeNull();
 	});
 
 	it("calls registerEl on mount", () => {

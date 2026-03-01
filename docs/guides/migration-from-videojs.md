@@ -423,7 +423,10 @@ onUnmounted(() => player?.dispose());
 **Vide in Vue** — composables handle lifecycle:
 ```vue
 <script setup lang="ts">
-import { useVidePlayer, useHls, VideVideo, VidePlayButton, VideProgress } from "@videts/vide/vue";
+import {
+  useVidePlayer, useHls,
+  VideUI, VideVideo, VideControls, VidePlayButton, VideProgress,
+} from "@videts/vide/vue";
 import "@videts/vide/ui/theme.css";
 
 const player = useVidePlayer();
@@ -431,10 +434,13 @@ useHls(player);
 </script>
 
 <template>
-  <VideVideo src="stream.m3u8">
-    <VidePlayButton />
-    <VideProgress />
-  </VideVideo>
+  <VideUI>
+    <VideVideo src="stream.m3u8" />
+    <VideControls>
+      <VidePlayButton />
+      <VideProgress />
+    </VideControls>
+  </VideUI>
 </template>
 ```
 
@@ -445,17 +451,23 @@ See the full [Vue guide](/frameworks/vue).
 **Vide in Svelte** — functions and components:
 ```svelte
 <script lang="ts">
-  import { createVidePlayer, useHls, VideVideo, PlayButton, Progress } from "@videts/vide/svelte";
+  import {
+    createVidePlayer, useHls,
+    VideUI, VideVideo, VideControls, PlayButton, Progress,
+  } from "@videts/vide/svelte";
   import "@videts/vide/ui/theme.css";
 
   const player = createVidePlayer();
   useHls(player);
 </script>
 
-<VideVideo src="stream.m3u8">
-  <PlayButton />
-  <Progress />
-</VideVideo>
+<VideUI>
+  <VideVideo src="stream.m3u8" />
+  <VideControls>
+    <PlayButton />
+    <Progress />
+  </VideControls>
+</VideUI>
 ```
 
 See the full [Svelte guide](/frameworks/svelte).

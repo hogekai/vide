@@ -12,13 +12,15 @@ Requires Svelte 5 (runes).
 
 ```svelte
 <script>
-  import { createVidePlayer, useHls, VideVideo } from "@videts/vide/svelte";
+  import { createVidePlayer, useHls, VideUI, VideVideo } from "@videts/vide/svelte";
 
   const player = createVidePlayer();
   useHls(player);
 </script>
 
-<VideVideo src="stream.m3u8" />
+<VideUI>
+  <VideVideo src="stream.m3u8" />
+</VideUI>
 ```
 
 ## Functions
@@ -72,27 +74,60 @@ useVideEvent(player, "ad:start", ({ adId }) => {
 
 ## Components
 
-### VideVideo
+### VideUI
 
-Renders a `<video>` element inside a wrapper `<div>` and connects to the player via `getContext`.
+Container `<section>` with class `vide-ui`. Wraps both the video element and controls. Manages player state classes (`vide-ui--playing`, `vide-ui--paused`, etc.) for theme.css integration.
 
 ```svelte
-<VideVideo src="video.mp4" class="rounded-lg">
-  <PlayButton />
-  <Progress />
-</VideVideo>
+<VideUI>
+  <VideVideo src="video.mp4" />
+  <VideControls>...</VideControls>
+</VideUI>
 ```
 
-- `class` is applied to the wrapper `<div>`.
-- All other attributes (`src`, `poster`, `muted`, `autoplay`, etc.) are passed to the `<video>` element.
-- Children are rendered alongside the video element via Svelte 5 snippets.
+- All standard HTML attributes are passed through.
+- `class` is appended after `vide-ui`.
+
+### VideVideo
+
+Renders a `<video>` element and connects to the player via `getContext`.
+
+```svelte
+<VideUI>
+  <VideVideo src="video.mp4" class="rounded-lg" />
+  <VideControls>
+    <PlayButton />
+    <Progress />
+  </VideControls>
+</VideUI>
+```
+
+- All attributes (`src`, `poster`, `muted`, `autoplay`, `class`, etc.) are passed to the `<video>` element.
+
+### VideControls
+
+Container `<div>` with class `vide-controls`. Renders only after the player is ready. Place UI components inside.
+
+```svelte
+<VideControls>
+  <PlayButton />
+  <Progress />
+  <TimeDisplay />
+  <Volume />
+  <FullscreenButton />
+</VideControls>
+```
+
+- All standard `<div>` HTML attributes are passed through.
+- `class` is appended after `vide-controls`.
 
 ### Plugin Components
 
 Render nothing. Use for conditional plugin activation with `{#if}`.
 
 ```svelte
-<VideVideo src="stream.m3u8">
+<VideUI>
+  <VideVideo src="stream.m3u8" />
   <HlsPlugin />
   {#if showAds}
     <VastPlugin tagUrl="https://..." />
@@ -100,7 +135,7 @@ Render nothing. Use for conditional plugin activation with `{#if}`.
   {#if premium}
     <SsaiPlugin />
   {/if}
-</VideVideo>
+</VideUI>
 ```
 
 Available: `HlsPlugin`, `DashPlugin`, `DrmPlugin`, `VastPlugin`, `VmapPlugin`, `SsaiPlugin`.
@@ -110,14 +145,17 @@ Available: `HlsPlugin`, `DashPlugin`, `DrmPlugin`, `VastPlugin`, `VmapPlugin`, `
 Interactive controls that subscribe to player events via context.
 
 ```svelte
-<VideVideo src="video.mp4">
-  <PlayButton class="rounded-full bg-white/80" />
-  <Progress class="h-1" />
-  <Volume class="w-24" />
-  <TimeDisplay />
-  <FullscreenButton />
-  <MuteButton />
-</VideVideo>
+<VideUI>
+  <VideVideo src="video.mp4" />
+  <VideControls>
+    <PlayButton class="rounded-full bg-white/80" />
+    <Progress class="h-1" />
+    <Volume class="w-24" />
+    <TimeDisplay />
+    <FullscreenButton />
+    <MuteButton />
+  </VideControls>
+</VideUI>
 ```
 
 | Component | Props | State Attributes |
@@ -188,13 +226,15 @@ Use functions when the plugin is always needed. Use components when you need con
 
 ```svelte
 <script>
-  import { createVidePlayer, useHls, VideVideo } from "@videts/vide/svelte";
+  import { createVidePlayer, useHls, VideUI, VideVideo } from "@videts/vide/svelte";
 
   const player = createVidePlayer();
   useHls(player);
 </script>
 
-<VideVideo src="video.mp4" />
+<VideUI>
+  <VideVideo src="video.mp4" />
+</VideUI>
 <button onclick={() => player()?.pause()}>Pause</button>
 <button onclick={() => { if (player()) player()!.currentTime = 0 }}>
   Restart
@@ -224,13 +264,16 @@ Build your own player components using `useVideContext()` and `useVideEvent()`. 
 <span>{Math.floor(time)}s</span>
 ```
 
-Use it inside `<VideVideo>` (or anywhere within the provider tree):
+Use it inside `<VideUI>` (or anywhere within the provider tree):
 
 ```svelte
-<VideVideo src="video.mp4">
-  <PlayButton />
-  <CurrentTime />
-</VideVideo>
+<VideUI>
+  <VideVideo src="video.mp4" />
+  <VideControls>
+    <PlayButton />
+    <CurrentTime />
+  </VideControls>
+</VideUI>
 ```
 
 #### Subscribing to State Changes
@@ -340,7 +383,8 @@ import {
 <script lang="ts">
   import {
     createVidePlayer, useHls, useVideEvent,
-    VideVideo, PlayButton, Progress,
+    VideUI, VideVideo, VideControls,
+    PlayButton, Progress,
     Volume, MuteButton, FullscreenButton,
     TimeDisplay, VastPlugin,
     AdOverlay, AdLabel, AdCountdown, AdSkip,
@@ -357,7 +401,8 @@ import {
 </script>
 
 <div class="relative aspect-video">
-  <VideVideo src="stream.m3u8" class="w-full">
+  <VideUI>
+    <VideVideo src="stream.m3u8" class="w-full" />
     {#if showAds}
       <VastPlugin tagUrl="https://..." />
     {/if}
@@ -368,13 +413,13 @@ import {
     <PlayButton class="absolute inset-0 flex items-center justify-center">
       ▶
     </PlayButton>
-    <div class="absolute bottom-0 left-0 right-0 flex items-center gap-2 p-2">
+    <VideControls>
       <Progress class="flex-1 h-1" />
       <TimeDisplay class="text-sm text-white" />
       <Volume class="w-20" />
       <MuteButton />
       <FullscreenButton />
-    </div>
-  </VideVideo>
+    </VideControls>
+  </VideUI>
 </div>
 ```

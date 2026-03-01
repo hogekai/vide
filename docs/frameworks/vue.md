@@ -10,14 +10,16 @@ npm install @videts/vide vue
 
 ```vue
 <script setup>
-import { useVidePlayer, useHls, VideVideo } from "@videts/vide/vue";
+import { useVidePlayer, useHls, VideUI, VideVideo } from "@videts/vide/vue";
 
 const player = useVidePlayer();
 useHls(player);
 </script>
 
 <template>
-  <VideVideo src="stream.m3u8" />
+  <VideUI>
+    <VideVideo src="stream.m3u8" />
+  </VideUI>
 </template>
 ```
 
@@ -71,31 +73,64 @@ useVideEvent(player, "ad:start", ({ adId }) => {
 
 ## Components
 
-### VideVideo
+### VideUI
 
-Renders a `<video>` element inside a wrapper `<div>` and connects to the player via `inject`.
+Container `<section>` with class `vide-ui`. Wraps both the video element and controls. Manages player state classes (`vide-ui--playing`, `vide-ui--paused`, etc.) for theme.css integration.
 
 ```vue
-<VideVideo src="video.mp4" class="rounded-lg">
-  <VidePlayButton />
-  <VideProgress />
-</VideVideo>
+<VideUI>
+  <VideVideo src="video.mp4" />
+  <VideControls>...</VideControls>
+</VideUI>
 ```
 
-- `class` is applied to the wrapper `<div>`.
-- All other attributes (`src`, `poster`, `muted`, `autoplay`, etc.) are passed to the `<video>` element.
-- Default slot renders alongside the video element.
+- All standard HTML attributes are passed through.
+- `class` is appended after `vide-ui`.
+
+### VideVideo
+
+Renders a `<video>` element and connects to the player via `inject`.
+
+```vue
+<VideUI>
+  <VideVideo src="video.mp4" class="rounded-lg" />
+  <VideControls>
+    <VidePlayButton />
+    <VideProgress />
+  </VideControls>
+</VideUI>
+```
+
+- All attributes (`src`, `poster`, `muted`, `autoplay`, `class`, etc.) are passed to the `<video>` element.
+
+### VideControls
+
+Container `<div>` with class `vide-controls`. Renders only after the player is ready. Place UI components inside.
+
+```vue
+<VideControls>
+  <VidePlayButton />
+  <VideProgress />
+  <VideTimeDisplay />
+  <VideVolume />
+  <VideFullscreenButton />
+</VideControls>
+```
+
+- All standard `<div>` HTML attributes are passed through.
+- `class` is appended after `vide-controls`.
 
 ### Plugin Components
 
 Render nothing. Use for conditional plugin activation with `v-if`.
 
 ```vue
-<VideVideo src="stream.m3u8">
+<VideUI>
+  <VideVideo src="stream.m3u8" />
   <VideHlsPlugin />
   <VideVastPlugin v-if="showAds" tag-url="https://..." />
   <VideSsaiPlugin v-if="premium" />
-</VideVideo>
+</VideUI>
 ```
 
 Available: `VideHlsPlugin`, `VideDashPlugin`, `VideDrmPlugin`, `VideVastPlugin`, `VideVmapPlugin`, `VideSsaiPlugin`.
@@ -105,14 +140,17 @@ Available: `VideHlsPlugin`, `VideDashPlugin`, `VideDrmPlugin`, `VideVastPlugin`,
 Interactive controls that subscribe to player events via context.
 
 ```vue
-<VideVideo src="video.mp4">
-  <VidePlayButton class="rounded-full bg-white/80" />
-  <VideProgress class="h-1" />
-  <VideVolume class="w-24" />
-  <VideTimeDisplay />
-  <VideFullscreenButton />
-  <VideMuteButton />
-</VideVideo>
+<VideUI>
+  <VideVideo src="video.mp4" />
+  <VideControls>
+    <VidePlayButton class="rounded-full bg-white/80" />
+    <VideProgress class="h-1" />
+    <VideVolume class="w-24" />
+    <VideTimeDisplay />
+    <VideFullscreenButton />
+    <VideMuteButton />
+  </VideControls>
+</VideUI>
 ```
 
 | Component | Props | State Attributes |
@@ -181,14 +219,16 @@ Use composables when the plugin is always needed. Use components when you need c
 
 ```vue
 <script setup>
-import { useVidePlayer, useHls, VideVideo } from "@videts/vide/vue";
+import { useVidePlayer, useHls, VideUI, VideVideo } from "@videts/vide/vue";
 
 const player = useVidePlayer();
 useHls(player);
 </script>
 
 <template>
-  <VideVideo src="video.mp4" />
+  <VideUI>
+    <VideVideo src="video.mp4" />
+  </VideUI>
   <button @click="player.value?.pause()">Pause</button>
   <button @click="() => { if (player.value) player.value.currentTime = 0 }">
     Restart
@@ -222,13 +262,16 @@ useVideEvent(player, "timeupdate", ({ currentTime }) => {
 </template>
 ```
 
-Use it inside `<VideVideo>` (or anywhere within the provider tree):
+Use it inside `<VideUI>` (or anywhere within the provider tree):
 
 ```vue
-<VideVideo src="video.mp4">
-  <VidePlayButton />
-  <CurrentTime />
-</VideVideo>
+<VideUI>
+  <VideVideo src="video.mp4" />
+  <VideControls>
+    <VidePlayButton />
+    <CurrentTime />
+  </VideControls>
+</VideUI>
 ```
 
 #### Subscribing to State Changes
@@ -341,7 +384,8 @@ import { VideVideo, VidePlayButton, useVidePlayer, useHls } from "@videts/vide/v
 <script setup lang="ts">
 import {
   useVidePlayer, useHls, useVideEvent,
-  VideVideo, VidePlayButton, VideProgress,
+  VideUI, VideVideo, VideControls,
+  VidePlayButton, VideProgress,
   VideVolume, VideMuteButton, VideFullscreenButton,
   VideTimeDisplay, VideVastPlugin,
   VideAdOverlay, VideAdLabel, VideAdCountdown, VideAdSkip,
@@ -360,7 +404,8 @@ useVideEvent(player, "statechange", ({ from, to }) => {
 
 <template>
   <div class="relative aspect-video">
-    <VideVideo src="stream.m3u8" class="w-full">
+    <VideUI>
+      <VideVideo src="stream.m3u8" class="w-full" />
       <VideVastPlugin v-if="showAds" tag-url="https://..." />
       <VideAdOverlay />
       <VideAdLabel />
@@ -369,14 +414,14 @@ useVideEvent(player, "statechange", ({ from, to }) => {
       <VidePlayButton class="absolute inset-0 flex items-center justify-center">
         ▶
       </VidePlayButton>
-      <div class="absolute bottom-0 left-0 right-0 flex items-center gap-2 p-2">
+      <VideControls>
         <VideProgress class="flex-1 h-1" />
         <VideTimeDisplay class="text-sm text-white" />
         <VideVolume class="w-20" />
         <VideMuteButton />
         <VideFullscreenButton />
-      </div>
-    </VideVideo>
+      </VideControls>
+    </VideUI>
   </div>
 </template>
 ```
