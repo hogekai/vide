@@ -31,7 +31,7 @@ describe("createAdLearnMore", () => {
 		const btn = container.querySelector(".vide-ad-cta") as HTMLElement;
 		expect(btn).not.toBeNull();
 		expect(btn.tagName).toBe("BUTTON");
-		expect(btn.style.display).toBe("none");
+		expect(btn.hidden).toBe(true);
 
 		comp.destroy();
 	});
@@ -57,7 +57,7 @@ describe("createAdLearnMore", () => {
 		player.emit("ad:start", { adId: "a1" });
 
 		const btn = container.querySelector(".vide-ad-cta") as HTMLElement;
-		expect(btn.style.display).not.toBe("none");
+		expect(btn.hidden).toBe(false);
 
 		comp.destroy();
 	});
@@ -83,7 +83,7 @@ describe("createAdLearnMore", () => {
 		player.emit("ad:start", { adId: "a1" });
 
 		const btn = container.querySelector(".vide-ad-cta") as HTMLElement;
-		expect(btn.style.display).toBe("none");
+		expect(btn.hidden).toBe(true);
 
 		comp.destroy();
 	});
@@ -229,13 +229,13 @@ describe("createAdLearnMore", () => {
 		player.emit("ad:start", { adId: "a1" });
 
 		const btn = container.querySelector(".vide-ad-cta") as HTMLElement;
-		expect(btn.style.display).not.toBe("none");
+		expect(btn.hidden).toBe(false);
 
 		// Clear ad state and emit ad:end
 		adState.clear();
 		player.emit("ad:end", { adId: "a1" });
 
-		expect(btn.style.display).toBe("none");
+		expect(btn.hidden).toBe(true);
 
 		comp.destroy();
 	});

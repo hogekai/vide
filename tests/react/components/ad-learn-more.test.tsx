@@ -57,7 +57,7 @@ describe("AdLearnMore", () => {
 		player.destroy();
 	});
 
-	it("shows 'Learn More' as default text", () => {
+	it("shows hostname in default content", () => {
 		const { player } = setup();
 		const { container } = render(
 			<VideContext.Provider value={{ player, registerEl: () => {} }}>
@@ -72,8 +72,8 @@ describe("AdLearnMore", () => {
 			});
 		});
 
-		const btn = container.querySelector(".vide-ad-cta");
-		expect(btn?.textContent).toBe("Learn More");
+		const urlEl = container.querySelector(".vide-ad-cta__url");
+		expect(urlEl?.textContent).toBe("example.com");
 		player.destroy();
 	});
 
@@ -127,11 +127,11 @@ describe("AdLearnMore", () => {
 		player.destroy();
 	});
 
-	it("shows ad title when showTitle prop is true", () => {
+	it("shows ad title when adTitle is available", () => {
 		const { player } = setup();
 		const { container } = render(
 			<VideContext.Provider value={{ player, registerEl: () => {} }}>
-				<AdLearnMore showTitle />
+				<AdLearnMore />
 			</VideContext.Provider>,
 		);
 

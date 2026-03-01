@@ -9,12 +9,11 @@ import {
 interface Props {
 	getPlayer: PlayerGetter;
 	class?: string;
-	showTitle?: boolean;
 }
 
-const { getPlayer, class: className, showTitle = false }: Props = $props();
+const { getPlayer, class: className }: Props = $props();
 
 setContext(VIDE_PLAYER_KEY, getPlayer);
 </script>
 
-<AdLearnMore class={className} {showTitle} />
+<AdLearnMore class={className} />

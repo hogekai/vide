@@ -62,7 +62,7 @@ describe("AdLearnMore", () => {
 		player.destroy();
 	});
 
-	it("shows 'Learn More' default text", async () => {
+	it("shows hostname as default text", async () => {
 		const { player } = setup();
 
 		render(AdLearnMoreHost, {
@@ -77,8 +77,9 @@ describe("AdLearnMore", () => {
 		});
 		await tick();
 
-		const button = screen.getByText("Learn More");
-		expect(button).toBeDefined();
+		const url = document.querySelector(".vide-ad-cta__url");
+		expect(url).not.toBeNull();
+		expect(url!.textContent).toBe("example.com");
 
 		player.destroy();
 	});
@@ -108,13 +109,12 @@ describe("AdLearnMore", () => {
 		player.destroy();
 	});
 
-	it("shows ad title when showTitle is true", async () => {
+	it("shows ad title when adTitle is available", async () => {
 		const { player } = setup();
 
 		render(AdLearnMoreHost, {
 			props: {
 				getPlayer: () => player,
-				showTitle: true,
 			},
 		});
 

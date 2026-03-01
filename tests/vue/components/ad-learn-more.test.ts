@@ -46,7 +46,7 @@ describe("VideAdLearnMore", () => {
 		player.destroy();
 	});
 
-	it("renders button when clickThrough exists, showing 'Learn More'", async () => {
+	it("renders button when clickThrough exists, showing hostname", async () => {
 		const { playerRef, player } = setup();
 		const wrapper = mountComponent(playerRef);
 
@@ -58,7 +58,7 @@ describe("VideAdLearnMore", () => {
 
 		const button = wrapper.find("button");
 		expect(button.exists()).toBe(true);
-		expect(button.text()).toBe("Learn More");
+		expect(wrapper.find(".vide-ad-cta__url").text()).toBe("example.com");
 		player.destroy();
 	});
 
@@ -96,9 +96,9 @@ describe("VideAdLearnMore", () => {
 		player.destroy();
 	});
 
-	it("shows ad title when showTitle prop is true", async () => {
+	it("shows ad title when adTitle is available", async () => {
 		const { playerRef, player } = setup();
-		const wrapper = mountComponent(playerRef, { showTitle: true });
+		const wrapper = mountComponent(playerRef);
 
 		player.emit("ad:start", {
 			adId: "ad-1",
