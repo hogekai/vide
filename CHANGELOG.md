@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+## [0.9.7] - 2026-03-01
+
+### Fixed
+- Trailing blank line in VAST plugin (`src/vast/index.ts`)
+
 ## [0.9.6] - 2026-03-01
 
 ### Added

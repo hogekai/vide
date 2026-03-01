@@ -235,4 +235,3 @@ function restoreContentEnded(
 	player.on("statechange", onReady);
 	player.src = prevSrc;
 }
-
