@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+## [0.9.2] - 2026-03-01
+
+### Fixed
+- Lint errors across React, Svelte, and Vue components
+
+## [0.9.1] - 2026-03-01
+
+### Changed
+- Redesigned ad UI: improved layout, skip button style, mini progress bar, responsive adjustments
+
 ## [0.9.0] - 2026-03-01
 
 ### Added

@@ -35,7 +35,10 @@ onDestroy(() => {
 
 function onClick() {
 	const p = getPlayer();
-	const fsTarget = target ?? (p?.el.closest(".vide-ui") as HTMLElement | null) ?? p?.el.parentElement;
+	const fsTarget =
+		target ??
+		(p?.el.closest(".vide-ui") as HTMLElement | null) ??
+		p?.el.parentElement;
 	if (!fsTarget) return;
 	if (document.fullscreenElement) {
 		document.exitFullscreen().catch(() => {});

@@ -117,9 +117,7 @@ describe("AdOverlay", () => {
 		const { player } = setup();
 		const clickSpy = vi.spyOn(player.el, "click");
 		const pauseSpy = vi.spyOn(player.el, "pause");
-		const openSpy = vi
-			.spyOn(window, "open")
-			.mockImplementation(() => null);
+		const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
 
 		const { container } = render(
 			<VideContext.Provider value={{ player, registerEl: () => {} }}>

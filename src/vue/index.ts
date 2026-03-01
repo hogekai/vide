@@ -76,7 +76,7 @@ import {
 	VideVastPlugin,
 	VideVmapPlugin,
 } from "./plugins.js";
-import { VideUI, VideControls } from "./ui.js";
+import { VideControls, VideUI } from "./ui.js";
 import { VideVideo } from "./video.js";
 
 export const Vide = {

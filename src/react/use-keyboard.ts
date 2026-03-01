@@ -32,10 +32,7 @@ export function useKeyboard(
 				case "k":
 				case "K":
 					e.preventDefault();
-					if (
-						player.state === "playing" ||
-						player.state === "ad:playing"
-					) {
+					if (player.state === "playing" || player.state === "ad:playing") {
 						player.pause();
 					} else {
 						player.play().catch(() => {});
@@ -85,8 +82,7 @@ export function useKeyboard(
 						document.exitFullscreen().catch(() => {});
 					} else {
 						const target =
-							(root?.closest(".vide-ui") as HTMLElement | null) ??
-							root;
+							(root?.closest(".vide-ui") as HTMLElement | null) ?? root;
 						target?.requestFullscreen().catch(() => {});
 					}
 					break;
@@ -116,5 +112,11 @@ export function useKeyboard(
 			root.removeEventListener("keydown", onKeyDown);
 			root.removeAttribute("tabindex");
 		};
-	}, [containerRef, player, options.disableSeek, options.disableVolume, options.disableFullscreen]);
+	}, [
+		containerRef,
+		player,
+		options.disableSeek,
+		options.disableVolume,
+		options.disableFullscreen,
+	]);
 }

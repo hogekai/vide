@@ -1,9 +1,9 @@
 <script lang="ts">
 import { getContext } from "svelte";
 import type { Snippet } from "svelte";
+import { type PlayerGetter, VIDE_PLAYER_KEY } from "./context.js";
 import { stateToClass } from "./helpers.js";
 import type { PlayerState } from "./helpers.js";
-import { type PlayerGetter, VIDE_PLAYER_KEY } from "./context.js";
 
 interface Props {
 	class?: string;
@@ -13,7 +13,7 @@ interface Props {
 
 const { class: className, children, onmount }: Props = $props();
 
-let rootEl: HTMLDivElement | undefined = $state();
+const rootEl: HTMLDivElement | undefined = $state();
 
 $effect(() => {
 	if (rootEl && onmount) onmount(rootEl);

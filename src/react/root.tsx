@@ -16,7 +16,5 @@ export function VideRoot({ player: handle, children }: VideRootProps) {
 		[handle.current, handle._registerEl],
 	);
 
-	return (
-		<VideContext.Provider value={value}>{children}</VideContext.Provider>
-	);
+	return <VideContext.Provider value={value}>{children}</VideContext.Provider>;
 }

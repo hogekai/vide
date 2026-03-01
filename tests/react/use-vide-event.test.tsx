@@ -1,10 +1,12 @@
 import { renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { createPlayer } from "../../src/core.js";
-import type { VidePlayerHandle } from "../../src/react/use-vide-player.js";
 import { useVideEvent } from "../../src/react/use-vide-event.js";
+import type { VidePlayerHandle } from "../../src/react/use-vide-player.js";
 
-function makeHandle(player = createPlayer(document.createElement("video"))): VidePlayerHandle {
+function makeHandle(
+	player = createPlayer(document.createElement("video")),
+): VidePlayerHandle {
 	return { current: player, _registerEl: () => {} };
 }
 

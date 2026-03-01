@@ -27,7 +27,7 @@ export function useAutohide(
 		}
 
 		function showControls(): void {
-			root!.classList.remove("vide-ui--autohide");
+			root?.classList.remove("vide-ui--autohide");
 		}
 
 		function clearTimer(): void {
@@ -41,7 +41,7 @@ export function useAutohide(
 			clearTimer();
 			if (shouldStayVisible()) return;
 			timerRef.current = setTimeout(() => {
-				root!.classList.add("vide-ui--autohide");
+				root?.classList.add("vide-ui--autohide");
 			}, IDLE_DELAY);
 		}
 

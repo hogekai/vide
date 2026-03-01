@@ -5,7 +5,9 @@ import { useVideContext } from "../../src/react/context.js";
 import { VideRoot } from "../../src/react/root.js";
 import type { VidePlayerHandle } from "../../src/react/use-vide-player.js";
 
-function makeHandle(player: import("../../src/types.js").Player | null = null): VidePlayerHandle {
+function makeHandle(
+	player: import("../../src/types.js").Player | null = null,
+): VidePlayerHandle {
 	return {
 		current: player,
 		_registerEl: () => {},

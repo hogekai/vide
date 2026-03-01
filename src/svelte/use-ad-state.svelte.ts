@@ -1,5 +1,5 @@
-import type { AdMeta, PlayerEventMap } from "./helpers.js";
 import type { PlayerGetter } from "./context.js";
+import type { AdMeta, PlayerEventMap } from "./helpers.js";
 
 export interface AdState {
 	readonly active: boolean;

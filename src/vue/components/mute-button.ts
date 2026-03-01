@@ -53,16 +53,15 @@ export const VideMuteButton = defineComponent({
 					"data-muted": muted.value || undefined,
 					onClick,
 				},
-				slots.default?.() ??
-					[
-						h(
-							muted.value
-								? IconVolumeMute
-								: volume.value < 0.5
-									? IconVolumeLow
-									: IconVolumeHigh,
-						),
-					],
+				slots.default?.() ?? [
+					h(
+						muted.value
+							? IconVolumeMute
+							: volume.value < 0.5
+								? IconVolumeLow
+								: IconVolumeHigh,
+					),
+				],
 			);
 	},
 });

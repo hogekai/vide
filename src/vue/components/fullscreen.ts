@@ -56,8 +56,9 @@ export const VideFullscreenButton = defineComponent({
 					"data-fullscreen": active.value || undefined,
 					onClick,
 				},
-				slots.default?.() ??
-					[h(active.value ? IconFullscreenExit : IconFullscreenEnter)],
+				slots.default?.() ?? [
+					h(active.value ? IconFullscreenExit : IconFullscreenEnter),
+				],
 			);
 	},
 });

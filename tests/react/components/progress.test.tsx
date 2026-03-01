@@ -29,7 +29,9 @@ describe("Progress", () => {
 				<Progress className="my-progress" />
 			</VideContext.Provider>,
 		);
-		expect(screen.getByRole("slider").className).toBe("vide-progress my-progress");
+		expect(screen.getByRole("slider").className).toBe(
+			"vide-progress my-progress",
+		);
 		player.destroy();
 	});
 

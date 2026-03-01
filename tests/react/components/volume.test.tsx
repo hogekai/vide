@@ -30,7 +30,9 @@ describe("Volume", () => {
 				<Volume className="my-volume" />
 			</VideContext.Provider>,
 		);
-		expect(container.firstElementChild!.className).toBe("vide-volume my-volume");
+		expect(container.firstElementChild!.className).toBe(
+			"vide-volume my-volume",
+		);
 		player.destroy();
 	});
 

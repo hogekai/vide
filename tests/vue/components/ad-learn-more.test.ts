@@ -64,9 +64,7 @@ describe("VideAdLearnMore", () => {
 
 	it("on click calls window.open", async () => {
 		const { playerRef, player } = setup();
-		const openSpy = vi
-			.spyOn(window, "open")
-			.mockImplementation(() => null);
+		const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
 		vi.spyOn(player.el, "click").mockImplementation(() => {});
 		vi.spyOn(player.el, "pause").mockImplementation(() => {});
 
@@ -119,8 +117,7 @@ describe("VideAdLearnMore", () => {
 			playerRef,
 			{},
 			{
-				default: () =>
-					h("span", { "data-testid": "cta" }, "Visit Sponsor"),
+				default: () => h("span", { "data-testid": "cta" }, "Visit Sponsor"),
 			},
 		);
 

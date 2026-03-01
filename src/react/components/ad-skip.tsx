@@ -34,11 +34,7 @@ export function AdSkip({ className, children }: AdSkipProps) {
 	return (
 		<button
 			type="button"
-			className={[
-				"vide-skip",
-				!canSkip && "vide-skip--disabled",
-				className,
-			]
+			className={["vide-skip", !canSkip && "vide-skip--disabled", className]
 				.filter(Boolean)
 				.join(" ")}
 			aria-label="Skip ad"

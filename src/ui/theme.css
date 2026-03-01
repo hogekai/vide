@@ -810,8 +810,8 @@
 	text-decoration: none;
 	color: var(--vide-text);
 
-	transition: background var(--vide-duration-fast), border-color var(--vide-duration-fast),
-		transform 0.25s var(--vide-ease);
+	transition: background var(--vide-duration-fast), border-color
+		var(--vide-duration-fast), transform 0.25s var(--vide-ease);
 }
 
 .vide-ad-cta:hover {

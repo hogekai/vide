@@ -1,7 +1,7 @@
 <script lang="ts">
 import { getContext, onDestroy } from "svelte";
-import { isAdState } from "../helpers.js";
 import { type PlayerGetter, VIDE_PLAYER_KEY } from "../context.js";
+import { isAdState } from "../helpers.js";
 
 const DBLCLICK_DELAY = 200;
 

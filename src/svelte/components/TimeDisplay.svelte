@@ -1,7 +1,7 @@
 <script lang="ts">
 import { getContext } from "svelte";
-import { formatTime } from "../helpers.js";
 import { type PlayerGetter, VIDE_PLAYER_KEY } from "../context.js";
+import { formatTime } from "../helpers.js";
 
 interface Props {
 	class?: string;

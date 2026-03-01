@@ -1,5 +1,5 @@
-import { isAdState } from "./helpers.js";
 import type { PlayerGetter } from "./context.js";
+import { isAdState } from "./helpers.js";
 
 export interface UseKeyboardOptions {
 	disableSeek?: boolean;
@@ -32,10 +32,7 @@ export function useKeyboard(
 				case "k":
 				case "K":
 					e.preventDefault();
-					if (
-						player.state === "playing" ||
-						player.state === "ad:playing"
-					) {
+					if (player.state === "playing" || player.state === "ad:playing") {
 						player.pause();
 					} else {
 						player.play().catch(() => {});
@@ -45,10 +42,7 @@ export function useKeyboard(
 				case "ArrowLeft":
 					if (!hasSeek || inAd) return;
 					e.preventDefault();
-					player.currentTime = Math.max(
-						0,
-						player.el.currentTime - 5,
-					);
+					player.currentTime = Math.max(0, player.el.currentTime - 5);
 					break;
 
 				case "ArrowRight":
@@ -88,8 +82,7 @@ export function useKeyboard(
 						document.exitFullscreen().catch(() => {});
 					} else {
 						const target =
-							(root?.closest(".vide-ui") as HTMLElement | null) ??
-							root;
+							(root?.closest(".vide-ui") as HTMLElement | null) ?? root;
 						target?.requestFullscreen().catch(() => {});
 					}
 					break;

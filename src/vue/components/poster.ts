@@ -13,10 +13,12 @@ export const VidePoster = defineComponent({
 	},
 	setup(props, { attrs }) {
 		return () =>
-			h(
-				"div",
-				{ class: cx("vide-poster", attrs.class as string) },
-				[h("img", { class: "vide-poster__image", src: props.src, alt: props.alt })],
-			);
+			h("div", { class: cx("vide-poster", attrs.class as string) }, [
+				h("img", {
+					class: "vide-poster__image",
+					src: props.src,
+					alt: props.alt,
+				}),
+			]);
 	},
 });

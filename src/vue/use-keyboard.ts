@@ -53,10 +53,7 @@ export function useKeyboard(
 					case "ArrowRight":
 						if (!hasSeek || inAd) return;
 						e.preventDefault();
-						p.currentTime = Math.min(
-							p.el.duration || 0,
-							p.el.currentTime + 5,
-						);
+						p.currentTime = Math.min(p.el.duration || 0, p.el.currentTime + 5);
 						break;
 
 					case "ArrowUp":
@@ -87,8 +84,7 @@ export function useKeyboard(
 							document.exitFullscreen().catch(() => {});
 						} else {
 							const target =
-								(root?.closest(".vide-ui") as HTMLElement | null) ??
-								root;
+								(root?.closest(".vide-ui") as HTMLElement | null) ?? root;
 							target?.requestFullscreen().catch(() => {});
 						}
 						break;

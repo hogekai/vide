@@ -93,9 +93,7 @@ describe("VideAdOverlay", () => {
 
 	it("on click calls window.open when clickThrough exists", async () => {
 		const { playerRef, player } = setup();
-		const openSpy = vi
-			.spyOn(window, "open")
-			.mockImplementation(() => null);
+		const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
 		vi.spyOn(player.el, "click").mockImplementation(() => {});
 		vi.spyOn(player.el, "pause").mockImplementation(() => {});
 

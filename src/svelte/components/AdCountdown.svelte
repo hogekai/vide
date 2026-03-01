@@ -21,8 +21,7 @@ $effect(() => {
 	const onTimeUpdate = ({ currentTime }: { currentTime: number }) => {
 		if (!adState.active || !adState.meta) return;
 		const duration =
-			adState.meta.duration ??
-			(Number.isFinite(p.duration) ? p.duration : 0);
+			adState.meta.duration ?? (Number.isFinite(p.duration) ? p.duration : 0);
 		remaining = Math.max(0, Math.ceil(duration - currentTime));
 	};
 

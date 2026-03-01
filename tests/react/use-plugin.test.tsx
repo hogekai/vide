@@ -1,8 +1,8 @@
 import { renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { createPlayer } from "../../src/core.js";
-import type { VidePlayerHandle } from "../../src/react/use-vide-player.js";
 import { useHls } from "../../src/react/use-plugin.js";
+import type { VidePlayerHandle } from "../../src/react/use-vide-player.js";
 import type { Player, Plugin } from "../../src/types.js";
 
 function makeHandle(player: Player | null = null): VidePlayerHandle {

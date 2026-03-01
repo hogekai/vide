@@ -21,7 +21,12 @@ $effect(() => {
 	if (!p) return;
 
 	const onTimeUpdate = ({ currentTime }: { currentTime: number }) => {
-		if (!adState.active || !adState.meta || adState.meta.skipOffset === undefined) return;
+		if (
+			!adState.active ||
+			!adState.meta ||
+			adState.meta.skipOffset === undefined
+		)
+			return;
 		if (currentTime >= adState.meta.skipOffset) {
 			canSkip = true;
 		} else {

@@ -1,6 +1,6 @@
+import type { PlayerGetter } from "./context.js";
 import { isAdState } from "./helpers.js";
 import type { PlayerState } from "./helpers.js";
-import type { PlayerGetter } from "./context.js";
 
 const IDLE_DELAY = 3000;
 
@@ -28,7 +28,7 @@ export function useAutohide(
 		}
 
 		function showControls(): void {
-			root!.classList.remove("vide-ui--autohide");
+			root?.classList.remove("vide-ui--autohide");
 		}
 
 		function clearTimer(): void {
@@ -42,7 +42,7 @@ export function useAutohide(
 			clearTimer();
 			if (shouldStayVisible()) return;
 			timer = setTimeout(() => {
-				root!.classList.add("vide-ui--autohide");
+				root?.classList.add("vide-ui--autohide");
 			}, IDLE_DELAY);
 		}
 

@@ -1,8 +1,8 @@
 <script lang="ts">
 import { getContext } from "svelte";
 import type { Snippet } from "svelte";
-import type { PlayerState } from "../helpers.js";
 import { type PlayerGetter, VIDE_PLAYER_KEY } from "../context.js";
+import type { PlayerState } from "../helpers.js";
 import IconPause from "../icons/IconPause.svelte";
 import IconPlay from "../icons/IconPlay.svelte";
 

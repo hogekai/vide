@@ -99,8 +99,7 @@ export const VideVolume = defineComponent({
 							"aria-label": muted.value ? "Unmute" : "Mute",
 							onClick: onMuteClick,
 						},
-						slots.default?.() ??
-						[
+						slots.default?.() ?? [
 							h(
 								muted.value
 									? IconVolumeMute

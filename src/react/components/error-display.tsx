@@ -15,9 +15,7 @@ export function ErrorDisplay({ className }: ErrorDisplayProps) {
 	});
 
 	return (
-		<div
-			className={["vide-error", className].filter(Boolean).join(" ")}
-		>
+		<div className={["vide-error", className].filter(Boolean).join(" ")}>
 			<span className="vide-error__message">{message}</span>
 		</div>
 	);

@@ -14,46 +14,44 @@ function cx(...classes: (string | undefined)[]): string {
 	return classes.filter(Boolean).join(" ");
 }
 
-export interface VideUIProps extends ComponentPropsWithRef<"div"> {
+export interface VideUIProps extends ComponentPropsWithRef<"section"> {
 	children: ReactNode;
 }
 
-export const VideUI = forwardRef<HTMLDivElement, VideUIProps>(
-	function VideUI({ children, className, ...divProps }, ref) {
-		const ctx = useContext(VideContext);
-		const player = ctx?.player ?? null;
-		const [stateClass, setStateClass] = useState("");
+export const VideUI = forwardRef<HTMLElement, VideUIProps>(function VideUI(
+	{ children, className, ...sectionProps },
+	ref,
+) {
+	const ctx = useContext(VideContext);
+	const player = ctx?.player ?? null;
+	const [stateClass, setStateClass] = useState("");
 
-		useEffect(() => {
-			if (!player) {
-				setStateClass("");
-				return;
-			}
-			setStateClass(stateToClass(player.state));
-			const onStateChange = ({
-				to,
-			}: { from: PlayerState; to: PlayerState }) => {
-				setStateClass(stateToClass(to));
-			};
-			player.on("statechange", onStateChange);
-			return () => {
-				player.off("statechange", onStateChange);
-			};
-		}, [player]);
+	useEffect(() => {
+		if (!player) {
+			setStateClass("");
+			return;
+		}
+		setStateClass(stateToClass(player.state));
+		const onStateChange = ({ to }: { from: PlayerState; to: PlayerState }) => {
+			setStateClass(stateToClass(to));
+		};
+		player.on("statechange", onStateChange);
+		return () => {
+			player.off("statechange", onStateChange);
+		};
+	}, [player]);
 
-		return (
-			<div
-				ref={ref}
-				className={cx("vide-ui", stateClass, className)}
-				role="region"
-				aria-label="Video player"
-				{...divProps}
-			>
-				{children}
-			</div>
-		);
-	},
-);
+	return (
+		<section
+			ref={ref}
+			className={cx("vide-ui", stateClass, className)}
+			aria-label="Video player"
+			{...sectionProps}
+		>
+			{children}
+		</section>
+	);
+});
 
 export interface VideControlsProps extends ComponentPropsWithRef<"div"> {
 	children: ReactNode;

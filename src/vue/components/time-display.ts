@@ -24,10 +24,14 @@ export const VideTimeDisplay = defineComponent({
 		});
 
 		return () =>
-			h("div", { class: cx("vide-time", attrs.class as string), "aria-label": "Time" }, [
-				h("span", formatTime(currentTime.value)),
-				h("span", props.separator),
-				h("span", formatTime(duration.value)),
-			]);
+			h(
+				"div",
+				{ class: cx("vide-time", attrs.class as string), "aria-label": "Time" },
+				[
+					h("span", formatTime(currentTime.value)),
+					h("span", props.separator),
+					h("span", formatTime(duration.value)),
+				],
+			);
 	},
 });

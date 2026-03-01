@@ -64,6 +64,12 @@ export function ClickPlay({
 		<div
 			className={["vide-clickplay", className].filter(Boolean).join(" ")}
 			onClick={onClick}
+			onKeyDown={(e) => {
+				if (e.key === "Enter" || e.key === " ") {
+					e.preventDefault();
+					onClick();
+				}
+			}}
 		/>
 	);
 }

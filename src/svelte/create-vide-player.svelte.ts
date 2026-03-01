@@ -1,12 +1,12 @@
 import { setContext } from "svelte";
-import { createPlayer } from "./helpers.js";
-import type { MediaElement, Player } from "./helpers.js";
 import {
 	type PlayerGetter,
 	type RegisterFn,
 	VIDE_PLAYER_KEY,
 	VIDE_REGISTER_KEY,
 } from "./context.js";
+import { createPlayer } from "./helpers.js";
+import type { MediaElement, Player } from "./helpers.js";
 
 export function createVidePlayer(): PlayerGetter {
 	let player = $state<Player | null>(null);
