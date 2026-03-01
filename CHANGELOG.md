@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+## [0.9.5] - 2026-03-01
+
+### Fixed
+- Lint errors in React AdLearnMore, Vue AdLearnMore, and Svelte VideUI
+
 ## [0.9.4] - 2026-03-01
 
 ### Changed

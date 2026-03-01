@@ -13,6 +13,7 @@ interface Props {
 
 const { class: className, children, onmount }: Props = $props();
 
+// biome-ignore lint/style/useConst: bind:this requires let in Svelte 5
 let rootEl: HTMLDivElement | undefined = $state();
 
 $effect(() => {

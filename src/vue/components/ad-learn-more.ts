@@ -41,13 +41,7 @@ export const VideAdLearnMore = defineComponent({
 				h("span", { class: "vide-ad-cta__icon" }, [h(IconExternalLink)]),
 				h("span", { class: "vide-ad-cta__body" }, [
 					...(meta.value.adTitle
-						? [
-								h(
-									"span",
-									{ class: "vide-ad-cta__title" },
-									meta.value.adTitle,
-								),
-							]
+						? [h("span", { class: "vide-ad-cta__title" }, meta.value.adTitle)]
 						: []),
 					h("span", { class: "vide-ad-cta__url" }, host.value),
 				]),

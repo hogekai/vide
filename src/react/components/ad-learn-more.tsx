@@ -47,9 +47,7 @@ export function AdLearnMore({ className, children }: AdLearnMoreProps) {
 					</span>
 					<span className="vide-ad-cta__body">
 						{meta.adTitle && (
-							<span className="vide-ad-cta__title">
-								{meta.adTitle}
-							</span>
+							<span className="vide-ad-cta__title">{meta.adTitle}</span>
 						)}
 						<span className="vide-ad-cta__url">{host}</span>
 					</span>
