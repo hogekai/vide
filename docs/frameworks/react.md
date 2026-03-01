@@ -197,18 +197,18 @@ Each component has a default CSS class matching the vanilla UI plugin (`vide-pla
 Components for ad CTA, controls, and overlay during ad playback. Use with `useVast()` or `useVmap()`. Each component auto-subscribes to ad events via context and renders only during active ads.
 
 ```tsx
-<Vide.AdLearnMore />
 <Vide.AdLabel />
 <Vide.AdCountdown />
 <Vide.AdSkip />
+<Vide.AdLearnMore />
 ```
 
 | Component | Default Class | Props |
 |-----------|--------------|-------|
-| `AdLearnMore` | `vide-ad-cta` | `className`, `children`, `showTitle` |
 | `AdLabel` | `vide-ad-label` | `className`, `children` |
 | `AdCountdown` | `vide-ad-countdown` | `className`, `format` |
 | `AdSkip` | `vide-skip` | `className`, `children` |
+| `AdLearnMore` | `vide-ad-cta` | `className`, `children` |
 | `AdOverlay` | `vide-ad-overlay` | `className`, `children` |
 
 ### useAdState(player)
@@ -428,10 +428,10 @@ function VideoPlayer({ src, adTag }: { src: string; adTag?: string }) {
       {adTag && <Vide.VastPlugin tagUrl={adTag} />}
       <Vide.UI>
         <Vide.Video src={src} />
-        <Vide.AdLearnMore />
         <Vide.AdLabel />
         <Vide.AdCountdown />
         <Vide.AdSkip />
+        <Vide.AdLearnMore />
         <Vide.Controls>
           <Vide.PlayButton />
           <Vide.Progress />

@@ -57,7 +57,7 @@ export function App() {
 					<Vide.ClickPlay />
 					<Vide.BigPlayButton />
 					<Vide.Loader />
-					<Vide.AdOverlay />
+					<Vide.AdLearnMore />
 					<Vide.AdLabel />
 					<Vide.AdCountdown />
 					<Vide.AdSkip />
