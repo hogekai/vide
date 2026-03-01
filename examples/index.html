@@ -18,7 +18,8 @@
       border-radius: 3px; margin-left: 0.5rem; vertical-align: middle;
     }
     .badge-ui { background: #e8f5e9; color: #2e7d32; }
-    .badge-headless { background: #fff3e0; color: #e65100; }
+    .badge-headless { background: #e3f2fd; color: #1565c0; }
+    .badge-without-ui { background: #fff3e0; color: #e65100; }
     .badge-debug { background: #f3e5f5; color: #7b1fa2; }
     .desc { color: #666; font-size: 14px; }
   </style>
@@ -31,8 +32,8 @@
   <ul>
     <li><a href="ui.html">ui.html</a> <span class="badge badge-ui">UI</span> <span class="desc">— Full UI plugin with default theme</span></li>
     <li><a href="ui-standalone.html">ui-standalone.html</a> <span class="badge badge-ui">UI</span> <span class="desc">— Manual component assembly (no convenience function)</span></li>
-    <li><a href="ui-headless.html">ui-headless.html</a> <span class="badge badge-ui">UI</span> <span class="desc">— Custom theme without theme.css (cyberpunk style)</span></li>
-    <li><a href="without-ui.html">without-ui.html</a> <span class="badge badge-headless">Without UI</span> <span class="desc">— Core player with native browser controls, no UI plugin</span></li>
+    <li><a href="ui-headless.html">ui-headless.html</a> <span class="badge badge-headless">Headless</span> <span class="desc">— Custom theme without theme.css (cyberpunk style)</span></li>
+    <li><a href="without-ui.html">without-ui.html</a> <span class="badge badge-without-ui">Without UI</span> <span class="desc">— Core player with native browser controls, no UI plugin</span></li>
   </ul>
 
   <h2>Streaming</h2>
@@ -53,18 +54,18 @@
     <li><a href="vpaid.html">vpaid.html</a> <span class="badge badge-ui">UI</span> <span class="desc">— VPAID 2.0 interactive ad creative</span></li>
   </ul>
 
-  <h2>Advanced <span class="badge badge-headless">Headless</span></h2>
+  <h2>Advanced</h2>
   <ul>
-    <li><a href="ssai.html">ssai.html</a> <span class="badge badge-headless">Headless</span> <span class="desc">— Server-side ad insertion (HLS + EXT-X-DATERANGE)</span></li>
-    <li><a href="omid.html">omid.html</a> <span class="badge badge-headless">Headless</span> <span class="desc">— Open Measurement (OM SDK) verification</span></li>
-    <li><a href="simid.html">simid.html</a> <span class="badge badge-headless">Headless</span> <span class="desc">— SIMID interactive ads in sandboxed iframe</span></li>
+    <li><a href="ssai.html">ssai.html</a> <span class="badge badge-ui">UI</span> <span class="desc">— Server-side ad insertion (HLS + EXT-X-DATERANGE)</span></li>
+    <li><a href="omid.html">omid.html</a> <span class="badge badge-ui">UI</span> <span class="desc">— Open Measurement (OM SDK) verification</span></li>
+    <li><a href="simid.html">simid.html</a> <span class="badge badge-ui">UI</span> <span class="desc">— SIMID interactive ads in sandboxed iframe</span></li>
   </ul>
 
   <h2>CDN (no bundler)</h2>
   <ul>
     <li><a href="cdn-all.html">cdn-all.html</a> <span class="badge badge-ui">UI</span> <span class="desc">— All-in-one IIFE build (global Vide.*)</span></li>
-    <li><a href="cdn-individual.html">cdn-individual.html</a> <span class="badge badge-headless">Headless</span> <span class="desc">— Individual IIFE builds loaded separately</span></li>
-    <li><a href="cdn-ads.html">cdn-ads.html</a> <span class="badge badge-headless">Headless</span> <span class="desc">— CDN + HLS + VAST ads</span></li>
+    <li><a href="cdn-individual.html">cdn-individual.html</a> <span class="badge badge-without-ui">Without UI</span> <span class="desc">— Individual IIFE builds loaded separately</span></li>
+    <li><a href="cdn-ads.html">cdn-ads.html</a> <span class="badge badge-without-ui">Without UI</span> <span class="desc">— CDN + HLS + VAST ads</span></li>
   </ul>
 
   <h2>Debug</h2>

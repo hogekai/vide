@@ -79,9 +79,9 @@ player.use(vast({
 | Companion Ads | Core + UI + VAST | [companion-ads.html](https://github.com/hogekai/vide/blob/main/examples/companion-ads.html) |
 | NonLinear Ads | Core + UI + VAST | [nonlinear-ads.html](https://github.com/hogekai/vide/blob/main/examples/nonlinear-ads.html) |
 | VMAP scheduling | Core + UI + VMAP | [vmap.html](https://github.com/hogekai/vide/blob/main/examples/vmap.html) |
-| SSAI | Core + HLS + SSAI | [ssai.html](https://github.com/hogekai/vide/blob/main/examples/ssai.html) |
-| OMID viewability | Core + VAST + OMID | [omid.html](https://github.com/hogekai/vide/blob/main/examples/omid.html) |
-| SIMID interactive | Core + VAST + SIMID | [simid.html](https://github.com/hogekai/vide/blob/main/examples/simid.html) |
+| SSAI | Core + UI + HLS + SSAI | [ssai.html](https://github.com/hogekai/vide/blob/main/examples/ssai.html) |
+| OMID viewability | Core + UI + VAST + OMID | [omid.html](https://github.com/hogekai/vide/blob/main/examples/omid.html) |
+| SIMID interactive | Core + UI + VAST + SIMID | [simid.html](https://github.com/hogekai/vide/blob/main/examples/simid.html) |
 | CDN all-in-one | All (script tag) | [cdn-all.html](https://github.com/hogekai/vide/blob/main/examples/cdn-all.html) |
 | CDN individual | Core + plugins (script tag) | [cdn-individual.html](https://github.com/hogekai/vide/blob/main/examples/cdn-individual.html) |
 | CDN + ads | Core + VAST (script tag) | [cdn-ads.html](https://github.com/hogekai/vide/blob/main/examples/cdn-ads.html) |

@@ -4,9 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>vide — SSAI Tracking Demo</title>
+  <link rel="stylesheet" href="../dist/ui/theme.css">
   <style>
     body { font-family: system-ui, sans-serif; max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
-    video { width: 100%; background: #000; display: block; }
+    #player-container { position: relative; width: 100%; background: #000; aspect-ratio: 16/9; }
+    #player-container video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
     #log { font-family: monospace; font-size: 13px; background: #1a1a1a; color: #0f0; padding: 1rem; max-height: 400px; overflow-y: auto; border-radius: 4px; }
     .log-entry { margin: 2px 0; }
     .log-entry.ad { color: #ff0; }
@@ -14,8 +16,6 @@
     .log-entry.quartile { color: #f0f; }
     .controls { margin: 1rem 0; display: flex; gap: 0.5rem; flex-wrap: wrap; }
     button { padding: 0.4rem 1rem; cursor: pointer; }
-    .ad-indicator { display: none; padding: 0.5rem 1rem; background: #e53e3e; color: #fff; font-weight: bold; border-radius: 4px; margin: 0.5rem 0; }
-    .ad-indicator.visible { display: block; }
     .legend { margin: 0.5rem 0; font-size: 13px; font-family: monospace; }
     .legend span { display: inline-block; margin-right: 1rem; }
     .legend .c-green { color: #0f0; }
@@ -29,8 +29,6 @@
 </head>
 <body>
   <h1>vide — SSAI Tracking Demo</h1>
-  <p><em>Headless example</em> — uses native browser controls to focus on SSAI integration.
-  For the UI plugin, see <a href="ui.html">ui.html</a>.</p>
   <p>
     HLS stream with injected <code>EXT-X-DATERANGE</code> tags.
     Custom parser returns <code>tracking</code> map with URLs for each event.
@@ -38,14 +36,14 @@
     Ad breaks: <strong>10s–20s</strong> and <strong>40s–50s</strong>.
   </p>
 
-  <video id="player" controls></video>
-  <div id="ad-indicator" class="ad-indicator">AD</div>
+  <div id="player-container">
+    <video id="player"></video>
+  </div>
 
   <div class="controls">
     <button onclick="player.play()">Play</button>
     <button onclick="player.pause()">Pause</button>
     <button onclick="player.currentTime = 0">Restart</button>
-    <button onclick="skipAd()">Skip Ad</button>
     <button onclick="loadStream()">Load Stream</button>
     <button onclick="player.destroy(); log('destroyed')">Destroy</button>
   </div>
@@ -63,11 +61,12 @@
     import { createPlayer } from "../dist/index.mjs";
     import { hls } from "../dist/hls/index.mjs";
     import { ssai } from "../dist/ssai/index.mjs";
+    import { ui } from "../dist/ui/index.mjs";
 
     const el = document.getElementById("player");
+    const container = document.getElementById("player-container");
     const stateEl = document.getElementById("state");
     const logEl = document.getElementById("log");
-    const adIndicator = document.getElementById("ad-indicator");
 
     function log(msg, cls = "") {
       const entry = document.createElement("div");
@@ -93,11 +92,9 @@
     const player = createPlayer(el);
     window.player = player;
 
-    // Track which ad is currently active (for skip button)
-    let currentAdId = null;
-
     // --- Register plugins ---
     player.use(hls());
+    player.use(ui({ container }));
 
     // Custom parser: wraps default SCTE35 detection and adds tracking URLs
     player.use(ssai({
@@ -133,7 +130,7 @@
         }];
       },
     }));
-    log("HLS + SSAI plugins registered (custom parser with tracking URLs)");
+    log("HLS + SSAI + UI plugins registered (custom parser with tracking URLs)");
 
     // --- Wire up events ---
     player.on("statechange", ({ from, to }) => {
@@ -147,35 +144,21 @@
 
     // SSAI ad events
     player.on("ad:breakStart", ({ breakId }) => {
-      adIndicator.classList.add("visible");
       log(`ad:breakStart — ${breakId}`, "ad");
     });
     player.on("ad:start", ({ adId }) => {
-      currentAdId = adId;
       log(`ad:start — ${adId}`, "ad");
     });
     player.on("ad:impression", ({ adId }) => log(`ad:impression — ${adId}`, "ad"));
     player.on("ad:quartile", ({ adId, quartile }) => log(`ad:quartile — ${adId} → ${quartile}`, "quartile"));
     player.on("ad:end", ({ adId }) => {
-      if (currentAdId === adId) currentAdId = null;
       log(`ad:end — ${adId}`, "ad");
     });
     player.on("ad:breakEnd", ({ breakId }) => {
-      adIndicator.classList.remove("visible");
       log(`ad:breakEnd — ${breakId}`, "ad");
     });
 
     log("Player created. State: " + player.state);
-
-    // --- Skip button ---
-    window.skipAd = function() {
-      if (currentAdId) {
-        log(`Skipping ad: ${currentAdId}`, "ad");
-        player.emit("ad:skip", { adId: currentAdId });
-      } else {
-        log("No ad playing to skip");
-      }
-    };
 
     // --- Manifest rewriting ---
 
