@@ -1,6 +1,6 @@
 # Text Tracks
 
-Control subtitles and captions via the Player API. vide delegates to the browser's native `<track>` and `TextTrack` APIs — no custom parser or renderer.
+Control subtitles and captions via the Player API. Vide delegates to the browser's native `<track>` and `TextTrack` APIs — no custom parser or renderer.
 
 ## HTML `<track>` Elements
 

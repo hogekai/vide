@@ -1,7 +1,7 @@
 # Browser Support
 
 ## General
-vide works in all modern browsers that support ES2022 and the `<video>` element.
+Vide works in all modern browsers that support ES2022 and the `<video>` element.
 
 ## iOS Safari
 
@@ -10,7 +10,7 @@ iOS Safari plays video fullscreen by default. Add `playsinline` to your `<video>
 ```html
 <video playsinline></video>
 ```
-vide does **not** add this attribute automatically — it follows the "delegate, don't wrap" principle.
+Vide does **not** add this attribute automatically — it follows the "delegate, don't wrap" principle.
 
 ### Autoplay
 iOS Safari blocks autoplay unless the video is muted:
@@ -29,4 +29,4 @@ iOS Safari does not support the standard Fullscreen API on arbitrary elements. T
 3. `HTMLVideoElement.webkitEnterFullscreen()` (iOS Safari — video only)
 
 ### Source Changes
-When changing `<source>` elements dynamically, call `video.load()` to apply. The vide core handles this via the `src` setter.
+When changing `<source>` elements dynamically, call `video.load()` to apply. The Vide core handles this via the `src` setter.

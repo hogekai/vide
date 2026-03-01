@@ -1,6 +1,6 @@
 # Custom Plugin
 
-vide plugins follow a simple interface: a `name` and a `setup` function.
+Vide plugins follow a simple interface: a `name` and a `setup` function.
 
 ## Plugin Interface
 

@@ -1,4 +1,4 @@
-# vide
+# Vide
 
 [![CI](https://github.com/hogekai/vide/actions/workflows/ci.yml/badge.svg)](https://github.com/hogekai/vide/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/@videts/vide)](https://www.npmjs.com/package/@videts/vide)
@@ -31,7 +31,7 @@ Web standards first — if the browser can do it, we don't reinvent it.
 npm install @videts/vide
 ```
 
-> Package is published as **@videts/vide** on npm. The project name is **vide**.
+> Package is published as **@videts/vide** on npm. The project name is **Vide**.
 
 ## Quick Start
 

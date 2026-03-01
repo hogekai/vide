@@ -1,6 +1,6 @@
 # React
 
-React hooks and components for vide. Import from `@videts/vide/react`.
+React hooks and components for Vide. Import from `@videts/vide/react`.
 
 ```sh
 npm install @videts/vide react react-dom
@@ -83,7 +83,7 @@ useVideEvent(player, "ad:start", ({ adId }) => {
 
 ### Vide.Root
 
-Context provider. All vide components must be children of `Vide.Root`.
+Context provider. All Vide components must be children of `Vide.Root`.
 
 ```tsx
 <Vide.Root player={player}>
@@ -183,7 +183,7 @@ Each component has a default CSS class matching the vanilla UI plugin (`vide-pla
 | `TimeDisplay` | `vide-time` | `className`, `separator` | — |
 
 - `children` — custom icons or content (button components).
-- CSS custom properties — use for styling sliders (same as vide UI plugin theme).
+- CSS custom properties — use for styling sliders (same as Vide UI plugin theme).
 - `data-*` attributes — use for state-based CSS selectors.
 - `className` is appended after the default class, not replacing it.
 

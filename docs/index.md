@@ -2,7 +2,7 @@
 layout: home
 
 hero:
-  name: vide
+  name: Vide
   tagline: Modular video player. Use only what you need.
   actions:
     - theme: brand
@@ -21,7 +21,7 @@ features:
     details: Every feature is a plugin. Import only what you use — HLS, VAST, UI, DRM, and more.
   - icon: 🌐
     title: Web Standards First
-    details: If the browser can do it natively, vide doesn't reinvent it. Proxies HTMLVideoElement directly.
+    details: If the browser can do it natively, Vide doesn't reinvent it. Proxies HTMLVideoElement directly.
 ---
 
 ## Plugin Sizes

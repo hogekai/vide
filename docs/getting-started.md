@@ -204,7 +204,7 @@ To load only the plugins you need, use individual builds:
 </script>
 ```
 
-For HLS or DASH streaming, load the peer dependency before the vide plugin:
+For HLS or DASH streaming, load the peer dependency before the Vide plugin:
 
 ```html
 <script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js"></script>

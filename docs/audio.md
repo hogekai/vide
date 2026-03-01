@@ -1,6 +1,6 @@
 # Audio
 
-vide supports `<audio>` elements with the same API as `<video>`. Useful for podcasts, music players, and audio ads.
+Vide supports `<audio>` elements with the same API as `<video>`. Useful for podcasts, music players, and audio ads.
 
 ## Usage
 

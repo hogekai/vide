@@ -1,6 +1,6 @@
 # Vue
 
-Vue 3 composables and components for vide. Import from `@videts/vide/vue`.
+Vue 3 composables and components for Vide. Import from `@videts/vide/vue`.
 
 ```sh
 npm install @videts/vide vue
@@ -125,7 +125,7 @@ Interactive controls that subscribe to player events via context.
 | `VideTimeDisplay` | `class`, `separator` | — |
 
 - Default slot — custom icons or content (button components).
-- CSS custom properties — use for styling sliders (same as vide UI plugin theme).
+- CSS custom properties — use for styling sliders (same as Vide UI plugin theme).
 - `data-*` attributes — use for state-based CSS selectors.
 
 ### Ad Components

@@ -1,6 +1,6 @@
 # Svelte
 
-Svelte 5 functions and components for vide. Import from `@videts/vide/svelte`.
+Svelte 5 functions and components for Vide. Import from `@videts/vide/svelte`.
 
 ```sh
 npm install @videts/vide svelte
@@ -130,7 +130,7 @@ Interactive controls that subscribe to player events via context.
 | `TimeDisplay` | `class`, `separator` | — |
 
 - Children — custom icons or content (button components), rendered via Svelte 5 snippets.
-- CSS custom properties — use for styling sliders (same as vide UI plugin theme).
+- CSS custom properties — use for styling sliders (same as Vide UI plugin theme).
 - `data-*` attributes — use for state-based CSS selectors.
 
 ### Ad Components

@@ -1,6 +1,6 @@
 # Ads Setup
 
-This guide covers the different ad integration options in vide.
+This guide covers the different ad integration options in Vide.
 
 ## Client-Side Ads (VAST)
 
