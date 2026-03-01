@@ -166,6 +166,10 @@ player.use(vast({
 }));
 ```
 
+### Learn More Button
+
+The `ad-learn-more` component displays a CTA button during ad playback when the VAST response includes a `clickThrough` URL. It shows the ad title and domain, and opens the URL in a new tab on click. This component is **on by default** — use `exclude: ["ad-learn-more"]` to disable it.
+
 ### Include Option
 
 The `ad-overlay` full-area click-through overlay is off by default. Enable it with the `include` option:
@@ -185,6 +189,7 @@ React, Vue, and Svelte integrations provide dedicated ad components that auto-su
 <Vide.AdLabel />
 <Vide.AdCountdown />
 <Vide.AdSkip />
+<Vide.AdLearnMore />
 ```
 
 **Vue**
@@ -194,6 +199,7 @@ React, Vue, and Svelte integrations provide dedicated ad components that auto-su
 <VideAdLabel />
 <VideAdCountdown />
 <VideAdSkip />
+<VideAdLearnMore />
 ```
 
 **Svelte**
@@ -203,6 +209,7 @@ React, Vue, and Svelte integrations provide dedicated ad components that auto-su
 <AdLabel />
 <AdCountdown />
 <AdSkip />
+<AdLearnMore />
 ```
 
 Each component renders only during active ad playback. See the [React](/frameworks/react#ad-components), [Vue](/frameworks/vue#ad-components), or [Svelte](/frameworks/svelte#ad-components) docs for full API reference.
