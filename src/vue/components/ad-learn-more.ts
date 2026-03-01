@@ -1,20 +1,30 @@
-import { type VNode, defineComponent, h } from "vue";
+import { type VNode, computed, defineComponent, h } from "vue";
 import { useVideContext } from "../context.js";
+import { IconExternalLink } from "../icons.js";
 import { useAdState } from "../use-ad-state.js";
 
 function cx(...classes: (string | false | undefined)[]): string {
 	return classes.filter(Boolean).join(" ");
 }
 
+function hostname(url: string): string {
+	try {
+		return new URL(url).hostname;
+	} catch {
+		return url;
+	}
+}
+
 export const VideAdLearnMore = defineComponent({
 	name: "VideAdLearnMore",
 	inheritAttrs: false,
-	props: {
-		showTitle: { type: Boolean, default: false },
-	},
-	setup(props, { attrs, slots }) {
+	setup(_, { attrs, slots }) {
 		const player = useVideContext();
 		const { active, meta } = useAdState(player);
+
+		const host = computed(() =>
+			meta.value?.clickThrough ? hostname(meta.value.clickThrough) : "",
+		);
 
 		const onClick = () => {
 			const p = player.value;
@@ -27,13 +37,21 @@ export const VideAdLearnMore = defineComponent({
 		return () => {
 			if (!active.value || !meta.value?.clickThrough) return null;
 
-			const children: (VNode | VNode[] | string)[] = [];
-			if (props.showTitle && meta.value.adTitle) {
-				children.push(
-					h("span", { class: "vide-ad-cta__title" }, meta.value.adTitle),
-				);
-			}
-			children.push(slots.default?.() ?? "Learn More");
+			const defaultContent: VNode[] = [
+				h("span", { class: "vide-ad-cta__icon" }, [h(IconExternalLink)]),
+				h("span", { class: "vide-ad-cta__body" }, [
+					...(meta.value.adTitle
+						? [
+								h(
+									"span",
+									{ class: "vide-ad-cta__title" },
+									meta.value.adTitle,
+								),
+							]
+						: []),
+					h("span", { class: "vide-ad-cta__url" }, host.value),
+				]),
+			];
 
 			return h(
 				"button",
@@ -42,7 +60,7 @@ export const VideAdLearnMore = defineComponent({
 					class: cx("vide-ad-cta", attrs.class as string),
 					onClick,
 				},
-				children,
+				slots.default?.() ?? defaultContent,
 			);
 		};
 	},

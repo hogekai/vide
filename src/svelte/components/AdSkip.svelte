@@ -2,6 +2,7 @@
 import { getContext } from "svelte";
 import type { Snippet } from "svelte";
 import { type PlayerGetter, VIDE_PLAYER_KEY } from "../context.js";
+import IconSkipForward from "../icons/IconSkipForward.svelte";
 import { useAdState } from "../use-ad-state.svelte.js";
 
 interface Props {
@@ -54,14 +55,13 @@ function onClick() {
 		onclick={onClick}
 		disabled={!canSkip}
 	>
-		{#if canSkip}
-			{#if children}
-				{@render children()}
-			{:else}
-				Skip Ad
-			{/if}
+		{#if children}
+			{@render children()}
 		{:else}
-			Skip in {countdown}s
+			<span class="vide-skip__label">
+				{canSkip ? "Skip Ad" : `Skip in ${countdown}s`}
+			</span>
+			<IconSkipForward />
 		{/if}
 	</button>
 {/if}

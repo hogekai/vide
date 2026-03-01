@@ -79,3 +79,28 @@ export const IconFullscreenExit = defineComponent({
 		]);
 	},
 });
+
+export const IconExternalLink = defineComponent({
+	name: "IconExternalLink",
+	render() {
+		return h("svg", defaults, [
+			h("path", {
+				d: "M14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z",
+			}),
+			h("path", {
+				d: "M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z",
+			}),
+		]);
+	},
+});
+
+export const IconSkipForward = defineComponent({
+	name: "IconSkipForward",
+	render() {
+		return h("svg", defaults, [
+			h("path", {
+				d: "M5 18l10-6L5 6v12zm12-12v12h2V6h-2z",
+			}),
+		]);
+	},
+});

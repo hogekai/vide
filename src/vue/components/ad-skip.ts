@@ -1,5 +1,6 @@
 import { defineComponent, h, ref } from "vue";
 import { useVideContext } from "../context.js";
+import { IconSkipForward } from "../icons.js";
 import { useAdState } from "../use-ad-state.js";
 import { useVideEvent } from "../use-vide-event.js";
 
@@ -40,6 +41,15 @@ export const VideAdSkip = defineComponent({
 			if (!active.value || !meta.value || meta.value.skipOffset === undefined)
 				return null;
 
+			const defaultContent = [
+				h(
+					"span",
+					{ class: "vide-skip__label" },
+					canSkip.value ? "Skip Ad" : `Skip in ${countdown.value}s`,
+				),
+				h(IconSkipForward),
+			];
+
 			return h(
 				"button",
 				{
@@ -53,9 +63,7 @@ export const VideAdSkip = defineComponent({
 					onClick,
 					disabled: !canSkip.value,
 				},
-				canSkip.value
-					? (slots.default?.() ?? "Skip Ad")
-					: `Skip in ${countdown.value}s`,
+				slots.default?.() ?? defaultContent,
 			);
 		};
 	},

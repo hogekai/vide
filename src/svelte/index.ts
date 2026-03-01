@@ -46,6 +46,8 @@ export { default as IconVolumeLow } from "./icons/IconVolumeLow.svelte";
 export { default as IconVolumeMute } from "./icons/IconVolumeMute.svelte";
 export { default as IconFullscreenEnter } from "./icons/IconFullscreenEnter.svelte";
 export { default as IconFullscreenExit } from "./icons/IconFullscreenExit.svelte";
+export { default as IconExternalLink } from "./icons/IconExternalLink.svelte";
+export { default as IconSkipForward } from "./icons/IconSkipForward.svelte";
 
 export { useAdState } from "./use-ad-state.svelte.js";
 export type { AdState } from "./use-ad-state.svelte.js";
