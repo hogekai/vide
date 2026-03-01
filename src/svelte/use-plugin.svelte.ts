@@ -6,7 +6,7 @@ import { hls } from "../hls/index.js";
 import type { HlsPluginOptions } from "../hls/types.js";
 import { ssai } from "../ssai/index.js";
 import type { SsaiPluginOptions } from "../ssai/types.js";
-import type { Plugin } from "../types.js";
+import type { Plugin, PluginPlayer } from "../types.js";
 import { ui } from "../ui/index.js";
 import type { UiPluginOptions } from "../ui/types.js";
 import { vast } from "../vast/index.js";
@@ -24,7 +24,7 @@ function usePlugin<O>(
 		const p = getPlayer();
 		if (!p) return;
 		const plugin = factory(options);
-		const cleanup = plugin.setup(p);
+		const cleanup = plugin.setup(p as PluginPlayer);
 		return () => {
 			cleanup?.();
 		};

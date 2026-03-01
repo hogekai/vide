@@ -7,6 +7,7 @@ import type {
 	PlayerEventMap,
 	PlayerState,
 	Plugin,
+	PluginPlayer,
 	QualityLevel,
 	SeekableRange,
 	SourceHandler,
@@ -657,7 +658,7 @@ export function createPlayer(el: MediaElement): Player {
 				console.warn("[vide] Cannot use plugin after destroy");
 				return;
 			}
-			const cleanup = plugin.setup(player);
+			const cleanup = plugin.setup(player as PluginPlayer);
 			if (cleanup) {
 				cleanups.push(cleanup);
 			}
@@ -702,7 +703,7 @@ export function createPlayer(el: MediaElement): Player {
 	};
 
 	// Expose setState for plugins (e.g. VAST plugin needs to set ad states)
-	(player as unknown as { _setState: typeof setState })._setState = setState;
+	(player as unknown as { setState: typeof setState }).setState = setState;
 
 	return player;
 }

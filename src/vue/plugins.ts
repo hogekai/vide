@@ -7,7 +7,7 @@ import { hls } from "../hls/index.js";
 import type { HlsPluginOptions } from "../hls/types.js";
 import { ssai } from "../ssai/index.js";
 import type { SsaiPluginOptions } from "../ssai/types.js";
-import type { Plugin } from "../types.js";
+import type { Plugin, PluginPlayer } from "../types.js";
 import { vast } from "../vast/index.js";
 import type { VastPluginOptions } from "../vast/types.js";
 import { vmap } from "../vmap/index.js";
@@ -39,7 +39,7 @@ function createPluginComponent<O>(
 					cleanup = undefined;
 					if (!p) return;
 					const plugin = factory({ ...props } as unknown as O);
-					cleanup = plugin.setup(p) ?? undefined;
+					cleanup = plugin.setup(p as PluginPlayer) ?? undefined;
 				},
 				{ immediate: true },
 			);

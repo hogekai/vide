@@ -1,4 +1,4 @@
-import type { Player, Plugin } from "../types.js";
+import type { Player, Plugin, PluginPlayer } from "../types.js";
 import type { AdPlugin, VastAd } from "../vast/types.js";
 import { uiAdPlugin } from "./ad-plugin.js";
 import { createAdCountdown } from "./components/ad-countdown.js";
@@ -89,7 +89,7 @@ export function ui(options: UiPluginOptions): UiPlugin {
 
 	return {
 		name: "ui",
-		setup(player: Player): () => void {
+		setup(player: PluginPlayer): () => void {
 			// Auto-exclude video-only components for audio elements
 			if (player.isAudio) {
 				excluded.add("fullscreen");

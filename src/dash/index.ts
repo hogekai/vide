@@ -2,8 +2,8 @@ import { ERR_DASH_IMPORT, ERR_DASH_PLAYBACK } from "../errors.js";
 import { qualityLabel } from "../quality.js";
 import type {
 	MediaElement,
-	Player,
 	Plugin,
+	PluginPlayer,
 	QualityLevel,
 	RecoveryConfig,
 	SourceHandler,
@@ -61,7 +61,7 @@ interface DashErrorEvent {
 export function dash(options: DashPluginOptions = {}): Plugin {
 	return {
 		name: "dash",
-		setup(player: Player): () => void {
+		setup(player: PluginPlayer): () => void {
 			let dashInstance: DashMediaPlayerLike | null = null;
 			let destroyed = false;
 

@@ -1,4 +1,4 @@
-import type { Player } from "../types.js";
+import type { PluginPlayer } from "../types.js";
 import { type SingleAdResult, playSingleAd } from "./playback.js";
 import type { AdPlugin, VastAd, VastLinear } from "./types.js";
 
@@ -68,7 +68,7 @@ export function classifyAds(vastAds: VastAd[]): ClassifiedAds {
  * `standalonePool` is substituted before moving to the next pod ad.
  */
 export async function playPod(
-	player: Player,
+	player: PluginPlayer,
 	ads: PlayableAd[],
 	options: {
 		source: "vast" | "vmap";
@@ -148,7 +148,7 @@ export async function playPod(
  * Returns the result of the first successful ad, or null if all fail.
  */
 export async function playWaterfall(
-	player: Player,
+	player: PluginPlayer,
 	ads: PlayableAd[],
 	options: {
 		source: "vast" | "vmap";

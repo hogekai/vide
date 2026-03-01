@@ -239,9 +239,15 @@ export interface SourceHandler {
 }
 
 // === Plugin ===
+
+/** Extended player interface exposed to plugins, includes state control. */
+export interface PluginPlayer extends Player {
+	setState(state: PlayerState): void;
+}
+
 export interface Plugin {
 	name: string;
-	setup(player: Player): (() => void) | undefined;
+	setup(player: PluginPlayer): (() => void) | undefined;
 }
 
 // === Player ===

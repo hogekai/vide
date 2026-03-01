@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { createPlayer } from "../../src/core.js";
-import type { PlayerState } from "../../src/types.js";
+import type { PluginPlayer } from "../../src/types.js";
 import { createKeyboard } from "../../src/ui/components/keyboard.js";
 import type { UIComponentName } from "../../src/ui/types.js";
 
@@ -160,8 +160,7 @@ describe("createKeyboard", () => {
 			writable: true,
 		});
 
-		const setState = (player as unknown as { _setState(s: PlayerState): void })
-			._setState;
+		const setState = (player as unknown as PluginPlayer).setState;
 		setState("ad:loading");
 		setState("ad:playing");
 

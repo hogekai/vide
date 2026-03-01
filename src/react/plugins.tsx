@@ -7,7 +7,7 @@ import { hls } from "../hls/index.js";
 import type { HlsPluginOptions } from "../hls/types.js";
 import { ssai } from "../ssai/index.js";
 import type { SsaiPluginOptions } from "../ssai/types.js";
-import type { Plugin } from "../types.js";
+import type { Plugin, PluginPlayer } from "../types.js";
 import { vast } from "../vast/index.js";
 import type { VastPluginOptions } from "../vast/types.js";
 import { vmap } from "../vmap/index.js";
@@ -24,7 +24,7 @@ function createPluginComponent<O>(name: string, factory: (opts: O) => Plugin) {
 		useEffect(() => {
 			if (!player) return;
 			const plugin = factory(optionsRef.current);
-			const cleanup = plugin.setup(player);
+			const cleanup = plugin.setup(player as PluginPlayer);
 			return () => {
 				cleanup?.();
 			};

@@ -120,7 +120,7 @@ function createMockPlayer() {
 		set src(v: string) {
 			_src = v;
 		},
-		_setState(s: string) {
+		setState(s: string) {
 			_state = s;
 		},
 		emit(event: string, data: unknown) {
@@ -386,8 +386,8 @@ describe("playSingleAd", () => {
 	it("does not call setState playing on completion", async () => {
 		const player = createMockPlayer();
 		const states: string[] = [];
-		const origSetState = player._setState.bind(player);
-		player._setState = (s: string) => {
+		const origSetState = player.setState.bind(player);
+		player.setState = (s: string) => {
 			states.push(s);
 			origSetState(s);
 		};

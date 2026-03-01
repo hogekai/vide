@@ -111,8 +111,8 @@ describe("createPlayButton", () => {
 
 		// Drive to ad:playing via ad:loading
 		driveToPlaying(el);
-		(player as any)._setState("ad:loading");
-		(player as any)._setState("ad:playing");
+		(player as any).setState("ad:loading");
+		(player as any).setState("ad:playing");
 
 		const btn = container.querySelector(".vide-play") as Element;
 		expect(btn.classList.contains("vide-play--playing")).toBe(true);
@@ -124,8 +124,8 @@ describe("createPlayButton", () => {
 		const el = makeVideo();
 		const player = createPlayer(el);
 		driveToPlaying(el);
-		(player as any)._setState("ad:loading");
-		(player as any)._setState("ad:playing");
+		(player as any).setState("ad:loading");
+		(player as any).setState("ad:playing");
 
 		const container = document.createElement("div");
 		const comp = createPlayButton();
@@ -150,9 +150,9 @@ describe("createPlayButton", () => {
 		comp.connect(player);
 
 		driveToPlaying(el);
-		(player as any)._setState("ad:loading");
-		(player as any)._setState("ad:playing");
-		(player as any)._setState("ad:paused");
+		(player as any).setState("ad:loading");
+		(player as any).setState("ad:playing");
+		(player as any).setState("ad:paused");
 
 		const btn = container.querySelector(".vide-play") as Element;
 		expect(btn.classList.contains("vide-play--paused")).toBe(true);

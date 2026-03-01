@@ -1,4 +1,4 @@
-import type { Player, PlayerState } from "../types.js";
+import type { PluginPlayer } from "../types.js";
 import {
 	VAST_MEDIA_DISPLAY_ERROR,
 	VAST_MEDIA_NOT_FOUND,
@@ -9,7 +9,7 @@ import { createQuartileTracker, track, trackError } from "./tracker.js";
 import type { AdPlugin, VastAd, VastLinear } from "./types.js";
 
 export interface PlaySingleAdOptions {
-	player: Player;
+	player: PluginPlayer;
 	ad: VastAd;
 	linear: VastLinear;
 	source: "vast" | "vmap";
@@ -38,8 +38,7 @@ export function playSingleAd(options: PlaySingleAdOptions): {
 	const { player, ad, linear, source } = options;
 	const adId = ad.id;
 
-	const setState = (player as unknown as { _setState(s: PlayerState): void })
-		._setState;
+	const setState = player.setState;
 
 	let resolvePromise: (result: SingleAdResult) => void = () => {};
 	const promise = new Promise<SingleAdResult>((resolve) => {

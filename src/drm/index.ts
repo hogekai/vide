@@ -3,7 +3,7 @@ import {
 	ERR_DRM_LICENSE,
 	ERR_DRM_UNSUPPORTED,
 } from "../errors.js";
-import type { Player, Plugin } from "../types.js";
+import type { Plugin, PluginPlayer } from "../types.js";
 import { dashDrmConfig, hlsDrmConfig } from "./bridge.js";
 import { detectKeySystem } from "./detect.js";
 import { setupEme } from "./eme.js";
@@ -28,7 +28,7 @@ export { setupEme } from "./eme.js";
 export function drm(options: DrmPluginOptions): Plugin {
 	return {
 		name: "drm",
-		setup(player: Player): () => void {
+		setup(player: PluginPlayer): () => void {
 			let destroyed = false;
 			let emeCleanup: (() => void) | undefined;
 

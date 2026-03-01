@@ -6,8 +6,8 @@ import {
 import { qualityLabel } from "../quality.js";
 import type {
 	MediaElement,
-	Player,
 	Plugin,
+	PluginPlayer,
 	QualityLevel,
 	RecoveryConfig,
 	SourceHandler,
@@ -76,7 +76,7 @@ interface HlsErrorData {
 export function hls(options: HlsPluginOptions = {}): Plugin {
 	return {
 		name: "hls",
-		setup(player: Player): () => void {
+		setup(player: PluginPlayer): () => void {
 			let hlsInstance: HlsLike | null = null;
 			let destroyed = false;
 

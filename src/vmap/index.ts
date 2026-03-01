@@ -1,4 +1,4 @@
-import type { Player, PlayerState, Plugin } from "../types.js";
+import type { PlayerState, Plugin, PluginPlayer } from "../types.js";
 import {
 	VAST_NO_ADS,
 	VAST_WRAPPER_TIMEOUT,
@@ -28,14 +28,12 @@ export { createScheduler } from "./scheduler.js";
 export function vmap(options: VmapPluginOptions): Plugin {
 	return {
 		name: "vmap",
-		setup(player: Player): () => void {
+		setup(player: PluginPlayer): () => void {
 			let aborted = false;
 			let schedulerRef: ReturnType<typeof createScheduler> | null = null;
 			let adAbort: (() => void) | null = null;
 
-			const setState = (
-				player as unknown as { _setState(s: PlayerState): void }
-			)._setState;
+			const setState = player.setState;
 
 			async function playAdForBreak(adBreak: AdBreak): Promise<void> {
 				if (aborted || !adBreak.adSource) return;

@@ -10,6 +10,7 @@ export type {
 	PlayerEventMap,
 	PlayerState,
 	Plugin,
+	PluginPlayer,
 	QualityLevel,
 	RecoveryConfig,
 	SeekableRange,

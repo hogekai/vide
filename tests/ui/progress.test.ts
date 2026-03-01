@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { createPlayer } from "../../src/core.js";
-import type { PlayerState } from "../../src/types.js";
+import type { PluginPlayer } from "../../src/types.js";
 import { createProgress } from "../../src/ui/components/progress.js";
 
 function makeVideo(): HTMLVideoElement {
@@ -58,8 +58,7 @@ describe("createProgress", () => {
 		comp.connect(player);
 
 		// Simulate ad:loading transition
-		const setState = (player as unknown as { _setState(s: PlayerState): void })
-			._setState;
+		const setState = (player as unknown as PluginPlayer).setState;
 		setState("ad:loading");
 
 		const root = container.querySelector<HTMLDivElement>(
@@ -79,8 +78,7 @@ describe("createProgress", () => {
 		comp.mount(container);
 		comp.connect(player);
 
-		const setState = (player as unknown as { _setState(s: PlayerState): void })
-			._setState;
+		const setState = (player as unknown as PluginPlayer).setState;
 		setState("ad:loading");
 		setState("ad:playing");
 		setState("playing");

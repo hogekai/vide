@@ -106,7 +106,7 @@ function createMockPlayer() {
 		set src(v: string) {
 			_src = v;
 		},
-		_setState(s: string) {
+		setState(s: string) {
 			_state = s;
 		},
 		emit(event: string, data: unknown) {

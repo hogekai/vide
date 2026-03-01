@@ -1,4 +1,4 @@
-import type { Player, Plugin } from "../types.js";
+import type { Plugin, PluginPlayer } from "../types.js";
 import { createQuartileTracker, track } from "../vast/tracker.js";
 import { createDashMonitor } from "./dash-monitor.js";
 import { createHlsMonitor } from "./hls-monitor.js";
@@ -28,7 +28,7 @@ function getTracking(ab: AdBreakMetadata): AdTrackingMap {
 export function ssai(options: SsaiPluginOptions = {}): Plugin {
 	return {
 		name: "ssai",
-		setup(player: Player): () => void {
+		setup(player: PluginPlayer): () => void {
 			const tolerance = options.tolerance ?? DEFAULT_TOLERANCE;
 			const parser = options.parser;
 

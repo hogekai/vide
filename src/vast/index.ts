@@ -1,4 +1,4 @@
-import type { Player, PlayerState, Plugin } from "../types.js";
+import type { Player, PlayerState, Plugin, PluginPlayer } from "../types.js";
 import {
 	VAST_NO_ADS,
 	VAST_WRAPPER_TIMEOUT,
@@ -50,13 +50,11 @@ export { trackError } from "./tracker.js";
 export function vast(options: VastPluginOptions): Plugin {
 	return {
 		name: "vast",
-		setup(player: Player): () => void {
+		setup(player: PluginPlayer): () => void {
 			let aborted = false;
 			let adAbort: (() => void) | null = null;
 
-			const setState = (
-				player as unknown as { _setState(s: PlayerState): void }
-			)._setState;
+			const setState = player.setState;
 
 			async function loadAndPlayAd(): Promise<void> {
 				if (aborted) return;

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createPlayer } from "../../src/core.js";
-import type { PlayerState } from "../../src/types.js";
+import type { PluginPlayer } from "../../src/types.js";
 import { createAutohide } from "../../src/ui/components/autohide.js";
 
 function makeVideo(): HTMLVideoElement {
@@ -85,8 +85,7 @@ describe("createAutohide", () => {
 	it("does not go idle during ad state", () => {
 		const { videoEl, player, root, comp } = setup();
 		driveToPlaying(videoEl);
-		const setState = (player as unknown as { _setState(s: PlayerState): void })
-			._setState;
+		const setState = (player as unknown as PluginPlayer).setState;
 		setState("ad:loading");
 		setState("ad:playing");
 		vi.advanceTimersByTime(5000);
