@@ -62,6 +62,11 @@ useUi(player, { container: containerRef.current! });
 
 All hooks are safe to call before the video element mounts (`player.current` is `null`).
 
+> **`useUi` vs `<Vide.UI>`** — `useUi` はバニラ JS の `ui()` プラグイン（DOM を自動生成する）を React のライフサイクルに乗せるフックです。`<Vide.UI>` + `<Vide.PlayButton>` 等の React コンポーネントで UI を組む場合、`useUi` は不要です。両方を同時に使うとコントロールが二重に生成されます。
+>
+> - **React コンポーネントで UI を組む** → `<Vide.UI>` を使う（推奨）
+> - **バニラ UI プラグインをそのまま使いたい** → `useUi` を使う
+
 ### useVideEvent(player, event, handler)
 
 Subscribe to player events with automatic cleanup.
@@ -290,6 +295,99 @@ useVast(player, {
   ],
 });
 ```
+
+### Custom Components
+
+Build your own player components using `useVideContext()` and `useVideEvent()`. All built-in components follow this same pattern.
+
+#### Basics
+
+`useVideContext()` returns `Player | null` from context. Must be inside `<Vide.Root>`.
+
+```tsx
+import { useVideContext, useVideEvent } from "@videts/vide/react";
+
+function CurrentTime() {
+  const player = useVideContext();
+  const [time, setTime] = useState(0);
+
+  useVideEvent(player, "timeupdate", ({ currentTime }) => {
+    setTime(currentTime);
+  });
+
+  return <span>{Math.floor(time)}s</span>;
+}
+```
+
+Use it inside `<Vide.Controls>` (or anywhere within `<Vide.Root>`):
+
+```tsx
+<Vide.Controls>
+  <Vide.PlayButton />
+  <CurrentTime />
+</Vide.Controls>
+```
+
+#### Subscribing to State Changes
+
+```tsx
+function StateIndicator() {
+  const player = useVideContext();
+  const [state, setState] = useState("idle");
+
+  useVideEvent(player, "statechange", ({ to }) => {
+    setState(to);
+  });
+
+  return <div className="my-state-badge">{state}</div>;
+}
+```
+
+#### Calling Player Methods
+
+Access `player` directly for actions. Guard with `if (!player)` since it's `null` before mount.
+
+```tsx
+function SkipButton({ seconds = 10 }: { seconds?: number }) {
+  const player = useVideContext();
+
+  const onClick = useCallback(() => {
+    if (!player) return;
+    player.currentTime = Math.min(
+      player.currentTime + seconds,
+      player.el.duration,
+    );
+  }, [player, seconds]);
+
+  return <button onClick={onClick}>+{seconds}s</button>;
+}
+```
+
+#### Ad-Aware Components
+
+Use `useAdState()` for components that react to ad playback.
+
+```tsx
+import { useVideContext, useAdState } from "@videts/vide/react";
+
+function ContentOverlay() {
+  const player = useVideContext();
+  const { active } = useAdState(player);
+
+  if (active) return null; // hide during ads
+  return <div className="my-overlay">...</div>;
+}
+```
+
+#### Available Hooks
+
+| Hook | Purpose |
+|------|---------|
+| `useVideContext()` | Get `Player \| null` from context |
+| `useVideEvent(player, event, handler)` | Subscribe to player events with auto-cleanup |
+| `useAdState(player)` | Get `{ active, meta }` for ad state |
+| `useAutohide(containerRef, player)` | Auto-hide controls on inactivity |
+| `useKeyboard(containerRef, player)` | Keyboard shortcuts (space, arrows, etc.) |
 
 ## Import Styles
 
