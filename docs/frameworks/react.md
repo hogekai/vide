@@ -62,10 +62,10 @@ useUi(player, { container: containerRef.current! });
 
 All hooks are safe to call before the video element mounts (`player.current` is `null`).
 
-> **`useUi` vs `<Vide.UI>`** — `useUi` はバニラ JS の `ui()` プラグイン（DOM を自動生成する）を React のライフサイクルに乗せるフックです。`<Vide.UI>` + `<Vide.PlayButton>` 等の React コンポーネントで UI を組む場合、`useUi` は不要です。両方を同時に使うとコントロールが二重に生成されます。
+> **`useUi` vs `<Vide.UI>`** — `useUi` is a hook that mounts the vanilla JS `ui()` plugin (which auto-generates DOM) onto React's lifecycle. When building UI with React components like `<Vide.UI>` + `<Vide.PlayButton>`, `useUi` is not needed. Using both at the same time will generate duplicate controls.
 >
-> - **React コンポーネントで UI を組む** → `<Vide.UI>` を使う（推奨）
-> - **バニラ UI プラグインをそのまま使いたい** → `useUi` を使う
+> - **Build UI with React components** → use `<Vide.UI>` (recommended)
+> - **Use the vanilla UI plugin as-is** → use `useUi`
 
 ### useVideEvent(player, event, handler)
 
@@ -226,6 +226,22 @@ if (active && meta?.clickThrough) {
 
 - `active` — `boolean`, true during ad playback.
 - `meta` — `AdMeta | null` with `adId`, `clickThrough`, `skipOffset`, `duration`, `adTitle`.
+
+## Styling
+
+Every component accepts `className`. Your classes are appended after the default class (`vide-play`, `vide-progress`, etc.), so you can use Tailwind or any CSS framework alongside `theme.css`.
+
+```tsx
+<Vide.Controls className="flex items-center gap-2 px-4">
+  <Vide.PlayButton className="rounded-full bg-white/80 p-2 hover:bg-white" />
+  <Vide.Progress className="flex-1" />
+  <Vide.TimeDisplay className="text-sm text-white tabular-nums" />
+  <Vide.MuteButton className="opacity-70 hover:opacity-100" />
+  <Vide.FullscreenButton className="ml-auto" />
+</Vide.Controls>
+```
+
+To go fully custom without `theme.css`, skip the import and style everything with your own classes.
 
 ## Patterns
 
