@@ -187,6 +187,41 @@ Each component has a default CSS class matching the vanilla UI plugin (`vide-pla
 - `data-*` attributes — use for state-based CSS selectors.
 - `className` is appended after the default class, not replacing it.
 
+### Ad Components
+
+Components for ad overlay, controls, and CTA during ad playback. Use with `useVast()` or `useVmap()`. Each component auto-subscribes to ad events via context and renders only during active ads.
+
+```tsx
+<Vide.AdOverlay />
+<Vide.AdLabel />
+<Vide.AdCountdown />
+<Vide.AdSkip />
+```
+
+| Component | Default Class | Props |
+|-----------|--------------|-------|
+| `AdOverlay` | `vide-ad-overlay` | `className`, `children` |
+| `AdSkip` | `vide-skip` | `className`, `children` |
+| `AdCountdown` | `vide-ad-countdown` | `className`, `format` |
+| `AdLabel` | `vide-ad-label` | `className`, `children` |
+| `AdLearnMore` | `vide-ad-cta` | `className`, `children`, `showTitle` |
+
+### useAdState(player)
+
+Low-level hook for custom ad UI. Returns `{ active, meta }`.
+
+```tsx
+const player = useVideContext();
+const { active, meta } = useAdState(player);
+
+if (active && meta?.clickThrough) {
+  // render custom CTA
+}
+```
+
+- `active` — `boolean`, true during ad playback.
+- `meta` — `AdMeta | null` with `adId`, `clickThrough`, `skipOffset`, `duration`, `adTitle`.
+
 ## Patterns
 
 ### Hook vs Component for Plugins
@@ -295,6 +330,10 @@ function VideoPlayer({ src, adTag }: { src: string; adTag?: string }) {
       {adTag && <Vide.VastPlugin tagUrl={adTag} />}
       <Vide.UI>
         <Vide.Video src={src} />
+        <Vide.AdOverlay />
+        <Vide.AdLabel />
+        <Vide.AdCountdown />
+        <Vide.AdSkip />
         <Vide.Controls>
           <Vide.PlayButton />
           <Vide.Progress />

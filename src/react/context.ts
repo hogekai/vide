@@ -8,15 +8,10 @@ export interface VideContextValue {
 
 export const VideContext = createContext<VideContextValue | null>(null);
 
-export function useVideContext(): Player {
+export function useVideContext(): Player | null {
 	const ctx = useContext(VideContext);
 	if (ctx === null) {
 		throw new Error("useVideContext must be used within <Vide.Root>");
-	}
-	if (ctx.player === null) {
-		throw new Error(
-			"useVideContext: player is not ready. Ensure <Vide.Video> is rendered inside <Vide.Root>.",
-		);
 	}
 	return ctx.player;
 }

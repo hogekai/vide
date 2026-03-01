@@ -37,12 +37,26 @@ export { VideErrorDisplay } from "./components/error-display.js";
 export { VideBigPlayButton } from "./components/big-play-button.js";
 export { VideClickPlay } from "./components/click-play.js";
 
+export { useAdState } from "./use-ad-state.js";
+export type { AdState } from "./use-ad-state.js";
+
+export { VideAdOverlay } from "./components/ad-overlay.js";
+export { VideAdSkip } from "./components/ad-skip.js";
+export { VideAdCountdown } from "./components/ad-countdown.js";
+export { VideAdLabel } from "./components/ad-label.js";
+export { VideAdLearnMore } from "./components/ad-learn-more.js";
+
 export { useAutohide } from "./use-autohide.js";
 export { useKeyboard } from "./use-keyboard.js";
 export type { UseKeyboardOptions } from "./use-keyboard.js";
 
 export { VideUI, VideControls } from "./ui.js";
 
+import { VideAdCountdown } from "./components/ad-countdown.js";
+import { VideAdLabel } from "./components/ad-label.js";
+import { VideAdLearnMore } from "./components/ad-learn-more.js";
+import { VideAdOverlay } from "./components/ad-overlay.js";
+import { VideAdSkip } from "./components/ad-skip.js";
 import { VideBigPlayButton } from "./components/big-play-button.js";
 import { VideClickPlay } from "./components/click-play.js";
 import { VideErrorDisplay } from "./components/error-display.js";
@@ -86,4 +100,9 @@ export const Vide = {
 	ClickPlay: VideClickPlay,
 	UI: VideUI,
 	Controls: VideControls,
+	AdOverlay: VideAdOverlay,
+	AdSkip: VideAdSkip,
+	AdCountdown: VideAdCountdown,
+	AdLabel: VideAdLabel,
+	AdLearnMore: VideAdLearnMore,
 } as const;

@@ -85,7 +85,13 @@ export interface PlayerEventMap {
 		}[];
 		trackingEvents: Record<string, string[]>;
 	};
-	"ad:start": { adId: string };
+	"ad:start": {
+		adId: string;
+		clickThrough?: string | undefined;
+		skipOffset?: number | undefined;
+		duration?: number | undefined;
+		adTitle?: string | undefined;
+	};
 	"ad:end": { adId: string };
 	"ad:skip": { adId: string };
 	"ad:click": { clickThrough: string | undefined; clickTracking: string[] };
@@ -128,6 +134,16 @@ export interface PlayerEventMap {
 }
 
 export type PlayerEvent = keyof PlayerEventMap;
+
+/** Ad metadata exposed by framework `useAdState` hooks. */
+export interface AdMeta {
+	adId: string;
+	clickThrough: string | undefined;
+	skipOffset: number | undefined;
+	duration: number | undefined;
+	adTitle: string | undefined;
+	adStartTime: number;
+}
 
 // === Recovery ===
 export interface RecoveryConfig {

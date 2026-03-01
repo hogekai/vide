@@ -1,5 +1,6 @@
 export { createPlayer } from "./core.js";
 export type {
+	AdMeta,
 	AdQuartile,
 	EventBus,
 	EventHandler,

@@ -128,6 +128,34 @@ Interactive controls that subscribe to player events via context.
 - CSS custom properties — use for styling sliders (same as vide UI plugin theme).
 - `data-*` attributes — use for state-based CSS selectors.
 
+### Ad Components
+
+Components for ad overlay, controls, and CTA during ad playback. Use with `useVast()` or `useVmap()`.
+
+```vue
+<VideAdOverlay />
+<VideAdLabel />
+<VideAdCountdown />
+<VideAdSkip />
+```
+
+| Component | Props |
+|-----------|-------|
+| `VideAdOverlay` | `class`, slot |
+| `VideAdSkip` | `class`, slot |
+| `VideAdCountdown` | `class`, `format` |
+| `VideAdLabel` | `class`, slot |
+| `VideAdLearnMore` | `class`, `show-title`, slot |
+
+### useAdState(player)
+
+Low-level composable for custom ad UI. Returns `{ active: Ref<boolean>, meta: ShallowRef<AdMeta | null> }`.
+
+```ts
+const player = useVideContext();
+const { active, meta } = useAdState(player);
+```
+
 ## Patterns
 
 ### Composable vs Component for Plugins
@@ -205,6 +233,7 @@ import {
   VideVideo, VidePlayButton, VideProgress,
   VideVolume, VideMuteButton, VideFullscreenButton,
   VideTimeDisplay, VideVastPlugin,
+  VideAdOverlay, VideAdLabel, VideAdCountdown, VideAdSkip,
 } from "@videts/vide/vue";
 import { ref } from "vue";
 
@@ -222,6 +251,10 @@ useVideEvent(player, "statechange", ({ from, to }) => {
   <div class="relative aspect-video">
     <VideVideo src="stream.m3u8" class="w-full">
       <VideVastPlugin v-if="showAds" tag-url="https://..." />
+      <VideAdOverlay />
+      <VideAdLabel />
+      <VideAdCountdown />
+      <VideAdSkip />
       <VidePlayButton class="absolute inset-0 flex items-center justify-center">
         ▶
       </VidePlayButton>

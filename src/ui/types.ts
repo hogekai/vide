@@ -16,6 +16,7 @@ export interface AdUIState {
 	skipOffset: number | undefined;
 	clickThrough: string | undefined;
 	duration: number;
+	adTitle: string | undefined;
 }
 
 /** Mutable holder for AdUIState, shared between ad-plugin and ad UI components. */
@@ -40,6 +41,7 @@ export type UIComponentName =
 	| "ad-skip"
 	| "ad-overlay"
 	| "ad-label"
+	| "ad-learn-more"
 	| "keyboard"
 	| "clickplay"
 	| "autohide";
@@ -51,6 +53,9 @@ export interface UiPluginOptions {
 
 	/** Components to exclude (default: none — all enabled). */
 	exclude?: UIComponentName[] | undefined;
+
+	/** Components to opt-in (overrides default exclusions like `ad-learn-more`). */
+	include?: UIComponentName[] | undefined;
 
 	/** Poster image URL. */
 	poster?: string | undefined;

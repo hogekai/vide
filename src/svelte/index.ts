@@ -47,6 +47,15 @@ export { default as IconVolumeMute } from "./icons/IconVolumeMute.svelte";
 export { default as IconFullscreenEnter } from "./icons/IconFullscreenEnter.svelte";
 export { default as IconFullscreenExit } from "./icons/IconFullscreenExit.svelte";
 
+export { useAdState } from "./use-ad-state.svelte.js";
+export type { AdState } from "./use-ad-state.svelte.js";
+
+export { default as AdOverlay } from "./components/AdOverlay.svelte";
+export { default as AdSkip } from "./components/AdSkip.svelte";
+export { default as AdCountdown } from "./components/AdCountdown.svelte";
+export { default as AdLabel } from "./components/AdLabel.svelte";
+export { default as AdLearnMore } from "./components/AdLearnMore.svelte";
+
 export { useAutohide } from "./use-autohide.svelte.js";
 export { useKeyboard } from "./use-keyboard.svelte.js";
 export type { UseKeyboardOptions } from "./use-keyboard.svelte.js";

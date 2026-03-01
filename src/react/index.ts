@@ -61,10 +61,29 @@ export type { BigPlayButtonProps } from "./components/big-play-button.js";
 export { ClickPlay } from "./components/click-play.js";
 export type { ClickPlayProps } from "./components/click-play.js";
 
+export { useAdState } from "./use-ad-state.js";
+export type { AdState } from "./use-ad-state.js";
+
+export { AdOverlay } from "./components/ad-overlay.js";
+export type { AdOverlayProps } from "./components/ad-overlay.js";
+export { AdSkip } from "./components/ad-skip.js";
+export type { AdSkipProps } from "./components/ad-skip.js";
+export { AdCountdown } from "./components/ad-countdown.js";
+export type { AdCountdownProps } from "./components/ad-countdown.js";
+export { AdLabel } from "./components/ad-label.js";
+export type { AdLabelProps } from "./components/ad-label.js";
+export { AdLearnMore } from "./components/ad-learn-more.js";
+export type { AdLearnMoreProps } from "./components/ad-learn-more.js";
+
 export { useAutohide } from "./use-autohide.js";
 export { useKeyboard } from "./use-keyboard.js";
 export type { UseKeyboardOptions } from "./use-keyboard.js";
 
+import { AdCountdown } from "./components/ad-countdown.js";
+import { AdLabel } from "./components/ad-label.js";
+import { AdLearnMore } from "./components/ad-learn-more.js";
+import { AdOverlay } from "./components/ad-overlay.js";
+import { AdSkip } from "./components/ad-skip.js";
 import { BigPlayButton } from "./components/big-play-button.js";
 import { ClickPlay } from "./components/click-play.js";
 import { ErrorDisplay } from "./components/error-display.js";
@@ -110,4 +129,9 @@ export const Vide = {
 	ErrorDisplay,
 	BigPlayButton,
 	ClickPlay,
+	AdOverlay,
+	AdSkip,
+	AdCountdown,
+	AdLabel,
+	AdLearnMore,
 } as const;

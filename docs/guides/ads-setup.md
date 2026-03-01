@@ -121,6 +121,47 @@ player.use(vast({
 }));
 ```
 
+### Include Option
+
+The `ad-learn-more` CTA button is off by default. Enable it with the `include` option:
+
+```ts
+const uiPlugin = ui({ container: el, include: ["ad-learn-more"] });
+```
+
+### Framework Ad Components
+
+React, Vue, and Svelte integrations provide dedicated ad components that auto-subscribe to ad events:
+
+**React**
+
+```tsx
+<Vide.AdOverlay />
+<Vide.AdLabel />
+<Vide.AdCountdown />
+<Vide.AdSkip />
+```
+
+**Vue**
+
+```vue
+<VideAdOverlay />
+<VideAdLabel />
+<VideAdCountdown />
+<VideAdSkip />
+```
+
+**Svelte**
+
+```svelte
+<AdOverlay />
+<AdLabel />
+<AdCountdown />
+<AdSkip />
+```
+
+Each component renders only during active ad playback. See the [React](/frameworks/react#ad-components), [Vue](/frameworks/vue#ad-components), or [Svelte](/frameworks/svelte#ad-components) docs for full API reference.
+
 ## Viewability (OMID)
 
 Add OM SDK viewability measurement:

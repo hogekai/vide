@@ -13,6 +13,7 @@
 // ── Re-exports from the bundled core entry point ─────────────────────
 export { createPlayer } from "../index.js";
 export type {
+	AdMeta,
 	EventHandler,
 	MediaElement,
 	Player,

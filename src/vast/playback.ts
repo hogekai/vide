@@ -47,7 +47,13 @@ export function playSingleAd(options: PlaySingleAdOptions): {
 	});
 
 	setState("ad:loading");
-	player.emit("ad:start", { adId });
+	player.emit("ad:start", {
+		adId,
+		clickThrough: linear.clickThrough,
+		skipOffset: linear.skipOffset,
+		duration: linear.duration,
+		adTitle: ad.adTitle,
+	});
 
 	// Emit companion ads if present in any creative
 	for (const creative of ad.creatives) {

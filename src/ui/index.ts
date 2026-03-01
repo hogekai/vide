@@ -3,6 +3,7 @@ import type { AdPlugin, VastAd } from "../vast/types.js";
 import { uiAdPlugin } from "./ad-plugin.js";
 import { createAdCountdown } from "./components/ad-countdown.js";
 import { createAdLabel } from "./components/ad-label.js";
+import { createAdLearnMore } from "./components/ad-learn-more.js";
 import { createAdOverlay } from "./components/ad-overlay.js";
 import { createAdSkip } from "./components/ad-skip.js";
 import { createAutohide } from "./components/autohide.js";
@@ -43,6 +44,7 @@ export {
 	createAdSkip,
 	createAdOverlay,
 	createAdLabel,
+	createAdLearnMore,
 	createKeyboard,
 	createClickPlay,
 	createAutohide,
@@ -67,10 +69,25 @@ function mountAndConnect(
 	comp.connect(player);
 }
 
+/** Components that default to off (require explicit `include` to enable). */
+const DEFAULT_EXCLUDED: ReadonlySet<UIComponentName> = new Set([
+	"ad-learn-more",
+]);
+
 /** Create the UI convenience plugin. Mounts all components (minus excluded). */
 export function ui(options: UiPluginOptions): UiPlugin {
 	const adUIStateRef = createAdUIState();
-	const excluded = new Set<UIComponentName>(options.exclude);
+
+	// Start with default exclusions
+	const excluded = new Set<UIComponentName>(DEFAULT_EXCLUDED);
+	// include: un-exclude these (overrides defaults)
+	if (options.include) {
+		for (const name of options.include) excluded.delete(name);
+	}
+	// exclude: always exclude these (takes precedence)
+	if (options.exclude) {
+		for (const name of options.exclude) excluded.add(name);
+	}
 
 	return {
 		name: "ui",
@@ -118,7 +135,8 @@ export function ui(options: UiPluginOptions): UiPlugin {
 				!excluded.has("ad-overlay") ||
 				!excluded.has("ad-label") ||
 				!excluded.has("ad-countdown") ||
-				!excluded.has("ad-skip");
+				!excluded.has("ad-skip") ||
+				!excluded.has("ad-learn-more");
 
 			if (hasAnyAd) {
 				const adContainer = document.createElement("div");
@@ -129,6 +147,7 @@ export function ui(options: UiPluginOptions): UiPlugin {
 				add("ad-label", createAdLabel(), adContainer);
 				add("ad-countdown", createAdCountdown(adUIStateRef), adContainer);
 				add("ad-skip", createAdSkip(adUIStateRef), adContainer);
+				add("ad-learn-more", createAdLearnMore(adUIStateRef), adContainer);
 			}
 
 			// Controls bar

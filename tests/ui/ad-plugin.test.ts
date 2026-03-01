@@ -84,6 +84,7 @@ describe("uiAdPlugin", () => {
 			skipOffset: 5,
 			clickThrough: "https://example.com",
 			duration: 30,
+			adTitle: "Test Ad",
 		});
 	});
 

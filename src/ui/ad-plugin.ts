@@ -15,6 +15,7 @@ export function uiAdPlugin(stateRef: AdUIStateRef): AdPlugin {
 				skipOffset: linear.skipOffset,
 				clickThrough: linear.clickThrough,
 				duration: linear.duration,
+				adTitle: ad.adTitle,
 			});
 
 			return () => {

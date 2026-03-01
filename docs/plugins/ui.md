@@ -1,6 +1,6 @@
 # UI
 
-Headless UI plugin with 16 components. JS creates DOM and wires behavior — styling is yours. Import `theme.css` for a ready-made look.
+Headless UI plugin with 17 components. JS creates DOM and wires behavior — styling is yours. Import `theme.css` for a ready-made look.
 
 ## Usage
 
@@ -25,11 +25,14 @@ player.use(ui({ container: document.getElementById("player-container")! }));
 |--------|------|---------|-------------|
 | `container` | `HTMLElement` | — | Container element for UI controls (required) |
 | `exclude` | `UIComponentName[]` | `[]` | Components to exclude |
+| `include` | `UIComponentName[]` | — | Components to opt-in (overrides default exclusions) |
 | `poster` | `string` | — | Poster image URL |
 
-### Excludable Components
+### Component Selection
 
-`play`, `progress`, `time`, `volume`, `fullscreen`, `loader`, `error`, `bigplay`, `poster`, `keyboard`, `clickplay`, `autohide`, `ad-countdown`, `ad-skip`, `ad-overlay`, `ad-label`
+`play`, `progress`, `time`, `volume`, `fullscreen`, `loader`, `error`, `bigplay`, `poster`, `keyboard`, `clickplay`, `autohide`, `ad-countdown`, `ad-skip`, `ad-overlay`, `ad-label`, `ad-learn-more`
+
+The `ad-learn-more` component is off by default and needs `include: ["ad-learn-more"]` to enable.
 
 ```ts
 player.use(ui({
@@ -59,6 +62,7 @@ player.use(ui({
 | `ad-skip` | Skip ad button (after skipOffset) |
 | `ad-overlay` | Ad click-through overlay |
 | `ad-label` | "Ad" label during ad playback |
+| `ad-learn-more` | CTA "Learn More" button (opt-in, default off) |
 
 ## Standalone Components
 
@@ -102,6 +106,11 @@ player.use(vast({
   tagUrl: "https://example.com/vast.xml",
   adPlugins: uiPlugin.getAdPlugin(),
 }));
+```
+
+```ts
+// Enable the "Learn More" CTA button (off by default)
+const uiPlugin = ui({ container: el, include: ["ad-learn-more"] });
 ```
 
 ## Styling

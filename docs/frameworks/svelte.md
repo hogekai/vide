@@ -132,6 +132,34 @@ Interactive controls that subscribe to player events via context.
 - CSS custom properties — use for styling sliders (same as vide UI plugin theme).
 - `data-*` attributes — use for state-based CSS selectors.
 
+### Ad Components
+
+Components for ad overlay, controls, and CTA during ad playback.
+
+```svelte
+<AdOverlay />
+<AdLabel />
+<AdCountdown />
+<AdSkip />
+```
+
+| Component | Props |
+|-----------|-------|
+| `AdOverlay` | `class`, children |
+| `AdSkip` | `class`, children |
+| `AdCountdown` | `class`, `format` |
+| `AdLabel` | `class`, children |
+| `AdLearnMore` | `class`, `showTitle`, children |
+
+### useAdState(getPlayer)
+
+Low-level function for custom ad UI. Returns `{ active: boolean, meta: AdMeta | null }` (reactive via runes).
+
+```ts
+const getPlayer = getContext<PlayerGetter>(VIDE_PLAYER_KEY);
+const { active, meta } = useAdState(getPlayer);
+```
+
 ## Patterns
 
 ### Function vs Component for Plugins
@@ -209,6 +237,7 @@ import {
     VideVideo, PlayButton, Progress,
     Volume, MuteButton, FullscreenButton,
     TimeDisplay, VastPlugin,
+    AdOverlay, AdLabel, AdCountdown, AdSkip,
   } from "@videts/vide/svelte";
 
   const { player } = createVidePlayer();
@@ -226,6 +255,10 @@ import {
     {#if showAds}
       <VastPlugin tagUrl="https://..." />
     {/if}
+    <AdOverlay />
+    <AdLabel />
+    <AdCountdown />
+    <AdSkip />
     <PlayButton class="absolute inset-0 flex items-center justify-center">
       ▶
     </PlayButton>
