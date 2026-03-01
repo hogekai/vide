@@ -72,10 +72,15 @@ export function ima(options: ImaPluginOptions): Plugin {
 
 				// Create internal overlay div for IMA inside the user-provided container
 				// (same pattern as UI plugin creating div.vide-ui)
+				// On touch devices IMA renders its own full controls, so the
+				// overlay must sit above vide's controls bar (z-index 3).
+				const isTouchDevice =
+					"ontouchstart" in window || navigator.maxTouchPoints > 0;
+				const overlayZ = isTouchDevice ? 10 : 2;
 				imaOverlay = document.createElement("div");
 				imaOverlay.setAttribute("data-vide-ima", "");
 				imaOverlay.style.cssText =
-					"position:absolute;top:0;left:0;width:100%;height:100%;z-index:5;";
+					`position:absolute;top:0;left:0;width:100%;height:100%;z-index:${overlayZ};`;
 				options.adContainer.appendChild(imaOverlay);
 				const adContainerEl = imaOverlay;
 				debug(
@@ -202,6 +207,25 @@ export function ima(options: ImaPluginOptions): Plugin {
 							adsManager,
 							ima: sdk,
 						});
+
+						// Remove IMA overlay when ad break ends so it doesn't
+						// block content controls. Re-add when a new break starts.
+						function onOverlayBreakStart(): void {
+							if (imaOverlay && !imaOverlay.parentNode) {
+								options.adContainer.appendChild(imaOverlay);
+							}
+						}
+						function onOverlayBreakEnd(): void {
+							imaOverlay?.remove();
+						}
+						player.on("ad:breakStart", onOverlayBreakStart);
+						player.on("ad:breakEnd", onOverlayBreakEnd);
+						const bridgeCleanupInner = bridgeCleanup;
+						bridgeCleanup = () => {
+							bridgeCleanupInner();
+							player.off("ad:breakStart", onOverlayBreakStart);
+							player.off("ad:breakEnd", onOverlayBreakEnd);
+						};
 
 						// Expose via pluginData
 						player.setPluginData("ima", {

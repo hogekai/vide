@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>vide — Google IMA SDK</title>
+  <title>vide — UI + Google IMA SDK</title>
+  <link rel="stylesheet" href="../dist/ui/theme.css">
   <style>
     body { font-family: system-ui, sans-serif; max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
     #player-container { position: relative; width: 100%; background: #000; aspect-ratio: 16/9; }
@@ -15,11 +16,11 @@
   </style>
 </head>
 <body>
-  <h1>vide — Google IMA SDK</h1>
-  <p>Pre-roll ad via Google IMA SDK. The SDK handles ad fetching, playback, tracking, and its own ad UI.</p>
+  <h1>vide — UI + Google IMA SDK</h1>
+  <p>Pre-roll ad via Google IMA SDK with vide UI for content playback. IMA SDK provides its own ad UI.</p>
 
   <div id="player-container">
-    <video id="player" controls playsinline
+    <video id="player" playsinline
       src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4">
     </video>
   </div>
@@ -33,6 +34,7 @@
 
   <script type="module">
     import { createPlayer } from "../dist/index.mjs";
+    import { ui } from "../dist/ui/index.mjs";
     import { ima } from "../dist/ima/index.mjs";
 
     const el = document.getElementById("player");
@@ -50,6 +52,10 @@
     const player = createPlayer(el);
     window.player = player;
 
+    // UI plugin for content playback controls
+    // Ad UI is auto-hidden when IMA manages ads (via managedUI flag)
+    player.use(ui({ container }));
+
     // Google IMA sample VAST tag (pre-roll, linear, skippable)
     function adTagUrl() {
       return "https://pubads.g.doubleclick.net/gampad/ads?"
@@ -64,7 +70,7 @@
         + "&correlator=" + Date.now();
     }
 
-    // IMA plugin — pass the player's parent container
+    // IMA plugin — same container as UI
     player.use(ima({
       adTagUrl: adTagUrl(),
       adContainer: container,
@@ -87,9 +93,17 @@
       stateEl.textContent = to;
       log(`state: ${from} → ${to}`);
     });
-    player.on("ad:breakStart", () => log("ad:breakStart"));
+    player.on("ad:breakStart", (e) => {
+      log(`ad:breakStart managedUI=${e.managedUI}`);
+      const uiRoot = container.querySelector(".vide-ui");
+      log(`  vide-ui classes: ${uiRoot?.className}`);
+    });
     player.on("ad:breakEnd", () => log("ad:breakEnd"));
-    player.on("ad:start", ({ adId, duration }) => log(`ad:start id=${adId} duration=${duration}`));
+    player.on("ad:start", ({ adId, duration, managedUI }) => {
+      log(`ad:start id=${adId} duration=${duration} managedUI=${managedUI}`);
+      const uiRoot = container.querySelector(".vide-ui");
+      log(`  vide-ui classes: ${uiRoot?.className}`);
+    });
     player.on("ad:end", ({ adId }) => log(`ad:end id=${adId}`));
     player.on("ad:skip", ({ adId }) => log(`ad:skip id=${adId}`));
     player.on("ad:click", ({ clickThrough }) => {

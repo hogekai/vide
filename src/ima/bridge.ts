@@ -33,7 +33,7 @@ export function createImaBridge(options: BridgeOptions): () => void {
 	function onContentPauseRequested(): void {
 		contentResumed = false;
 		setState("ad:loading");
-		player.emit("ad:breakStart", { breakId: undefined });
+		player.emit("ad:breakStart", { breakId: undefined, managedUI: true });
 	}
 
 	function onLoaded(event: ImaAdEvent): void {
@@ -64,6 +64,7 @@ export function createImaBridge(options: BridgeOptions): () => void {
 				typeof ad.getTitle === "function"
 					? ad.getTitle() || undefined
 					: undefined,
+			managedUI: true,
 		});
 		player.emit("ad:impression", { adId: currentAdId });
 
@@ -208,12 +209,47 @@ export function createImaBridge(options: BridgeOptions): () => void {
 		}
 	}
 
-	// ── vide → IMA bridge (ad:skip from UI) ─────────────
+	// ── vide → IMA bridge ───────────────────────────────
 
 	function onVideAdSkip(): void {
 		adsManager.skip();
 	}
 	player.on("ad:skip", onVideAdSkip);
+
+	// Forward play/pause/volume from UI controls to adsManager during ads.
+	// IMA uses a separate video element for ads, so content video's native
+	// play/pause events don't fire. We wrap player.play()/pause() instead.
+	let adActive = false;
+	function onAdStateChange({
+		to,
+	}: { from: string; to: string }): void {
+		adActive = to.startsWith("ad:");
+	}
+	player.on("statechange", onAdStateChange);
+
+	const originalPlay = player.play.bind(player);
+	const originalPause = player.pause.bind(player);
+	player.play = () => {
+		if (adActive) {
+			adsManager.resume();
+			return Promise.resolve();
+		}
+		return originalPlay();
+	};
+	player.pause = () => {
+		if (adActive) {
+			adsManager.pause();
+			return;
+		}
+		originalPause();
+	};
+
+	function onVideoVolumeChange(): void {
+		if (!adActive) return;
+		const vol = player.el.muted ? 0 : player.el.volume;
+		adsManager.setVolume(vol);
+	}
+	player.el.addEventListener("volumechange", onVideoVolumeChange);
 
 	// ── Wire up IMA listeners ───────────────────────────
 
@@ -278,5 +314,9 @@ export function createImaBridge(options: BridgeOptions): () => void {
 		document.removeEventListener("fullscreenchange", onFullscreenChange);
 		resizeObserver?.disconnect();
 		player.off("ad:skip", onVideAdSkip);
+		player.off("statechange", onAdStateChange);
+		player.play = originalPlay;
+		player.pause = originalPause;
+		player.el.removeEventListener("volumechange", onVideoVolumeChange);
 	};
 }

@@ -207,7 +207,7 @@
 	);
 	opacity: 0;
 	transition: opacity 0.25s var(--vide-ease);
-	z-index: 2;
+	z-index: 3;
 }
 
 .vide-ui:hover .vide-controls,
@@ -657,6 +657,20 @@
 .vide-ui--ad-playing .vide-ad,
 .vide-ui--ad-paused .vide-ad {
 	display: block;
+}
+
+/* Hide vide ad UI when an external SDK (e.g. IMA) manages the ad UI */
+.vide-ui--managed-ad .vide-ad {
+	display: none;
+}
+
+/* Let the external SDK's overlay receive all pointer/touch events.
+   Make the entire vide-ui pass-through except the controls bar. */
+.vide-ui--managed-ad {
+	pointer-events: none;
+}
+.vide-ui--managed-ad .vide-controls {
+	pointer-events: auto;
 }
 
 /* ── Ad overlay (click-through) ── */

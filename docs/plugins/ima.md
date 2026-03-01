@@ -166,6 +166,17 @@ After initialization, the plugin exposes data via `player.getPluginData("ima")`:
 | `adDisplayContainer` | `ImaAdDisplayContainer` | The IMA AdDisplayContainer |
 | `requestAds` | `(adTagUrl?: string) => void` | Request new ads on demand |
 
+## Using with UI Plugin
+
+When the IMA plugin and [UI plugin](/plugins/ui) are used together, vide's ad UI components (label, countdown, skip, learn more) are automatically hidden during IMA ads. IMA SDK provides its own ad UI, so vide suppresses duplicates via the `managedUI` flag on the `ad:start` event. No configuration needed:
+
+```ts
+player.use(ui({ container }));
+player.use(ima({ adTagUrl: "...", adContainer: container }));
+```
+
+During IMA ads, the `vide-ui--managed-ad` class is added to the UI root, hiding `div.vide-ad`. When the ad break ends, the class is removed. VAST ads played through the VAST plugin are unaffected — vide's ad UI shows normally for those.
+
 ## Notes
 
 - IMA SDK is loaded via script injection from `https://imasdk.googleapis.com/js/sdkloader/ima3.js` by default. Override with `sdkUrl`.

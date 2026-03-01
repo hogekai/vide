@@ -91,6 +91,8 @@ export interface PlayerEventMap {
 		skipOffset?: number | undefined;
 		duration?: number | undefined;
 		adTitle?: string | undefined;
+		/** When `true`, an external SDK (e.g. IMA) manages the ad UI. UI plugin hides its own ad components. */
+		managedUI?: boolean | undefined;
 	};
 	"ad:end": { adId: string };
 	"ad:skip": { adId: string };
@@ -108,7 +110,11 @@ export interface PlayerEventMap {
 	"ad:unmute": { adId: string };
 	"ad:volumeChange": { adId: string; volume: number };
 	"ad:fullscreen": { adId: string; fullscreen: boolean };
-	"ad:breakStart": { breakId: string | undefined };
+	"ad:breakStart": {
+		breakId: string | undefined;
+		/** When `true`, an external SDK (e.g. IMA) manages the ad UI. */
+		managedUI?: boolean | undefined;
+	};
 	"ad:breakEnd": { breakId: string | undefined };
 	"ad:pod:start": {
 		ads: { id: string; sequence?: number | undefined }[];
