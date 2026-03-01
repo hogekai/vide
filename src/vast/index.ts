@@ -99,6 +99,9 @@ export function vast(options: VastPluginOptions): Plugin {
 						// then to "ended" for post-roll.
 						setState("playing");
 						if (wasEnded) {
+							// Stop ad media without restoring content (it already ended).
+							player.el.pause();
+							player.src = "";
 							setState("ended");
 						} else {
 							restoreContent(player, prevSrc, originalTime);

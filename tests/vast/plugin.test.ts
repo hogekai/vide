@@ -434,6 +434,34 @@ describe("vast plugin — ended state (post-roll)", () => {
 		container.remove();
 		vi.restoreAllMocks();
 	});
+
+	it("transitions to ended state after ad is skipped and stops ad media", async () => {
+		const container = document.createElement("div");
+		const el = document.createElement("video");
+		stubMediaMethods(el);
+		container.appendChild(el);
+		document.body.appendChild(container);
+
+		const player = createPlayer(el);
+		driveToEnded(el);
+		expect(player.state).toBe("ended");
+
+		mockedFetchVast.mockResolvedValueOnce(makeVastXml({ skipOffset: 5 }));
+
+		player.use(vast({ tagUrl: "https://example.com/vast.xml" }));
+		await vi.waitFor(() => expect(player.state).toBe("ad:loading"));
+		triggerAdPlaying(el);
+		await vi.waitFor(() => expect(player.state).toBe("ad:playing"));
+
+		// Skip the ad
+		player.emit("ad:skip", { adId: "ad-1" });
+		expect(player.state).toBe("ended");
+		expect(el.pause).toHaveBeenCalled();
+
+		player.destroy();
+		container.remove();
+		vi.restoreAllMocks();
+	});
 });
 
 describe("vast plugin — ad error recovery", () => {
