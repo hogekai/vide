@@ -3,7 +3,7 @@
 import {
 	VideAdCountdown,
 	VideAdLabel,
-	VideAdOverlay,
+	VideAdLearnMore,
 	VideAdSkip,
 	VideBigPlayButton,
 	VideClickPlay,
@@ -64,7 +64,7 @@ useVideEvent(player, "ad:start", () => {
       <VideClickPlay />
       <VideBigPlayButton />
       <VideLoader />
-      <VideAdOverlay />
+      <VideAdLearnMore />
       <VideAdLabel />
       <VideAdCountdown />
       <VideAdSkip />

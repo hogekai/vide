@@ -2,7 +2,7 @@
 import {
 	AdCountdown,
 	AdLabel,
-	AdOverlay,
+	AdLearnMore,
 	AdSkip,
 	BigPlayButton,
 	ClickPlay,
@@ -60,7 +60,7 @@ useVideEvent(player, "ad:start", () => {
     <ClickPlay />
     <BigPlayButton />
     <Loader />
-    <AdOverlay />
+    <AdLearnMore />
     <AdLabel />
     <AdCountdown />
     <AdSkip />
