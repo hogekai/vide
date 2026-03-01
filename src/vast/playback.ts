@@ -46,6 +46,15 @@ export function playSingleAd(options: PlaySingleAdOptions): {
 		resolvePromise = resolve;
 	});
 
+	// --- Ad plugins lifecycle (before ad:start so state is ready for listeners) ---
+	const adPluginCleanups: (() => void)[] = [];
+	if (options.adPlugins) {
+		for (const p of options.adPlugins(ad)) {
+			const c = p.setup(player, ad);
+			if (c) adPluginCleanups.push(c);
+		}
+	}
+
 	setState("ad:loading");
 	player.emit("ad:start", {
 		adId,
@@ -76,15 +85,6 @@ export function playSingleAd(options: PlaySingleAdOptions): {
 				trackingEvents: creative.nonLinearAds.trackingEvents,
 			});
 			break;
-		}
-	}
-
-	// --- Ad plugins lifecycle ---
-	const adPluginCleanups: (() => void)[] = [];
-	if (options.adPlugins) {
-		for (const p of options.adPlugins(ad)) {
-			const c = p.setup(player, ad);
-			if (c) adPluginCleanups.push(c);
 		}
 	}
 
