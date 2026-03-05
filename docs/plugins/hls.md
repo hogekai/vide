@@ -4,9 +4,25 @@ HLS streaming via hls.js. On Safari/iOS, uses native HLS support — hls.js is n
 
 ## Install
 
-```sh
+::: code-group
+
+```sh [npm]
 npm install @videts/vide hls.js
 ```
+
+```sh [pnpm]
+pnpm add @videts/vide hls.js
+```
+
+```sh [yarn]
+yarn add @videts/vide hls.js
+```
+
+```sh [bun]
+bun add @videts/vide hls.js
+```
+
+:::
 
 `hls.js` is an optional peer dependency. It is only imported when the browser doesn't support native HLS.
 

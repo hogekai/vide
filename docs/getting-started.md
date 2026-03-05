@@ -2,9 +2,27 @@
 
 ## Install
 
-```sh
+::: code-group
+
+```sh [npm]
 npm install @videts/vide
 ```
+
+```sh [pnpm]
+pnpm add @videts/vide
+```
+
+```sh [yarn]
+yarn add @videts/vide
+```
+
+```sh [bun]
+bun add @videts/vide
+```
+
+:::
+
+> No build tool? See [CDN / No Build Tool](#cdn--no-build-tool) below.
 
 ## Basic Usage
 
