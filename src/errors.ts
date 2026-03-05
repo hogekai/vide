@@ -24,6 +24,8 @@ export const ERR_DRM_DETECTION = 4001;
 export const ERR_DRM_LICENSE = 4002;
 /** DRM: certificate request failed. */
 export const ERR_DRM_CERTIFICATE = 4003;
+/** DRM: key status error (expired, internal-error). */
+export const ERR_DRM_KEY_STATUS = 4004;
 
 /** IMA: SDK script failed to load (ad blocker, network error). */
 export const ERR_IMA_SDK_LOAD = 5000;

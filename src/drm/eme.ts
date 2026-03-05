@@ -1,34 +1,81 @@
 import type { MediaElement } from "../types.js";
+import { buildClearKeyLicense } from "./clearkey.js";
+import { probeConfigFor } from "./detect.js";
 import type { KeySystem } from "./types.js";
 
 export interface EmeOptions {
 	keySystem: KeySystem;
-	licenseUrl: string;
+	licenseUrl?: string | undefined;
 	certificateUrl?: string | undefined;
 	headers?: Record<string, string> | undefined;
+	/** ClearKey: provide keys directly, bypassing license server fetch. */
+	clearkeys?: Record<string, string> | undefined;
 	prepareLicenseRequest?:
 		| ((payload: Uint8Array) => Uint8Array | Promise<Uint8Array>)
 		| undefined;
 	processLicenseResponse?:
 		| ((response: Uint8Array) => Uint8Array | Promise<Uint8Array>)
 		| undefined;
+	robustness?: string | undefined;
+	encryptionScheme?: string | undefined;
+	retry?:
+		| {
+				maxAttempts?: number | undefined;
+				delayMs?: number | undefined;
+				backoff?: number | undefined;
+		  }
+		| undefined;
+	transformInitData?:
+		| ((
+				initData: Uint8Array,
+				initDataType: string,
+		  ) => Uint8Array | Promise<Uint8Array>)
+		| undefined;
+	onKeyStatus?:
+		| ((keyId: string, status: MediaKeyStatus) => void)
+		| undefined;
 }
 
-const FAIRPLAY: KeySystem = "com.apple.fps.1_0";
+/** Convert a BufferSource keyId to a hex string. */
+function keyIdToHex(keyId: BufferSource): string {
+	const bytes = new Uint8Array(
+		keyId instanceof ArrayBuffer ? keyId : keyId.buffer,
+	);
+	return Array.from(bytes)
+		.map((b) => b.toString(16).padStart(2, "0"))
+		.join("");
+}
 
-const PROBE_CONFIG: MediaKeySystemConfiguration[] = [
-	{
-		initDataTypes: ["cenc"],
-		videoCapabilities: [{ contentType: 'video/mp4;codecs="avc1.42E01E"' }],
-	},
-];
+async function fetchWithRetry(
+	url: string,
+	init: RequestInit,
+	retry: { maxAttempts?: number | undefined; delayMs?: number | undefined; backoff?: number | undefined } | undefined,
+): Promise<Response> {
+	const maxAttempts = retry?.maxAttempts ?? 1;
+	const delayMs = retry?.delayMs ?? 1000;
+	const backoff = retry?.backoff ?? 2;
 
-const FAIRPLAY_PROBE_CONFIG: MediaKeySystemConfiguration[] = [
-	{
-		initDataTypes: ["sinf"],
-		videoCapabilities: [{ contentType: 'video/mp4;codecs="avc1.42E01E"' }],
-	},
-];
+	let lastError: unknown;
+	for (let attempt = 0; attempt < maxAttempts; attempt++) {
+		try {
+			const res = await fetch(url, init);
+			if (!res.ok) {
+				throw new Error(
+					`Fetch failed: ${res.status} ${res.statusText}`,
+				);
+			}
+			return res;
+		} catch (err: unknown) {
+			lastError = err;
+			if (attempt < maxAttempts - 1) {
+				await new Promise((r) =>
+					setTimeout(r, delayMs * backoff ** attempt),
+				);
+			}
+		}
+	}
+	throw lastError;
+}
 
 /**
  * Set up standalone EME (Encrypted Media Extensions) handling on a video element.
@@ -55,14 +102,29 @@ export function setupEme(
 		const session = mediaKeys.createSession("temporary");
 		sessions.push(session);
 
-		session.generateRequest(event.initDataType, event.initData).then(
+		(async () => {
+			let initData: Uint8Array = new Uint8Array(event.initData!);
+			if (options.transformInitData) {
+				const transformed = await options.transformInitData(
+					initData,
+					event.initDataType,
+				);
+				initData = new Uint8Array(transformed);
+			}
+			await session.generateRequest(
+				event.initDataType,
+				initData.buffer as ArrayBuffer,
+			);
+		})().then(
 			() => {
 				if (destroyed) return;
 			},
 			(err: unknown) => {
 				if (destroyed) return;
 				onError(
-					err instanceof Error ? err : new Error("generateRequest failed"),
+					err instanceof Error
+						? err
+						: new Error("generateRequest failed"),
 				);
 			},
 		);
@@ -74,16 +136,25 @@ export function setupEme(
 
 		session.addEventListener("keystatuseschange", () => {
 			if (destroyed) return;
-			for (const [, status] of session.keyStatuses) {
-				if (status === "expired" || status === "internal-error") {
+			for (const [keyId, status] of session.keyStatuses) {
+				if (options.onKeyStatus) {
+					options.onKeyStatus(keyIdToHex(keyId), status);
+				} else if (
+					status === "expired" ||
+					status === "internal-error"
+				) {
+					// Fallback: emit error if no onKeyStatus handler is set.
 					onError(new Error(`Key status: ${status}`));
 				}
 			}
 		});
 	};
 
-	const config =
-		options.keySystem === FAIRPLAY ? FAIRPLAY_PROBE_CONFIG : PROBE_CONFIG;
+	const config = probeConfigFor(
+		options.keySystem,
+		options.robustness,
+		options.encryptionScheme,
+	);
 
 	navigator
 		.requestMediaKeySystemAccess(options.keySystem, config)
@@ -95,16 +166,19 @@ export function setupEme(
 			if (destroyed || !keys) return;
 			mediaKeys = keys;
 
-			// FairPlay: fetch and set server certificate.
-			if (options.keySystem === FAIRPLAY && options.certificateUrl) {
+			// Fetch and set server certificate (FairPlay requires it; Widevine benefits from it).
+			if (options.certificateUrl) {
 				return fetchCertificate(
 					options.certificateUrl,
 					options.headers,
+					options.retry,
 					onError,
 					() => destroyed,
 				).then((cert) => {
 					if (destroyed || !cert) return;
-					return mediaKeys?.setServerCertificate(cert.buffer as ArrayBuffer);
+					return mediaKeys?.setServerCertificate(
+						cert.buffer as ArrayBuffer,
+					);
 				});
 			}
 		})
@@ -141,22 +215,24 @@ export function setupEme(
 async function fetchCertificate(
 	url: string,
 	headers: Record<string, string> | undefined,
+	retry: { maxAttempts?: number | undefined; delayMs?: number | undefined; backoff?: number | undefined } | undefined,
 	onError: (err: Error) => void,
 	isDestroyed: () => boolean,
 ): Promise<Uint8Array | null> {
 	try {
-		const res = await fetch(url, headers ? { headers } : {});
-		if (!res.ok) {
-			throw new Error(
-				`Certificate fetch failed: ${res.status} ${res.statusText}`,
-			);
-		}
+		const res = await fetchWithRetry(
+			url,
+			headers ? { headers } : {},
+			retry,
+		);
 		const buf = await res.arrayBuffer();
 		if (isDestroyed()) return null;
 		return new Uint8Array(buf);
 	} catch (err: unknown) {
 		if (isDestroyed()) return null;
-		onError(err instanceof Error ? err : new Error("Certificate fetch failed"));
+		onError(
+			err instanceof Error ? err : new Error("Certificate fetch failed"),
+		);
 		return null;
 	}
 }
@@ -170,24 +246,42 @@ function handleMessage(
 ): void {
 	const body = new Uint8Array(msgEvent.message);
 
+	// ClearKey: generate license locally without network request.
+	if (options.clearkeys) {
+		const license = buildClearKeyLicense(options.clearkeys);
+		session.update(license.buffer as ArrayBuffer).catch((err: unknown) => {
+			if (isDestroyed()) return;
+			onError(
+				err instanceof Error ? err : new Error("ClearKey update failed"),
+			);
+		});
+		return;
+	}
+
+	if (!options.licenseUrl) {
+		onError(new Error("No license URL configured"));
+		return;
+	}
+
+	const licenseUrl = options.licenseUrl;
+
 	Promise.resolve(
 		options.prepareLicenseRequest ? options.prepareLicenseRequest(body) : body,
 	)
 		.then((payload) => {
 			if (isDestroyed()) return;
-			return fetch(options.licenseUrl, {
-				method: "POST",
-				body: payload.buffer as ArrayBuffer,
-				...(options.headers ? { headers: options.headers } : {}),
-			});
+			return fetchWithRetry(
+				licenseUrl,
+				{
+					method: "POST",
+					body: payload.buffer as ArrayBuffer,
+					...(options.headers ? { headers: options.headers } : {}),
+				},
+				options.retry,
+			);
 		})
 		.then((res) => {
 			if (isDestroyed() || !res) return;
-			if (!res.ok) {
-				throw new Error(
-					`License request failed: ${res.status} ${res.statusText}`,
-				);
-			}
 			return res.arrayBuffer();
 		})
 		.then((buf) => {

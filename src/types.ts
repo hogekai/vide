@@ -136,6 +136,8 @@ export interface PlayerEventMap {
 	texttrackchange: { track: VideTextTrack | null };
 	texttracksavailable: { tracks: VideTextTrack[] };
 	cuechange: { cues: VideCue[] };
+	"drm:keystatus": { keyId: string; status: MediaKeyStatus };
+	"drm:ready": { keySystem: string };
 	destroy: undefined;
 }
 

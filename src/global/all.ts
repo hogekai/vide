@@ -11,6 +11,7 @@ export {
 	ERR_DRM_DETECTION,
 	ERR_DRM_LICENSE,
 	ERR_DRM_CERTIFICATE,
+	ERR_DRM_KEY_STATUS,
 	ERR_IMA_SDK_LOAD,
 } from "../errors.js";
 
@@ -24,6 +25,7 @@ export { vmap, parseVmap, createScheduler } from "../vmap/index.js";
 export {
 	drm,
 	detectKeySystem,
+	queryDrmSupport,
 	dashDrmConfig,
 	hlsDrmConfig,
 	setupEme,

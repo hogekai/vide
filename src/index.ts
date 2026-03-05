@@ -34,4 +34,5 @@ export {
 	ERR_DRM_DETECTION,
 	ERR_DRM_LICENSE,
 	ERR_DRM_CERTIFICATE,
+	ERR_DRM_KEY_STATUS,
 } from "./errors.js";

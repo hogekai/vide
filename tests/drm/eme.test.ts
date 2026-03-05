@@ -361,6 +361,76 @@ describe("setupEme", () => {
 		expect(onError).not.toHaveBeenCalled();
 	});
 
+	it("Widevine: fetches certificate and calls setServerCertificate when certificateUrl provided", async () => {
+		const certBytes = new ArrayBuffer(32);
+		globalThis.fetch = vi.fn().mockImplementation((url: string) => {
+			if (url.includes("cert")) {
+				return Promise.resolve({
+					ok: true,
+					arrayBuffer: () => Promise.resolve(certBytes),
+				});
+			}
+			return Promise.resolve({
+				ok: true,
+				arrayBuffer: () => Promise.resolve(new ArrayBuffer(16)),
+			});
+		});
+
+		const onError = vi.fn();
+		const opts: EmeOptions = {
+			keySystem: "com.widevine.alpha",
+			licenseUrl: "https://wv.example.com/license",
+			certificateUrl: "https://wv.example.com/cert",
+		};
+
+		setupEme(video, opts, onError);
+		await flush();
+
+		expect(globalThis.fetch).toHaveBeenCalledWith(
+			"https://wv.example.com/cert",
+			{},
+		);
+		expect(
+			keys.setServerCertificate as ReturnType<typeof vi.fn>,
+		).toHaveBeenCalledWith(expect.any(ArrayBuffer));
+		expect(onError).not.toHaveBeenCalled();
+	});
+
+	it("ClearKey: generates license locally without fetch", async () => {
+		const onError = vi.fn();
+		const opts: EmeOptions = {
+			keySystem: "org.w3.clearkey",
+			clearkeys: { myKeyId: "myKey" },
+		};
+
+		setupEme(video, opts, onError);
+		await flush();
+
+		// Fire encrypted event.
+		video._fire("encrypted", {
+			initDataType: "cenc",
+			initData: new ArrayBuffer(16),
+		} as MediaEncryptedEvent);
+
+		await flush();
+
+		// Fire the message event from the session.
+		session._fire("message", {
+			message: new ArrayBuffer(8),
+		} as MediaKeyMessageEvent);
+
+		await flush();
+
+		// ClearKey should NOT call fetch — it generates the license locally.
+		expect(globalThis.fetch).not.toHaveBeenCalled();
+		expect(session.update).toHaveBeenCalledTimes(1);
+		// Verify the license is a JWK Set.
+		const arg = (session.update as ReturnType<typeof vi.fn>).mock.calls[0][0];
+		const decoded = new TextDecoder().decode(new Uint8Array(arg));
+		expect(JSON.parse(decoded).keys[0].kid).toBe("myKeyId");
+		expect(onError).not.toHaveBeenCalled();
+	});
+
 	it("key status 'expired' triggers onError", async () => {
 		const onError = vi.fn();
 		const opts: EmeOptions = {
@@ -390,5 +460,186 @@ describe("setupEme", () => {
 		expect(onError).toHaveBeenCalledWith(
 			expect.objectContaining({ message: "Key status: expired" }),
 		);
+	});
+
+	it("retry: license fetch fails once then succeeds", async () => {
+		let fetchCount = 0;
+		globalThis.fetch = vi.fn().mockImplementation(() => {
+			fetchCount++;
+			if (fetchCount === 1) {
+				return Promise.reject(new Error("Network error"));
+			}
+			return Promise.resolve({
+				ok: true,
+				arrayBuffer: () => Promise.resolve(new ArrayBuffer(16)),
+			});
+		});
+
+		const onError = vi.fn();
+		const opts: EmeOptions = {
+			keySystem: "com.widevine.alpha",
+			licenseUrl: "https://lic.example.com",
+			retry: { maxAttempts: 2, delayMs: 1, backoff: 1 },
+		};
+
+		setupEme(video, opts, onError);
+		await flush();
+
+		video._fire("encrypted", {
+			initDataType: "cenc",
+			initData: new ArrayBuffer(16),
+		} as MediaEncryptedEvent);
+
+		await flush();
+
+		session._fire("message", {
+			message: new ArrayBuffer(8),
+		} as MediaKeyMessageEvent);
+
+		await flush();
+
+		expect(session.update).toHaveBeenCalledWith(expect.any(ArrayBuffer));
+		expect(onError).not.toHaveBeenCalled();
+	});
+
+	it("retry: all attempts fail triggers onError", async () => {
+		globalThis.fetch = vi
+			.fn()
+			.mockRejectedValue(new Error("Network error"));
+
+		const onError = vi.fn();
+		const opts: EmeOptions = {
+			keySystem: "com.widevine.alpha",
+			licenseUrl: "https://lic.example.com",
+			retry: { maxAttempts: 2, delayMs: 1, backoff: 1 },
+		};
+
+		setupEme(video, opts, onError);
+		await flush();
+
+		video._fire("encrypted", {
+			initDataType: "cenc",
+			initData: new ArrayBuffer(16),
+		} as MediaEncryptedEvent);
+
+		await flush();
+
+		session._fire("message", {
+			message: new ArrayBuffer(8),
+		} as MediaKeyMessageEvent);
+
+		await flush();
+
+		expect(session.update).not.toHaveBeenCalled();
+		expect(onError).toHaveBeenCalledWith(
+			expect.objectContaining({ message: "Network error" }),
+		);
+	});
+
+	it("onKeyStatus callback is called with hex keyId and status", async () => {
+		const onKeyStatus = vi.fn();
+		const onError = vi.fn();
+		const opts: EmeOptions = {
+			keySystem: "com.widevine.alpha",
+			licenseUrl: "https://lic.example.com",
+			onKeyStatus,
+		};
+
+		setupEme(video, opts, onError);
+		await flush();
+
+		video._fire("encrypted", {
+			initDataType: "cenc",
+			initData: new ArrayBuffer(16),
+		} as MediaEncryptedEvent);
+
+		await flush();
+
+		const keyId = new Uint8Array([0x0a, 0x1b, 0xff]);
+		(session.keyStatuses as Map<BufferSource, MediaKeyStatus>).set(
+			keyId,
+			"usable",
+		);
+
+		session._fire("keystatuseschange", {});
+
+		expect(onKeyStatus).toHaveBeenCalledWith("0a1bff", "usable");
+		expect(onError).not.toHaveBeenCalled();
+	});
+
+	it("transformInitData is called before generateRequest", async () => {
+		const transformed = new Uint8Array([0xde, 0xad]);
+		const transformInitData = vi
+			.fn()
+			.mockResolvedValue(transformed);
+
+		const onError = vi.fn();
+		const opts: EmeOptions = {
+			keySystem: "com.widevine.alpha",
+			licenseUrl: "https://lic.example.com",
+			transformInitData,
+		};
+
+		setupEme(video, opts, onError);
+		await flush();
+
+		const originalInitData = new ArrayBuffer(16);
+		video._fire("encrypted", {
+			initDataType: "cenc",
+			initData: originalInitData,
+		} as MediaEncryptedEvent);
+
+		await flush();
+
+		expect(transformInitData).toHaveBeenCalledWith(
+			expect.any(Uint8Array),
+			"cenc",
+		);
+		expect(session.generateRequest).toHaveBeenCalledWith(
+			"cenc",
+			transformed.buffer,
+		);
+		expect(onError).not.toHaveBeenCalled();
+	});
+
+	it("PlayReady: encrypted event triggers license fetch and session.update", async () => {
+		const onError = vi.fn();
+		const opts: EmeOptions = {
+			keySystem: "com.microsoft.playready",
+			licenseUrl: "https://pr.example.com/license",
+		};
+
+		setupEme(video, opts, onError);
+		await flush();
+
+		expect(video.setMediaKeys).toHaveBeenCalledWith(keys);
+
+		video._fire("encrypted", {
+			initDataType: "cenc",
+			initData: new ArrayBuffer(16),
+		} as MediaEncryptedEvent);
+
+		await flush();
+
+		expect(
+			keys.createSession as ReturnType<typeof vi.fn>,
+		).toHaveBeenCalledWith("temporary");
+		expect(session.generateRequest).toHaveBeenCalledWith(
+			"cenc",
+			expect.any(ArrayBuffer),
+		);
+
+		session._fire("message", {
+			message: new ArrayBuffer(8),
+		} as MediaKeyMessageEvent);
+
+		await flush();
+
+		expect(globalThis.fetch).toHaveBeenCalledWith(
+			"https://pr.example.com/license",
+			expect.objectContaining({ method: "POST" }),
+		);
+		expect(session.update).toHaveBeenCalledWith(expect.any(ArrayBuffer));
+		expect(onError).not.toHaveBeenCalled();
 	});
 });

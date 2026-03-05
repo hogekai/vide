@@ -1,16 +1,12 @@
-import type { WidevineConfig } from "./types.js";
+import type { PlayReadyConfig } from "./types.js";
 
-/** Generate hls.js config fragment for Widevine DRM. */
-export function widevineHlsConfig(
-	config: WidevineConfig,
+/** Generate hls.js config fragment for PlayReady DRM. */
+export function playreadyHlsConfig(
+	config: PlayReadyConfig,
 ): Record<string, unknown> {
 	const systemConfig: Record<string, unknown> = {
 		licenseUrl: config.licenseUrl,
 	};
-
-	if (config.certificateUrl) {
-		systemConfig.serverCertificateUrl = config.certificateUrl;
-	}
 
 	if (config.headers) {
 		const headers = config.headers;
@@ -24,21 +20,18 @@ export function widevineHlsConfig(
 	return {
 		emeEnabled: true,
 		drmSystems: {
-			"com.widevine.alpha": systemConfig,
+			"com.microsoft.playready": systemConfig,
 		},
 	};
 }
 
-/** Generate dash.js settings fragment for Widevine DRM. */
-export function widevineDashConfig(
-	config: WidevineConfig,
+/** Generate dash.js settings fragment for PlayReady DRM. */
+export function playreadyDashConfig(
+	config: PlayReadyConfig,
 ): Record<string, unknown> {
 	const protEntry: Record<string, unknown> = {
 		serverURL: config.licenseUrl,
 	};
-	if (config.certificateUrl) {
-		protEntry.serverCertificateURL = config.certificateUrl;
-	}
 	if (config.headers) {
 		protEntry.httpRequestHeaders = config.headers;
 	}
@@ -46,7 +39,7 @@ export function widevineDashConfig(
 		streaming: {
 			protection: {
 				data: {
-					"com.widevine.alpha": protEntry,
+					"com.microsoft.playready": protEntry,
 				},
 			},
 		},
