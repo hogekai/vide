@@ -39,6 +39,8 @@ interface DashMediaPlayerLike {
 	updateSettings(settings: Record<string, unknown>): void;
 	// biome-ignore lint/suspicious/noExplicitAny: dashjs event data varies by event type
 	on(type: string, listener: (e: any) => void): void;
+	// biome-ignore lint/suspicious/noExplicitAny: dashjs event data varies by event type
+	off(type: string, listener: (e: any) => void): void;
 	destroy(): void;
 	reset(): void;
 	getBitrateInfoListFor(type: string): DashBitrateInfo[];
@@ -143,9 +145,7 @@ export function dash(options: DashPluginOptions = {}): Plugin {
 						dashInstance = instance;
 						player.setPluginData("dash", instance);
 
-						const drmData = player.getPluginData("drm") as
-							| { dashConfig?: Record<string, unknown> }
-							| undefined;
+						const drmData = player.getPluginData("drm");
 						if (drmData?.dashConfig) {
 							instance.updateSettings(drmData.dashConfig);
 						}

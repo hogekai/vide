@@ -52,23 +52,18 @@ export function ssai(options: SsaiPluginOptions = {}): Plugin {
 			function tryAttach(): boolean {
 				if (monitorCleanup) return true;
 
-				const hlsInstance = player.getPluginData("hls") as
-					| {
-							on(e: string, h: (...args: unknown[]) => void): void;
-							off(e: string, h: (...args: unknown[]) => void): void;
-					  }
-					| undefined;
+				const hlsInstance = player.getPluginData("hls");
 				if (hlsInstance) {
-					monitorCleanup = createHlsMonitor(hlsInstance, parser, onMetadata);
+					// Cast: SSAI monitor needs a different projection of hls.js (on/off + levels.details)
+					monitorCleanup = createHlsMonitor(
+						hlsInstance as unknown as Parameters<typeof createHlsMonitor>[0],
+						parser,
+						onMetadata,
+					);
 					return true;
 				}
 
-				const dashInstance = player.getPluginData("dash") as
-					| {
-							on(e: string, h: (e: unknown) => void): void;
-							off(e: string, h: (e: unknown) => void): void;
-					  }
-					| undefined;
+				const dashInstance = player.getPluginData("dash");
 				if (dashInstance) {
 					monitorCleanup = createDashMonitor(dashInstance, parser, onMetadata);
 					return true;

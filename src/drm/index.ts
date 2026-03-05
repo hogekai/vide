@@ -20,6 +20,7 @@ export type {
 	ResolvedDrmConfig,
 	WidevineConfig,
 } from "./types.js";
+
 export { detectKeySystem } from "./detect.js";
 export { dashDrmConfig, hlsDrmConfig } from "./bridge.js";
 export { setupEme } from "./eme.js";

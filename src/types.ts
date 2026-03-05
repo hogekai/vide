@@ -219,6 +219,37 @@ export interface QualityLevel {
 	label: string;
 }
 
+// ── Plugin Data Registry ──────────────────────────────────────
+// Plugin-specific value types live in plugin-data-types.ts to keep
+// this file focused on core abstractions.
+export type {
+	PluginDashInstance,
+	PluginDrmConfig,
+	PluginHlsInstance,
+	PluginImaData,
+} from "./plugin-data-types.js";
+import type {
+	PluginDashInstance,
+	PluginDrmConfig,
+	PluginHlsInstance,
+	PluginImaData,
+} from "./plugin-data-types.js";
+
+/**
+ * Registry mapping plugin data keys to their value types.
+ * Used by `setPluginData` / `getPluginData` for compile-time safety.
+ */
+export interface PluginDataMap {
+	qualities: QualityLevel[];
+	currentQuality: QualityLevel | null;
+	autoQuality: boolean;
+	qualitySetter: (id: number) => void;
+	hls: PluginHlsInstance;
+	dash: PluginDashInstance;
+	drm: PluginDrmConfig;
+	ima: PluginImaData;
+}
+
 // === Text Track ===
 export interface VideTextTrack {
 	id: number;
@@ -339,7 +370,12 @@ export interface Player extends EventBus {
 	destroy(): void;
 
 	/** Store data for cross-plugin communication. */
-	setPluginData(key: string, data: unknown): void;
+	setPluginData<K extends keyof PluginDataMap>(
+		key: K,
+		data: PluginDataMap[K],
+	): void;
 	/** Retrieve data stored by another plugin. Returns undefined if not set. */
-	getPluginData(key: string): unknown;
+	getPluginData<K extends keyof PluginDataMap>(
+		key: K,
+	): PluginDataMap[K] | undefined;
 }

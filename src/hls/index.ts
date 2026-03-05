@@ -58,6 +58,8 @@ interface HlsLike {
 	readonly autoLevelEnabled: boolean;
 	recoverMediaError(): void;
 	startLoad(startPosition: number): void;
+	on(event: string, handler: (...args: unknown[]) => void): void;
+	off(event: string, handler: (...args: unknown[]) => void): void;
 }
 
 interface HlsLevel {
@@ -159,9 +161,7 @@ export function hls(options: HlsPluginOptions = {}): Plugin {
 							return;
 						}
 
-						const drmData = player.getPluginData("drm") as
-							| { hlsConfig?: Record<string, unknown> }
-							| undefined;
+						const drmData = player.getPluginData("drm");
 						const mergedConfig = {
 							...((options.hlsConfig as object) ?? {}),
 							...(drmData?.hlsConfig ?? {}),

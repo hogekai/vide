@@ -7,6 +7,7 @@ import type {
 	PlayerEventMap,
 	PlayerState,
 	Plugin,
+	PluginDataMap,
 	PluginPlayer,
 	QualityLevel,
 	SeekableRange,
@@ -460,21 +461,19 @@ export function createPlayer(el: MediaElement): Player {
 			return { start: el.seekable.start(0), end: el.seekable.end(0) };
 		},
 		get qualities(): QualityLevel[] {
-			return (pluginData.get("qualities") as QualityLevel[]) ?? [];
+			return player.getPluginData("qualities") ?? [];
 		},
 		get currentQuality(): QualityLevel | null {
-			return (pluginData.get("currentQuality") as QualityLevel | null) ?? null;
+			return player.getPluginData("currentQuality") ?? null;
 		},
 		get isAutoQuality(): boolean {
-			return (pluginData.get("autoQuality") as boolean) ?? true;
+			return player.getPluginData("autoQuality") ?? true;
 		},
 		get isAudio(): boolean {
 			return isAudio;
 		},
 		setQuality(id: number): void {
-			const setter = pluginData.get("qualitySetter") as
-				| ((id: number) => void)
-				| undefined;
+			const setter = player.getPluginData("qualitySetter");
 			if (setter) {
 				setter(id);
 			}
@@ -664,20 +663,27 @@ export function createPlayer(el: MediaElement): Player {
 			}
 		},
 
-		setPluginData(key: string, data: unknown): void {
+		setPluginData<K extends keyof PluginDataMap>(
+			key: K,
+			data: PluginDataMap[K],
+		): void {
 			pluginData.set(key, data);
 			if (key === "qualities") {
 				emit("qualitiesavailable", {
-					qualities: data as QualityLevel[],
+					qualities: data as PluginDataMap["qualities"],
 				});
 			} else if (key === "currentQuality") {
-				const next = data as QualityLevel;
-				emit("qualitychange", { from: previousQuality, to: next });
+				const next = data as PluginDataMap["currentQuality"];
+				if (next) {
+					emit("qualitychange", { from: previousQuality, to: next });
+				}
 				previousQuality = next;
 			}
 		},
-		getPluginData(key: string): unknown {
-			return pluginData.get(key);
+		getPluginData<K extends keyof PluginDataMap>(
+			key: K,
+		): PluginDataMap[K] | undefined {
+			return pluginData.get(key) as PluginDataMap[K] | undefined;
 		},
 
 		destroy(): void {
