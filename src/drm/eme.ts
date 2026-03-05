@@ -31,9 +31,7 @@ export interface EmeOptions {
 				initDataType: string,
 		  ) => Uint8Array | Promise<Uint8Array>)
 		| undefined;
-	onKeyStatus?:
-		| ((keyId: string, status: MediaKeyStatus) => void)
-		| undefined;
+	onKeyStatus?: ((keyId: string, status: MediaKeyStatus) => void) | undefined;
 }
 
 /** Convert a BufferSource keyId to a hex string. */
@@ -49,7 +47,13 @@ function keyIdToHex(keyId: BufferSource): string {
 async function fetchWithRetry(
 	url: string,
 	init: RequestInit,
-	retry: { maxAttempts?: number | undefined; delayMs?: number | undefined; backoff?: number | undefined } | undefined,
+	retry:
+		| {
+				maxAttempts?: number | undefined;
+				delayMs?: number | undefined;
+				backoff?: number | undefined;
+		  }
+		| undefined,
 ): Promise<Response> {
 	const maxAttempts = retry?.maxAttempts ?? 1;
 	const delayMs = retry?.delayMs ?? 1000;
@@ -60,17 +64,13 @@ async function fetchWithRetry(
 		try {
 			const res = await fetch(url, init);
 			if (!res.ok) {
-				throw new Error(
-					`Fetch failed: ${res.status} ${res.statusText}`,
-				);
+				throw new Error(`Fetch failed: ${res.status} ${res.statusText}`);
 			}
 			return res;
 		} catch (err: unknown) {
 			lastError = err;
 			if (attempt < maxAttempts - 1) {
-				await new Promise((r) =>
-					setTimeout(r, delayMs * backoff ** attempt),
-				);
+				await new Promise((r) => setTimeout(r, delayMs * backoff ** attempt));
 			}
 		}
 	}
@@ -103,7 +103,7 @@ export function setupEme(
 		sessions.push(session);
 
 		(async () => {
-			let initData: Uint8Array = new Uint8Array(event.initData!);
+			let initData: Uint8Array = new Uint8Array(event.initData as ArrayBuffer);
 			if (options.transformInitData) {
 				const transformed = await options.transformInitData(
 					initData,
@@ -122,9 +122,7 @@ export function setupEme(
 			(err: unknown) => {
 				if (destroyed) return;
 				onError(
-					err instanceof Error
-						? err
-						: new Error("generateRequest failed"),
+					err instanceof Error ? err : new Error("generateRequest failed"),
 				);
 			},
 		);
@@ -139,10 +137,7 @@ export function setupEme(
 			for (const [keyId, status] of session.keyStatuses) {
 				if (options.onKeyStatus) {
 					options.onKeyStatus(keyIdToHex(keyId), status);
-				} else if (
-					status === "expired" ||
-					status === "internal-error"
-				) {
+				} else if (status === "expired" || status === "internal-error") {
 					// Fallback: emit error if no onKeyStatus handler is set.
 					onError(new Error(`Key status: ${status}`));
 				}
@@ -176,9 +171,7 @@ export function setupEme(
 					() => destroyed,
 				).then((cert) => {
 					if (destroyed || !cert) return;
-					return mediaKeys?.setServerCertificate(
-						cert.buffer as ArrayBuffer,
-					);
+					return mediaKeys?.setServerCertificate(cert.buffer as ArrayBuffer);
 				});
 			}
 		})
@@ -215,24 +208,24 @@ export function setupEme(
 async function fetchCertificate(
 	url: string,
 	headers: Record<string, string> | undefined,
-	retry: { maxAttempts?: number | undefined; delayMs?: number | undefined; backoff?: number | undefined } | undefined,
+	retry:
+		| {
+				maxAttempts?: number | undefined;
+				delayMs?: number | undefined;
+				backoff?: number | undefined;
+		  }
+		| undefined,
 	onError: (err: Error) => void,
 	isDestroyed: () => boolean,
 ): Promise<Uint8Array | null> {
 	try {
-		const res = await fetchWithRetry(
-			url,
-			headers ? { headers } : {},
-			retry,
-		);
+		const res = await fetchWithRetry(url, headers ? { headers } : {}, retry);
 		const buf = await res.arrayBuffer();
 		if (isDestroyed()) return null;
 		return new Uint8Array(buf);
 	} catch (err: unknown) {
 		if (isDestroyed()) return null;
-		onError(
-			err instanceof Error ? err : new Error("Certificate fetch failed"),
-		);
+		onError(err instanceof Error ? err : new Error("Certificate fetch failed"));
 		return null;
 	}
 }
@@ -251,9 +244,7 @@ function handleMessage(
 		const license = buildClearKeyLicense(options.clearkeys);
 		session.update(license.buffer as ArrayBuffer).catch((err: unknown) => {
 			if (isDestroyed()) return;
-			onError(
-				err instanceof Error ? err : new Error("ClearKey update failed"),
-			);
+			onError(err instanceof Error ? err : new Error("ClearKey update failed"));
 		});
 		return;
 	}

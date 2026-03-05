@@ -27,30 +27,16 @@ Web standards first — if the browser can do it, we don't reinvent it.
 
 ## Features
 
-### Streaming
-
-HLS and DASH with adaptive bitrate. Thin wrappers around hls.js and dashjs.
-
-### Advertising
-
-Full ad stack: VAST 4.2, VMAP scheduling, SSAI, VPAID 2.0, SIMID, Google IMA.
-Open Measurement (OMID) viewability tracking.
-
-### DRM
-
-Widevine + FairPlay. Auto-configures hls.js/dashjs.
-
-### UI
-
-17 headless components. No UI / headless / themed — pick your level.
-
-### Frameworks
-
-React hooks, Vue composables, Svelte 5 — all first-class.
-
-### Tiny
-
-Core 3.0 KB gzip. Each plugin is a separate import. Pay only for what you use.
+- **Streaming** — HLS and DASH with adaptive bitrate. Thin wrappers around hls.js and dashjs.
+- **Advertising** — VAST 4.2 parsing, VMAP scheduling, SSAI, VPAID 2.0, SIMID interactive ads, Google IMA SDK bridge.
+- **Viewability** — Open Measurement (OMID) with automatic `AdVerification` extraction from VAST.
+- **DRM** — Widevine, FairPlay, PlayReady, ClearKey. Auto-detection, retry with backoff, key status events.
+- **UI** — 17 headless components with optional theme. No UI / headless / themed — pick your level.
+- **Frameworks** — React hooks, Vue 3 composables, Svelte 5 — all first-class.
+- **Tiny** — Core 3.0 KB gzip. Tree-shakeable. Each plugin is a separate import.
+- **TypeScript** — Strict types throughout. Type-safe plugin data, events, and state machine.
+- **Zero dependencies** — No runtime dependencies. Peer deps only for optional integrations.
+- **Web standards first** — Proxies `HTMLVideoElement`. Fullscreen API, `<track>` subtitles, native HLS on Safari.
 
 ## Install
 
