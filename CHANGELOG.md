@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+## [0.9.11] - 2026-03-06
+
+### Changed
+- Refactor core.ts: extract pure modules for state machine, event bus, text tracks, and media listeners
+
 ## [0.9.10] - 2026-03-05
 
 ### Fixed
