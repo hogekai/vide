@@ -63,7 +63,9 @@ describe("clearkeyDashConfig", () => {
 	it("produces dash.js config with clearkeys map", () => {
 		const config = clearkeyDashConfig({ keys: KEYS });
 
-		const streaming = config.streaming as { protection: { data: { clearkey: { clearkeys: Record<string, string> } } } };
+		const streaming = config.streaming as {
+			protection: { data: { clearkey: { clearkeys: Record<string, string> } } };
+		};
 		expect(streaming.protection.data.clearkey.clearkeys).toEqual(KEYS);
 	});
 });

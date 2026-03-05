@@ -19,8 +19,10 @@ export function probeConfigFor(
 	const capability: MediaKeySystemMediaCapability = {
 		contentType: 'video/mp4;codecs="avc1.42E01E"',
 	};
-	if (robustness) (capability as Record<string, unknown>).robustness = robustness;
-	if (encryptionScheme) (capability as Record<string, unknown>).encryptionScheme = encryptionScheme;
+	if (robustness)
+		(capability as Record<string, unknown>).robustness = robustness;
+	if (encryptionScheme)
+		(capability as Record<string, unknown>).encryptionScheme = encryptionScheme;
 	return [{ initDataTypes, videoCapabilities: [capability] }];
 }
 
@@ -41,8 +43,7 @@ export async function detectKeySystem(
 	candidates: (KeySystem | KeySystemCandidate)[],
 ): Promise<KeySystem | null> {
 	for (const raw of candidates) {
-		const { keySystem, robustness, encryptionScheme } =
-			normalizeCandidate(raw);
+		const { keySystem, robustness, encryptionScheme } = normalizeCandidate(raw);
 		try {
 			const config = probeConfigFor(keySystem, robustness, encryptionScheme);
 			await navigator.requestMediaKeySystemAccess(keySystem, config);

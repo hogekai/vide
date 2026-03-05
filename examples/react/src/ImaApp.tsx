@@ -1,4 +1,3 @@
-import { useRef, useState } from "react";
 import {
 	Vide,
 	useAutohide,
@@ -7,6 +6,7 @@ import {
 	useVideEvent,
 	useVidePlayer,
 } from "@videts/vide/react";
+import { useRef, useState } from "react";
 import "@videts/vide/ui/theme.css";
 
 const CONTENT_SRC =

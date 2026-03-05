@@ -503,9 +503,7 @@ describe("setupEme", () => {
 	});
 
 	it("retry: all attempts fail triggers onError", async () => {
-		globalThis.fetch = vi
-			.fn()
-			.mockRejectedValue(new Error("Network error"));
+		globalThis.fetch = vi.fn().mockRejectedValue(new Error("Network error"));
 
 		const onError = vi.fn();
 		const opts: EmeOptions = {
@@ -569,9 +567,7 @@ describe("setupEme", () => {
 
 	it("transformInitData is called before generateRequest", async () => {
 		const transformed = new Uint8Array([0xde, 0xad]);
-		const transformInitData = vi
-			.fn()
-			.mockResolvedValue(transformed);
+		const transformInitData = vi.fn().mockResolvedValue(transformed);
 
 		const onError = vi.fn();
 		const opts: EmeOptions = {
@@ -621,9 +617,9 @@ describe("setupEme", () => {
 
 		await flush();
 
-		expect(
-			keys.createSession as ReturnType<typeof vi.fn>,
-		).toHaveBeenCalledWith("temporary");
+		expect(keys.createSession as ReturnType<typeof vi.fn>).toHaveBeenCalledWith(
+			"temporary",
+		);
 		expect(session.generateRequest).toHaveBeenCalledWith(
 			"cenc",
 			expect.any(ArrayBuffer),

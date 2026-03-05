@@ -144,10 +144,7 @@ export function drm(options: DrmPluginOptions): Plugin {
 					emeOpts.onKeyStatus = (keyId, status) => {
 						if (destroyed) return;
 						player.emit("drm:keystatus", { keyId, status });
-						if (
-							status === "expired" ||
-							status === "internal-error"
-						) {
+						if (status === "expired" || status === "internal-error") {
 							player.emit("error", {
 								code: ERR_DRM_KEY_STATUS,
 								message: `Key status: ${status}`,

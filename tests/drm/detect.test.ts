@@ -120,9 +120,7 @@ describe("detectKeySystem", () => {
 
 	it("accepts KeySystemCandidate objects (backward compatible)", async () => {
 		mockRMKSA(vi.fn().mockResolvedValue({} as MediaKeySystemAccess));
-		const result = await detectKeySystem([
-			{ keySystem: "com.widevine.alpha" },
-		]);
+		const result = await detectKeySystem([{ keySystem: "com.widevine.alpha" }]);
 		expect(result).toBe("com.widevine.alpha");
 	});
 
@@ -180,13 +178,8 @@ describe("probeConfigFor", () => {
 	});
 
 	it("includes robustness when provided", () => {
-		const config = probeConfigFor(
-			"com.widevine.alpha",
-			"HW_SECURE_ALL",
-		);
-		expect(config[0].videoCapabilities?.[0]?.robustness).toBe(
-			"HW_SECURE_ALL",
-		);
+		const config = probeConfigFor("com.widevine.alpha", "HW_SECURE_ALL");
+		expect(config[0].videoCapabilities?.[0]?.robustness).toBe("HW_SECURE_ALL");
 	});
 
 	it("omits robustness when not provided", () => {
@@ -195,11 +188,7 @@ describe("probeConfigFor", () => {
 	});
 
 	it("includes encryptionScheme when provided", () => {
-		const config = probeConfigFor(
-			"com.widevine.alpha",
-			undefined,
-			"cenc",
-		);
+		const config = probeConfigFor("com.widevine.alpha", undefined, "cenc");
 		const cap = config[0].videoCapabilities?.[0] as Record<string, unknown>;
 		expect(cap.encryptionScheme).toBe("cenc");
 	});
@@ -211,11 +200,7 @@ describe("probeConfigFor", () => {
 	});
 
 	it("includes both robustness and encryptionScheme together", () => {
-		const config = probeConfigFor(
-			"com.microsoft.playready",
-			"3000",
-			"cbcs",
-		);
+		const config = probeConfigFor("com.microsoft.playready", "3000", "cbcs");
 		const cap = config[0].videoCapabilities?.[0] as Record<string, unknown>;
 		expect(cap.robustness).toBe("3000");
 		expect(cap.encryptionScheme).toBe("cbcs");

@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+## [0.9.10] - 2026-03-05
+
+### Fixed
+- Biome lint and format issues across DRM plugin, tests, theme CSS, and IMA example
+- README Features section: flatten to single list, add OMID, TypeScript, zero deps, web standards
+
 ## [0.9.9] - 2026-03-05
 
 ### Added

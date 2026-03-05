@@ -17,11 +17,7 @@ export interface PluginHlsInstance {
 
 /** Minimal dash.js instance shape stored via pluginData. */
 export interface PluginDashInstance {
-	initialize(
-		view: HTMLMediaElement,
-		source: string,
-		autoPlay: boolean,
-	): void;
+	initialize(view: HTMLMediaElement, source: string, autoPlay: boolean): void;
 	updateSettings(settings: Record<string, unknown>): void;
 	// biome-ignore lint/suspicious/noExplicitAny: dashjs event data varies by event type
 	on(type: string, listener: (e: any) => void): void;
@@ -29,9 +25,7 @@ export interface PluginDashInstance {
 	off(type: string, listener: (e: any) => void): void;
 	destroy(): void;
 	reset(): void;
-	getBitrateInfoListFor(
-		type: string,
-	): Array<{
+	getBitrateInfoListFor(type: string): Array<{
 		qualityIndex: number;
 		width: number;
 		height: number;
