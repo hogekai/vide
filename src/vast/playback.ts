@@ -92,7 +92,10 @@ export function playSingleAd(options: PlaySingleAdOptions): {
 	player.emit("ad:impression", { adId });
 
 	// Select best media file
-	const mediaFile = selectMediaFile(linear.mediaFiles);
+	const mediaFile = selectMediaFile(linear.mediaFiles, {
+		width: player.el.clientWidth,
+		height: player.el.clientHeight,
+	});
 	if (!mediaFile) {
 		cleanupAdPlugins();
 		trackError(ad.errors, VAST_MEDIA_UNSUPPORTED);

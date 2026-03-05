@@ -39,6 +39,7 @@ export {
 	trackNonLinear,
 } from "./tracker.js";
 export { selectMediaFile } from "./media.js";
+export type { MediaSelectionHints } from "./media.js";
 export { playSingleAd } from "./playback.js";
 export type { PlaySingleAdOptions, SingleAdResult } from "./playback.js";
 export { classifyAds, playPod, playWaterfall } from "./pod.js";
