@@ -6,7 +6,7 @@
 
 Modular video player library. Use only what you need.
 
-**[Documentation](https://hogekai.github.io/vide/)** · **[Getting Started](https://hogekai.github.io/vide/getting-started)** · **[Demo](https://hogekai.github.io/vide/demo)** · **[Try on StackBlitz](https://stackblitz.com/github/hogekai/vide/tree/main/examples/stackblitz)**
+**[Documentation](https://hogekai.github.io/vide/)** · **[Getting Started](https://hogekai.github.io/vide/getting-started)** · **[Playground](https://hogekai.github.io/vide/demo)**
 
 ```html
 <video src="video.mp4"></video>

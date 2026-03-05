@@ -20,7 +20,7 @@ export default defineConfig({
 					{ text: "Getting Started", link: "/getting-started" },
 					{ text: "CDN / No Build Tool", link: "/cdn" },
 					{ text: "Audio", link: "/audio" },
-					{ text: "Demo", link: "/demo" },
+					{ text: "Playground", link: "/demo" },
 					{ text: "Browser Support", link: "/browser-support" },
 				],
 			},

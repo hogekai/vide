@@ -9,8 +9,8 @@ hero:
       text: Get Started
       link: /getting-started
     - theme: alt
-      text: Try on StackBlitz
-      link: https://stackblitz.com/github/hogekai/vide/tree/main/examples/stackblitz
+      text: Playground
+      link: /demo
     - theme: alt
       text: View on GitHub
       link: https://github.com/hogekai/vide

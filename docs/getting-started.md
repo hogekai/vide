@@ -191,7 +191,7 @@ Calls all plugin cleanup functions, removes event listeners, and clears internal
 
 ## Next Steps
 
-- [Try on StackBlitz](https://stackblitz.com/github/hogekai/vide/tree/main/examples/stackblitz) — interactive playground
+- [Playground](/demo) — interactive playground
 - [HLS Streaming](/plugins/hls) — play `.m3u8` streams
 - [VAST Ads](/plugins/vast) — client-side video ads
 - [UI](/plugins/ui) — player controls and theme

@@ -1,63 +1,16 @@
-# Demo
+# Playground
 
 <script setup>
-import LiveDemo from './.vitepress/components/LiveDemo.vue'
+import Playground from './.vitepress/components/Playground.vue'
 </script>
+
+<ClientOnly>
+  <Playground />
+</ClientOnly>
 
 ::: tip
 See the [examples/](https://github.com/hogekai/vide/tree/main/examples) directory for runnable HTML demos covering all plugin combinations.
 :::
-
-## Quick Demo
-
-A minimal player with HLS streaming and UI:
-
-<LiveDemo />
-
-```html
-<div id="player">
-  <video src="https://example.com/stream.m3u8" autoplay muted playsinline></video>
-</div>
-```
-
-```ts [HLS + UI]
-import { createPlayer } from "@videts/vide";
-import { hls } from "@videts/vide/hls";
-import { ui } from "@videts/vide/ui";
-import "@videts/vide/ui/theme.css";
-
-const player = createPlayer(document.querySelector("video")!);
-player.use(hls());
-player.use(ui({ container: document.getElementById("player")! }));
-```
-
-## With VAST Pre-Roll
-
-<LiveDemo vast />
-
-```html
-<div id="player">
-  <video src="https://example.com/stream.m3u8" autoplay muted playsinline></video>
-</div>
-```
-
-```ts [HLS + UI + VAST]
-import { createPlayer } from "@videts/vide";
-import { hls } from "@videts/vide/hls";
-import { ui } from "@videts/vide/ui";
-import { vast } from "@videts/vide/vast";
-import "@videts/vide/ui/theme.css";
-
-const player = createPlayer(document.querySelector("video")!);
-player.use(hls());
-
-const uiPlugin = ui({ container: document.getElementById("player")! });
-player.use(uiPlugin);
-player.use(vast({
-  tagUrl: "https://pubads.g.doubleclick.net/gampad/ads?...",
-  adPlugins: uiPlugin.getAdPlugin(),
-}));
-```
 
 ## Available Examples
 
