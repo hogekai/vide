@@ -125,9 +125,9 @@
 	pointer-events: none;
 }
 
-.vide-ui--autohide::after,
-.vide-ui--playing:not(:hover)::after,
-.vide-ui--ad-playing:not(:hover)::after {
+.vide-ui--ad-loading:not(:hover)::after,
+.vide-ui--ad-playing:not(:hover)::after,
+.vide-ui--ad-paused:not(:hover)::after {
 	opacity: 1;
 }
 
@@ -164,11 +164,15 @@
 
 .vide-ui--autohide .vide-controls {
 	opacity: 0;
+	transform: translateY(12px);
 	pointer-events: none;
 }
 
 .vide-ui--autohide .vide-bigplay {
-	display: none;
+	opacity: 0;
+	visibility: hidden;
+	pointer-events: none;
+	transform: translate(-50%, -50%) scale(0.7);
 }
 
 /* Slide ad elements down when controls fade out */
@@ -206,7 +210,10 @@
 		transparent 100%
 	);
 	opacity: 0;
-	transition: opacity 0.25s var(--vide-ease);
+	transform: translateY(12px);
+	transition:
+		opacity 0.25s var(--vide-ease),
+		transform 0.25s var(--vide-ease);
 	z-index: 3;
 }
 
@@ -216,6 +223,7 @@
 .vide-ui--ended .vide-controls,
 .vide-ui--ad-paused .vide-controls {
 	opacity: 1;
+	transform: translateY(0);
 	pointer-events: auto;
 }
 
@@ -331,8 +339,10 @@
 	left: calc(var(--vide-progress, 0) * 100%);
 	transform: translateX(-50%) scale(0);
 	opacity: 0;
-	transition: opacity var(--vide-duration-fast), transform
-		var(--vide-duration-fast) var(--vide-ease);
+	transition:
+		opacity var(--vide-duration-fast),
+		transform var(--vide-duration-fast) var(--vide-ease),
+		box-shadow var(--vide-duration-fast) var(--vide-ease);
 	pointer-events: none;
 }
 
@@ -340,6 +350,7 @@
 .vide-progress--dragging .vide-progress__handle {
 	opacity: 1;
 	transform: translateX(-50%) scale(1);
+	box-shadow: 0 0 6px 1px rgba(224, 62, 82, 0.5);
 }
 
 .vide-progress--disabled {
@@ -482,11 +493,11 @@
    ═══════════════════════════════════════════ */
 
 .vide-bigplay {
-	display: none;
+	display: flex;
 	position: absolute;
 	top: 50%;
 	left: 50%;
-	transform: translate(-50%, -50%);
+	transform: translate(-50%, -50%) scale(0.7);
 	appearance: none;
 	border: none;
 	width: 64px;
@@ -502,8 +513,14 @@
 	align-items: center;
 	justify-content: center;
 	z-index: 2;
-	transition: background var(--vide-duration-fast), transform
-		var(--vide-duration) var(--vide-ease);
+	opacity: 0;
+	visibility: hidden;
+	pointer-events: none;
+	transition:
+		opacity 0.25s var(--vide-ease),
+		transform 0.25s var(--vide-ease),
+		visibility 0.25s,
+		background var(--vide-duration-fast);
 }
 
 .vide-bigplay:hover {
@@ -522,7 +539,10 @@
 .vide-ui--ready .vide-bigplay,
 .vide-ui--paused .vide-bigplay,
 .vide-ui--ended .vide-bigplay {
-	display: flex;
+	opacity: 1;
+	visibility: visible;
+	pointer-events: auto;
+	transform: translate(-50%, -50%) scale(1);
 }
 
 /* ═══════════════════════════════════════════
@@ -552,14 +572,20 @@
    ═══════════════════════════════════════════ */
 
 .vide-loader {
-	display: none;
+	display: flex;
 	position: absolute;
 	top: 50%;
 	left: 50%;
-	transform: translate(-50%, -50%);
+	transform: translate(-50%, -50%) scale(0.6);
 	margin: 0;
 	padding: 0;
 	z-index: 1;
+	opacity: 0;
+	visibility: hidden;
+	transition:
+		opacity 0.2s var(--vide-ease),
+		transform 0.2s var(--vide-ease),
+		visibility 0.2s;
 }
 
 .vide-loader__spinner {
@@ -567,10 +593,19 @@
 	height: 36px;
 	margin: 0;
 	padding: 0;
-	border: 2px solid transparent;
-	border-top-color: var(--vide-text);
 	border-radius: var(--vide-radius-round);
-	animation: vide-spin 0.7s linear infinite;
+	background: conic-gradient(from 0deg, transparent 30%, var(--vide-text));
+	-webkit-mask: radial-gradient(
+		farthest-side,
+		transparent calc(100% - 3px),
+		#000 calc(100% - 2.5px)
+	);
+	mask: radial-gradient(
+		farthest-side,
+		transparent calc(100% - 3px),
+		#000 calc(100% - 2.5px)
+	);
+	animation: vide-spin 0.8s linear infinite;
 }
 
 @keyframes vide-spin {
@@ -582,7 +617,9 @@
 .vide-ui--loading .vide-loader,
 .vide-ui--buffering .vide-loader,
 .vide-ui--ad-loading .vide-loader {
-	display: flex;
+	opacity: 1;
+	visibility: visible;
+	transform: translate(-50%, -50%) scale(1);
 }
 
 /* ═══════════════════════════════════════════
@@ -1024,6 +1061,7 @@
 
 	.vide-controls,
 	.vide-bigplay,
+	.vide-loader,
 	.vide-progress__bar,
 	.vide-progress__handle,
 	.vide-progress__buffered,
