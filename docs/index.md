@@ -9,6 +9,9 @@ hero:
       text: Get Started
       link: /getting-started
     - theme: alt
+      text: Try on StackBlitz
+      link: https://stackblitz.com/github/hogekai/vide/tree/main/examples/stackblitz
+    - theme: alt
       text: View on GitHub
       link: https://github.com/hogekai/vide
 
@@ -22,6 +25,15 @@ features:
   - icon: 🌐
     title: Web Standards First
     details: If the browser can do it natively, Vide doesn't reinvent it. Proxies HTMLVideoElement directly.
+  - icon: 📡
+    title: Streaming
+    details: HLS and DASH with adaptive bitrate. Thin wrappers around hls.js and dashjs.
+  - icon: 📺
+    title: Full Ad Stack
+    details: VAST 4.2, VMAP, SSAI, VPAID, SIMID, Google IMA, and OMID viewability.
+  - icon: ⚛️
+    title: Framework Ready
+    details: React hooks, Vue composables, Svelte 5 — all first-class integrations.
 ---
 
 ## Plugin Sizes

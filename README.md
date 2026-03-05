@@ -6,7 +6,7 @@
 
 Modular video player library. Use only what you need.
 
-**[Documentation](https://hogekai.github.io/vide/)** · **[Getting Started](https://hogekai.github.io/vide/getting-started)** · **[Demo](https://hogekai.github.io/vide/demo)**
+**[Documentation](https://hogekai.github.io/vide/)** · **[Getting Started](https://hogekai.github.io/vide/getting-started)** · **[Demo](https://hogekai.github.io/vide/demo)** · **[Try on StackBlitz](https://stackblitz.com/github/hogekai/vide/tree/main/examples/stackblitz)**
 
 ```html
 <video src="video.mp4"></video>
@@ -25,6 +25,33 @@ player.use(vast({ tagUrl: "https://example.com/vast.xml" }));
 Explicit setup. No data attributes. No class scanning. No side effects.
 Web standards first — if the browser can do it, we don't reinvent it.
 
+## Features
+
+### Streaming
+
+HLS and DASH with adaptive bitrate. Thin wrappers around hls.js and dashjs.
+
+### Advertising
+
+Full ad stack: VAST 4.2, VMAP scheduling, SSAI, VPAID 2.0, SIMID, Google IMA.
+Open Measurement (OMID) viewability tracking.
+
+### DRM
+
+Widevine + FairPlay. Auto-configures hls.js/dashjs.
+
+### UI
+
+17 headless components. No UI / headless / themed — pick your level.
+
+### Frameworks
+
+React hooks, Vue composables, Svelte 5 — all first-class.
+
+### Tiny
+
+Core 2.8 KB gzip. Each plugin is a separate import. Pay only for what you use.
+
 ## Install
 
 ```sh
@@ -34,35 +61,6 @@ npm install @videts/vide
 > Package is published as **@videts/vide** on npm. The project name is **Vide**.
 
 ## Quick Start
-
-```html
-<video src="video.mp4"></video>
-```
-
-```ts
-import { createPlayer } from "@videts/vide";
-// import type { PlayerEventMap } from "@videts/vide";
-
-const player = createPlayer(document.querySelector("video")!);
-
-// HTMLVideoElement-compatible — play, pause, src, currentTime, … all proxied
-player.play();
-// player.pause();
-// player.src = "video.mp4";
-// player.currentTime = 30;
-
-// player.el — direct access to the underlying <video> element
-// player.el.requestPictureInPicture();
-
-// player.on() — typed custom events (statechange, ad:start, error, …)
-player.on("statechange", ({ from, to }) => console.log(`${from} → ${to}`));
-// player.on("volumechange", (e) => console.log(e.target));  // native events too
-
-// addEventListener() delegates directly to the <video> element
-// player.addEventListener("canplay", () => { ... });
-```
-
-## Quick Start with UI
 
 ```html
 <div id="player-container">
@@ -76,7 +74,15 @@ import { ui } from "@videts/vide/ui";
 import "@videts/vide/ui/theme.css";
 
 const player = createPlayer(document.querySelector("video")!);
+
+// Optional — add UI controls
 player.use(ui({ container: document.getElementById("player-container")! }));
+
+// HTMLVideoElement-compatible — play, pause, src, currentTime, … all proxied
+player.play();
+
+// player.el — direct access to the underlying <video> element
+// player.on() — typed custom events (statechange, ad:start, error, …)
 ```
 
 See the [Getting Started guide](https://hogekai.github.io/vide/getting-started) for more.
@@ -107,7 +113,7 @@ See the [plugin documentation](https://hogekai.github.io/vide/plugins/hls) for u
 
 ## Documentation
 
-- [Getting Started](https://hogekai.github.io/vide/getting-started) — install, CDN usage, basic setup
+- [Getting Started](https://hogekai.github.io/vide/getting-started) — install, basic setup
 - [Plugin Guides](https://hogekai.github.io/vide/plugins/hls) — HLS, DASH, DRM, VAST, UI, and more
 - [API Reference](https://hogekai.github.io/vide/api-reference/) — auto-generated from TypeScript
 - [Browser Support](https://hogekai.github.io/vide/browser-support) — compatibility notes

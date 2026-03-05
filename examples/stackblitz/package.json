@@ -1,0 +1,17 @@
+{
+	"name": "vide-playground",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"dev": "vite",
+		"build": "vite build"
+	},
+	"dependencies": {
+		"@videts/vide": "^0.9.8",
+		"hls.js": "^1"
+	},
+	"devDependencies": {
+		"vite": "^6",
+		"typescript": "^5"
+	}
+}
