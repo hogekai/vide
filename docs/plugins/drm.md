@@ -216,4 +216,4 @@ support.forEach((supported, ks) => {
 - Custom headers are useful for auth tokens on license requests.
 - Server certificates (Widevine optional, FairPlay required) reduce round-trips by avoiding individualization requests.
 - License and certificate requests use exponential backoff when `retry` is configured.
-- Size: **2.5 KB** gzip.
+

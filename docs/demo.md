@@ -100,16 +100,16 @@ pnpm build
 
 | Plugin | gzip |
 |--------|-----:|
-| Core | 2.8 KB |
-| VAST | 6.6 KB |
-| VMAP | 7.1 KB |
+| Core | 3.0 KB |
+| VAST | 7.9 KB |
+| VMAP | 8.8 KB |
 | HLS | 1.4 KB |
 | DASH | 1.4 KB |
-| DRM | 1.7 KB |
-| SSAI | 2.0 KB |
+| DRM | 2.6 KB |
+| SSAI | 2.3 KB |
 | OMID | 1.7 KB |
 | SIMID | 2.4 KB |
-| VPAID | 1.8 KB |
-| IMA | 3.5 KB |
-| UI | 5.3 KB |
-| theme.css | 3.5 KB |
+| VPAID | 2.1 KB |
+| IMA | 3.4 KB |
+| UI | 5.7 KB |
+| theme.css | 4.6 KB |

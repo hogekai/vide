@@ -40,16 +40,16 @@ features:
 
 | Plugin | What | gzip |
 |--------|------|-----:|
-| `@videts/vide` | Core player | 2.8 KB |
-| `@videts/vide/vast` | VAST 4.2 ads | 6.6 KB |
-| `@videts/vide/vmap` | VMAP scheduling | 7.1 KB |
-| `@videts/vide/hls` | HLS streaming | 1.3 KB |
-| `@videts/vide/dash` | DASH streaming | 1.3 KB |
-| `@videts/vide/drm` | DRM (Widevine + FairPlay) | 1.6 KB |
-| `@videts/vide/ssai` | SSAI (server-side ads) | 1.9 KB |
+| `@videts/vide` | Core player | 3.0 KB |
+| `@videts/vide/vast` | VAST 4.2 ads | 7.9 KB |
+| `@videts/vide/vmap` | VMAP scheduling | 8.8 KB |
+| `@videts/vide/hls` | HLS streaming | 1.4 KB |
+| `@videts/vide/dash` | DASH streaming | 1.4 KB |
+| `@videts/vide/drm` | DRM (Widevine, FairPlay, PlayReady, ClearKey) | 2.6 KB |
+| `@videts/vide/ssai` | SSAI (server-side ads) | 2.3 KB |
 | `@videts/vide/omid` | Open Measurement | 1.7 KB |
 | `@videts/vide/simid` | Interactive ads | 2.4 KB |
-| `@videts/vide/vpaid` | VPAID 2.0 ads | 1.8 KB |
-| `@videts/vide/ima` | Google IMA SDK bridge | 3.3 KB |
-| `@videts/vide/ui` | Headless UI | 5.5 KB |
-| `@videts/vide/ui/theme.css` | Default theme | 4.4 KB |
+| `@videts/vide/vpaid` | VPAID 2.0 ads | 2.1 KB |
+| `@videts/vide/ima` | Google IMA SDK bridge | 3.4 KB |
+| `@videts/vide/ui` | Headless UI | 5.7 KB |
+| `@videts/vide/ui/theme.css` | Default theme | 4.6 KB |

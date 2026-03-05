@@ -6,6 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+## [0.9.9] - 2026-03-05
+
+### Added
+- DRM plugin: PlayReady (Edge/Xbox/Smart TV) and ClearKey (testing/dev) key system support
+- DRM plugin: robustness level and encryption scheme configuration
+- DRM plugin: license request retry with exponential backoff
+- DRM plugin: key status events on the player event bus
+- DRM plugin: FairPlay init data transform callback and standalone DRM capability query API
+- DRM plugin: generalized server certificate management (Widevine + FairPlay)
+- Type-safe `pluginData` via `PluginDataMap` registry (`setPluginData`/`getPluginData` with generics)
+- Docs: Features section, StackBlitz playground, and dedicated CDN page
+- Docs: DRM plugin docs for PlayReady, ClearKey, robustness, retry, and events
+
+### Fixed
+- Mini progress bar showing during normal video playback (now ad-only)
+
+### Changed
+- Theme animations: BigPlay scale+fade, controls slide-up+fade, conic-gradient loader, accent glow on progress handle
+
 ## [0.9.8] - 2026-03-02
 
 ### Added

@@ -83,4 +83,3 @@ Standard ad events (`ad:start`, `ad:end`, `ad:click`) are fired by the parent VA
 - The VAST parser automatically extracts `InteractiveCreativeFile` elements from the VAST response.
 - Creative iframes are sandboxed with `allow-scripts allow-same-origin`.
 - The plugin implements the full SIMID handshake sequence (init → ready → start → stop).
-- Size: **2.4 KB** gzip.

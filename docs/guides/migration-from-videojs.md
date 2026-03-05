@@ -522,18 +522,18 @@ In React, Vue, and Svelte, the framework hooks (`useVidePlayer` / `createVidePla
 
 | video.js | Vide | Size |
 |----------|------|------|
-| VHS (built-in in 8.x) / `videojs-http-streaming` | `@videts/vide/hls` | 1.3 KB (+ hls.js) |
-| VHS (built-in in 8.x) / `videojs-contrib-dash` | `@videts/vide/dash` | 1.3 KB (+ dashjs) |
-| `videojs-contrib-eme` | `@videts/vide/drm` | 1.6 KB |
-| `videojs-contrib-ads` + `videojs-ima` | `@videts/vide/vast` | 6.6 KB |
-| N/A (ad SDK handles) | `@videts/vide/vmap` | 7.1 KB |
-| N/A (ad SDK handles) | `@videts/vide/ssai` | 1.9 KB |
+| VHS (built-in in 8.x) / `videojs-http-streaming` | `@videts/vide/hls` | 1.4 KB (+ hls.js) |
+| VHS (built-in in 8.x) / `videojs-contrib-dash` | `@videts/vide/dash` | 1.4 KB (+ dashjs) |
+| `videojs-contrib-eme` | `@videts/vide/drm` | 2.6 KB |
+| `videojs-contrib-ads` + `videojs-ima` | `@videts/vide/vast` | 7.9 KB |
+| N/A (ad SDK handles) | `@videts/vide/vmap` | 8.8 KB |
+| N/A (ad SDK handles) | `@videts/vide/ssai` | 2.3 KB |
 | N/A (ad SDK handles) | `@videts/vide/omid` | 1.7 KB |
 | N/A (ad SDK handles) | `@videts/vide/simid` | 2.4 KB |
-| N/A | `@videts/vide/vpaid` | 1.8 KB |
-| `videojs-contrib-ads` + `videojs-ima` | `@videts/vide/ima` | 3.3 KB |
-| Built-in | `@videts/vide/ui` | 5.5 KB |
-| Built-in | `@videts/vide/ui/theme.css` | 4.4 KB |
+| N/A | `@videts/vide/vpaid` | 2.1 KB |
+| `videojs-contrib-ads` + `videojs-ima` | `@videts/vide/ima` | 3.4 KB |
+| Built-in | `@videts/vide/ui` | 5.7 KB |
+| Built-in | `@videts/vide/ui/theme.css` | 4.6 KB |
 
 video.js bundles streaming, UI, and core into one package. Vide ships each as a separate entry point — import only what you use.
 
@@ -541,10 +541,10 @@ video.js bundles streaming, UI, and core into one package. Vide ships each as a 
 
 | | video.js 8.x | Vide (core + HLS + UI) |
 |-|-------------|------------------------|
-| JS | [~690 KB min (~200 KB gzip)](https://bundlephobia.com/package/video.js@8) | ~9.6 KB gzip |
-| CSS | ~30 KB min | 4.4 KB gzip |
+| JS | [~690 KB min (~200 KB gzip)](https://bundlephobia.com/package/video.js@8) | ~10.1 KB gzip |
+| CSS | ~30 KB min | 4.6 KB gzip |
 
-Core player alone is 2.8 KB gzip. Each plugin adds only what it needs.
+Core player alone is 3.0 KB gzip. Each plugin adds only what it needs.
 
 ## Migration Checklist
 

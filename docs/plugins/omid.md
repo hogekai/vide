@@ -38,4 +38,4 @@ No custom events. OMID communicates viewability data to verification vendors thr
 - OMID automatically reads `AdVerification` elements from the VAST response.
 - The plugin creates an OM SDK session per ad and fires standard ad events (impression, quartiles, pause/resume, etc.).
 - In production, host the OM SDK scripts on your own CDN.
-- Size: **1.7 KB** gzip.
+
