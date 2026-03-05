@@ -229,7 +229,11 @@ See [Text Tracks guide](/guides/text-tracks) for the full API.
 
 ## Ads
 
-video.js ad integration typically requires `videojs-contrib-ads` + `videojs-ima` (Google IMA SDK wrapper, ~200 KB). Vide parses VAST XML natively with no external SDK dependency.
+video.js ad integration typically requires `videojs-contrib-ads` + `videojs-ima` (Google IMA SDK wrapper, ~200 KB). Vide offers two approaches: a native VAST parser with no external SDK dependency, or an IMA SDK bridge for ad servers that require it.
+
+### VAST plugin (recommended)
+
+The VAST plugin parses and plays VAST XML directly — no external SDK, lighter bundle, full control over ad rendering and UI.
 
 **video.js + IMA:**
 ```js
@@ -260,6 +264,36 @@ player.use(vmap({ url: "https://example.com/vmap.xml" }));
 ```
 
 VMAP handles VAST resolution internally — no separate VAST import needed.
+
+### IMA plugin
+
+If your ad server or SSP **requires** IMA SDK integration (e.g., Google Ad Manager, AdSense for Video), use the IMA plugin instead. IMA controls its own ad UI, rendering, and tracking — vide acts as a thin bridge.
+
+**video.js + IMA:**
+```js
+import "videojs-contrib-ads";
+import "videojs-ima";
+
+const player = videojs("my-video");
+player.ima({ adTagUrl: "https://example.com/vast.xml" });
+```
+
+**Vide:**
+```ts
+import { createPlayer } from "@videts/vide";
+import { ima } from "@videts/vide/ima";
+
+const video = document.querySelector("video")!;
+const container = video.parentElement!; // position: relative wrapper
+
+const player = createPlayer(video);
+player.use(ima({
+  adTagUrl: "https://example.com/vast.xml",
+  adContainer: container,
+}));
+```
+
+The IMA SDK is loaded automatically — no `<script>` tag needed. See [IMA plugin docs](/plugins/ima) for VMAP/Ad Rules, layout structure, and framework integration.
 
 See [Ads Setup guide](/guides/ads-setup) for ad pods, companions, SSAI, OMID, and SIMID.
 
@@ -496,7 +530,10 @@ In React, Vue, and Svelte, the framework hooks (`useVidePlayer` / `createVidePla
 | N/A (ad SDK handles) | `@videts/vide/ssai` | 1.9 KB |
 | N/A (ad SDK handles) | `@videts/vide/omid` | 1.7 KB |
 | N/A (ad SDK handles) | `@videts/vide/simid` | 2.4 KB |
-| Built-in | `@videts/vide/ui` | 5.5 KB + 4.4 KB CSS |
+| N/A | `@videts/vide/vpaid` | 1.8 KB |
+| `videojs-contrib-ads` + `videojs-ima` | `@videts/vide/ima` | 3.3 KB |
+| Built-in | `@videts/vide/ui` | 5.5 KB |
+| Built-in | `@videts/vide/ui/theme.css` | 4.4 KB |
 
 video.js bundles streaming, UI, and core into one package. Vide ships each as a separate entry point — import only what you use.
 
@@ -516,7 +553,7 @@ Core player alone is 2.8 KB gzip. Each plugin adds only what it needs.
 - Move video config to native `<video>` HTML attributes
 - Add `hls()` or `dash()` plugin if streaming is needed
 - Move DRM from `videojs-contrib-eme` to `drm()` plugin
-- Replace IMA / `videojs-contrib-ads` with `vast()` or `vmap()`
+- Replace IMA / `videojs-contrib-ads` with `vast()`, `vmap()`, or `ima()` if ad server requires IMA SDK
 - Update event methods (`one` → `once`, `trigger` → `emit`)
 - Replace `.dispose()` with `.destroy()`
 - Add `ui()` plugin if you need player controls (not bundled in core)
