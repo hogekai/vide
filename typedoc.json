@@ -17,5 +17,15 @@
 	"excludePrivate": true,
 	"excludeInternal": true,
 	"readme": "none",
-	"entryFileName": "index"
+	"entryFileName": "index",
+	"interfacePropertiesFormat": "table",
+	"classPropertiesFormat": "table",
+	"propertyMembersFormat": "table",
+	"parametersFormat": "table",
+	"typeDeclarationFormat": "table",
+	"enumMembersFormat": "table",
+	"indexFormat": "table",
+	"tableColumnSettings": {
+		"hideSources": true
+	}
 }
