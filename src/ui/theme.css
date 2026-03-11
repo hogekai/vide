@@ -7,8 +7,8 @@
 
 :root {
 	/* ── Palette ── */
-	--vide-accent: #e03e52;
-	--vide-accent-hover: #ee4f62;
+	--vide-accent: #7EC8C8;
+	--vide-accent-hover: #92d4d4;
 	--vide-text: #fff;
 	--vide-text-mid: rgba(255, 255, 255, 0.72);
 	--vide-text-dim: rgba(255, 255, 255, 0.44);
@@ -17,7 +17,7 @@
 	--vide-bg: rgba(0, 0, 0, 0.75);
 	--vide-chip: rgba(0, 0, 0, 0.88);
 	--vide-chip-light: rgba(0, 0, 0, 0.72);
-	--vide-hover: rgba(255, 255, 255, 0.08);
+	--vide-hover: rgba(255, 255, 255, 0.06);
 
 	/* ── Layout ── */
 	--vide-controls-height: 48px;
@@ -242,6 +242,50 @@
 }
 
 /* ═══════════════════════════════════════════
+   TOOLTIPS
+   ═══════════════════════════════════════════ */
+
+.vide-controls [data-tooltip] {
+	position: relative;
+}
+
+.vide-controls [data-tooltip]::after {
+	content: attr(data-tooltip);
+	position: absolute;
+	bottom: 100%;
+	left: 50%;
+	transform: translateX(-50%) translateY(-4px);
+	padding: 4px 8px;
+	background: var(--vide-chip);
+	color: var(--vide-text);
+	font-family: var(--vide-font);
+	font-size: var(--vide-font-size-sm);
+	line-height: var(--vide-line-height);
+	white-space: nowrap;
+	border-radius: var(--vide-radius);
+	pointer-events: none;
+	opacity: 0;
+	transition: opacity var(--vide-duration-fast);
+	z-index: 10;
+}
+
+@media (hover: hover) {
+	.vide-controls [data-tooltip]:hover::after {
+		opacity: 1;
+	}
+}
+
+.vide-fullscreen[data-tooltip]::after {
+	left: auto;
+	right: 0;
+	transform: translateY(-4px);
+}
+
+.vide-ui--autohide [data-tooltip]::after {
+	display: none;
+}
+
+/* ═══════════════════════════════════════════
    PLAY BUTTON
    ═══════════════════════════════════════════ */
 
@@ -297,7 +341,7 @@
 	left: 0;
 	right: 0;
 	height: var(--vide-progress-height);
-	border-radius: 2px;
+	border-radius: 999px;
 	margin: 0;
 	padding: 0;
 	pointer-events: none;
@@ -333,7 +377,7 @@
 	padding: 0;
 	border: none;
 	border-radius: var(--vide-radius-round);
-	background: var(--vide-accent);
+	background: #fff;
 	left: calc(var(--vide-progress, 0) * 100%);
 	transform: translateX(-50%) scale(0);
 	opacity: 0;
@@ -347,7 +391,7 @@
 .vide-progress--dragging .vide-progress__handle {
 	opacity: 1;
 	transform: translateX(-50%) scale(1);
-	box-shadow: 0 0 6px 1px rgba(224, 62, 82, 0.5);
+	box-shadow: 0 0 6px 1px rgba(126, 200, 200, 0.4);
 }
 
 .vide-progress--disabled {

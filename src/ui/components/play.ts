@@ -30,6 +30,7 @@ export function createPlayButton(): UIComponent {
 			button.classList.add("vide-play--playing");
 			button.classList.remove("vide-play--paused");
 			button.setAttribute("aria-label", "Pause");
+			button.dataset.tooltip = "Pause";
 			setIcon(true);
 		} else if (
 			to === "paused" ||
@@ -40,6 +41,7 @@ export function createPlayButton(): UIComponent {
 			button.classList.remove("vide-play--playing");
 			button.classList.add("vide-play--paused");
 			button.setAttribute("aria-label", "Play");
+			button.dataset.tooltip = "Play";
 			setIcon(false);
 		}
 	}
@@ -49,6 +51,7 @@ export function createPlayButton(): UIComponent {
 			button = el("button", "vide-play vide-play--paused");
 			button.type = "button";
 			button.setAttribute("aria-label", "Play");
+			button.dataset.tooltip = "Play";
 			setIcon(false);
 			container.appendChild(button);
 		},

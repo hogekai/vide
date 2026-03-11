@@ -32,6 +32,7 @@ function buildSrcdoc(): string {
     '<meta name="viewport" content="width=device-width, initial-scale=1.0">',
     `<link rel="stylesheet" href="${CDN_BASE}/ui/theme.css">`,
     "<style>*{margin:0;padding:0;box-sizing:border-box}",
+    ":root{--vide-accent:#7EC8C8;--vide-accent-hover:#92d4d4}",
     "html,body{width:100%;height:100%;background:#000}",
     "#player{position:relative;width:100%;height:100%}",
     "video{position:absolute;top:0;left:0;width:100%;height:100%}</style>",
@@ -141,6 +142,6 @@ function onLoad() {
 }
 
 .hero-demo__badge {
-  color: var(--vp-c-text-2);
+  color: var(--vp-c-text-2, #5a5650);
 }
 </style>

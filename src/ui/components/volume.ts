@@ -31,9 +31,11 @@ export function createVolume(): UIComponent {
 		if (muted) {
 			root.classList.add("vide-volume--muted");
 			muteBtn.setAttribute("aria-label", "Unmute");
+			muteBtn.dataset.tooltip = "Unmute";
 		} else {
 			root.classList.remove("vide-volume--muted");
 			muteBtn.setAttribute("aria-label", "Mute");
+			muteBtn.dataset.tooltip = "Mute";
 		}
 		const vol = player.muted ? 0 : player.volume;
 		root.style.setProperty("--vide-volume", String(vol));
@@ -90,6 +92,7 @@ export function createVolume(): UIComponent {
 			muteBtn = el("button", "vide-volume__button");
 			muteBtn.type = "button";
 			muteBtn.setAttribute("aria-label", "Mute");
+			muteBtn.dataset.tooltip = "Mute";
 			slider = el("div", "vide-volume__slider");
 			slider.setAttribute("role", "slider");
 			slider.setAttribute("aria-label", "Volume");

@@ -55,9 +55,11 @@ export function createFullscreen(): UIComponent {
 		if (active) {
 			button.classList.add("vide-fullscreen--active");
 			button.setAttribute("aria-label", "Exit fullscreen");
+			button.dataset.tooltip = "Exit fullscreen";
 		} else {
 			button.classList.remove("vide-fullscreen--active");
 			button.setAttribute("aria-label", "Fullscreen");
+			button.dataset.tooltip = "Fullscreen";
 		}
 		setIcon(active);
 	}
@@ -70,6 +72,7 @@ export function createFullscreen(): UIComponent {
 			button = el("button", "vide-fullscreen");
 			button.type = "button";
 			button.setAttribute("aria-label", "Fullscreen");
+			button.dataset.tooltip = "Fullscreen";
 			setIcon(false);
 			container.appendChild(button);
 		},

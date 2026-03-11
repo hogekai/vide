@@ -6,6 +6,25 @@ export default defineConfig({
 	base: "/vide/",
 	lang: "en-US",
 
+	head: [
+		["link", { rel: "preconnect", href: "https://fonts.googleapis.com" }],
+		[
+			"link",
+			{
+				rel: "preconnect",
+				href: "https://fonts.gstatic.com",
+				crossorigin: "",
+			},
+		],
+		[
+			"link",
+			{
+				href: "https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Nunito:wght@400;500;600;700&display=swap",
+				rel: "stylesheet",
+			},
+		],
+	],
+
 	themeConfig: {
 		nav: [
 			{ text: "Guide", link: "/getting-started" },
