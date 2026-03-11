@@ -7,7 +7,7 @@
 
 :root {
 	/* ── Palette ── */
-	--vide-accent: #7EC8C8;
+	--vide-accent: #7ec8c8;
 	--vide-accent-hover: #92d4d4;
 	--vide-accent-glow: rgba(126, 200, 200, 0.4);
 	--vide-accent-ring: rgba(126, 200, 200, 0.09);
@@ -29,8 +29,7 @@
 	--vide-controls-gap: 6px;
 
 	/* ── Typography ── */
-	--vide-font: "Nunito", -apple-system, "Helvetica Neue", "Segoe UI",
-		sans-serif;
+	--vide-font: "Nunito", -apple-system, "Helvetica Neue", "Segoe UI", sans-serif;
 	--vide-font-mono: ui-monospace, "SF Mono", "Cascadia Mono", monospace;
 	--vide-font-size: 13px;
 	--vide-font-size-sm: 11px;
@@ -276,7 +275,8 @@
 	border-radius: var(--vide-radius);
 	pointer-events: none;
 	opacity: 0;
-	transition: opacity var(--vide-duration-fast), transform var(--vide-duration-fast);
+	transition: opacity var(--vide-duration-fast), transform
+		var(--vide-duration-fast);
 	z-index: 10;
 }
 
@@ -323,8 +323,8 @@
 	display: grid;
 	place-items: center;
 	border-radius: var(--vide-radius);
-	transition: color var(--vide-duration-fast),
-		background var(--vide-duration-fast);
+	transition: color var(--vide-duration-fast), background
+		var(--vide-duration-fast);
 }
 
 .vide-play:hover {
@@ -503,8 +503,8 @@
 	display: grid;
 	place-items: center;
 	border-radius: var(--vide-radius);
-	transition: color var(--vide-duration-fast),
-		background var(--vide-duration-fast);
+	transition: color var(--vide-duration-fast), background
+		var(--vide-duration-fast);
 }
 
 .vide-volume__button:hover {
@@ -522,8 +522,8 @@
 	cursor: pointer;
 	position: relative;
 	overflow: hidden;
-	transition: width var(--vide-duration) var(--vide-ease),
-		opacity var(--vide-duration) var(--vide-ease);
+	transition: width var(--vide-duration) var(--vide-ease), opacity
+		var(--vide-duration) var(--vide-ease);
 	opacity: 0;
 }
 
@@ -576,8 +576,8 @@
 	display: grid;
 	place-items: center;
 	border-radius: var(--vide-radius);
-	transition: color var(--vide-duration-fast),
-		background var(--vide-duration-fast);
+	transition: color var(--vide-duration-fast), background
+		var(--vide-duration-fast);
 }
 
 .vide-fullscreen:hover {
@@ -613,15 +613,15 @@
 	opacity: 0;
 	visibility: hidden;
 	pointer-events: none;
-	box-shadow: 0 0 0 12px var(--vide-accent-ring),
-		0 4px 22px var(--vide-accent-glow);
+	box-shadow: 0 0 0 12px var(--vide-accent-ring), 0 4px 22px
+		var(--vide-accent-glow);
 	transition: opacity 0.25s var(--vide-ease), transform 0.25s var(--vide-ease),
 		visibility 0.25s, box-shadow 0.2s var(--vide-ease);
 }
 
 .vide-bigplay:hover {
-	box-shadow: 0 0 0 20px rgba(126, 200, 200, 0.07),
-		0 6px 32px rgba(126, 200, 200, 0.55);
+	box-shadow: 0 0 0 20px rgba(126, 200, 200, 0.07), 0 6px 32px
+		rgba(126, 200, 200, 0.55);
 	transform: translate(-50%, -50%) scale(1.02);
 }
 

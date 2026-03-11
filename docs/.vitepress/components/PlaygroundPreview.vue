@@ -6,9 +6,7 @@ const props = defineProps<{
 	error?: string | null;
 }>();
 
-defineEmits<{
-	(e: "dismissError"): void;
-}>();
+defineEmits<(e: "dismissError") => void>();
 
 const iframeKey = ref(0);
 const loading = ref(true);

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import DefaultTheme from "vitepress/theme";
 import { useData } from "vitepress";
+import DefaultTheme from "vitepress/theme";
 import LandingPage from "../components/LandingPage.vue";
 import PlaygroundPage from "../components/PlaygroundPage.vue";
 

@@ -2,7 +2,11 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import PlaygroundCodePanel from "./PlaygroundCodePanel.vue";
 import PlaygroundInspector from "./PlaygroundInspector.vue";
-import type { InspectorEvent, InspectorPlayerState, InspectorQuality } from "./PlaygroundInspector.vue";
+import type {
+	InspectorEvent,
+	InspectorPlayerState,
+	InspectorQuality,
+} from "./PlaygroundInspector.vue";
 import PlaygroundPreview from "./PlaygroundPreview.vue";
 import PlaygroundSidebar from "./PlaygroundSidebar.vue";
 import {

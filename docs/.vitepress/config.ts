@@ -74,9 +74,7 @@ export default defineConfig({
 			},
 			{
 				text: "UI",
-				items: [
-					{ text: "UI Components", link: "/plugins/ui" },
-				],
+				items: [{ text: "UI Components", link: "/plugins/ui" }],
 			},
 			{
 				text: "Advanced",

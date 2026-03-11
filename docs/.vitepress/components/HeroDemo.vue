@@ -11,62 +11,62 @@ const CDN_BASE = `https://esm.sh/@videts/vide@${CDN_VERSION}`;
 const HLS_SOURCE = "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8";
 
 function buildSrcdoc(): string {
-  const js = [
-    `import { createPlayer } from "${CDN_BASE}";`,
-    `import { hls } from "${CDN_BASE}/hls";`,
-    `import { ui } from "${CDN_BASE}/ui";`,
-    "",
-    'const player = createPlayer(document.querySelector("video"));',
-    "player.use(hls());",
-    "player.use(ui({ container: document.getElementById('player') }));",
-    `player.src = "${HLS_SOURCE}";`,
-  ].join("\n    ");
+	const js = [
+		`import { createPlayer } from "${CDN_BASE}";`,
+		`import { hls } from "${CDN_BASE}/hls";`,
+		`import { ui } from "${CDN_BASE}/ui";`,
+		"",
+		'const player = createPlayer(document.querySelector("video"));',
+		"player.use(hls());",
+		"player.use(ui({ container: document.getElementById('player') }));",
+		`player.src = "${HLS_SOURCE}";`,
+	].join("\n    ");
 
-  // Concat script tags to avoid Vue SFC parser conflict
-  const sOpen = "<" + 'script type="module">';
-  const sClose = "</" + "script>";
+	// Concat script tags to avoid Vue SFC parser conflict
+	const sOpen = "<" + 'script type="module">';
+	const sClose = "</" + "script>";
 
-  return [
-    "<!doctype html><html><head>",
-    '<meta charset="utf-8">',
-    '<meta name="viewport" content="width=device-width, initial-scale=1.0">',
-    `<link rel="stylesheet" href="${CDN_BASE}/ui/theme.css">`,
-    "<style>*{margin:0;padding:0;box-sizing:border-box}",
-    ":root{--vide-accent:#7EC8C8;--vide-accent-hover:#92d4d4}",
-    "html,body{width:100%;height:100%;background:#000}",
-    "#player{position:relative;width:100%;height:100%}",
-    "video{position:absolute;top:0;left:0;width:100%;height:100%}</style>",
-    "</head><body>",
-    '<div id="player"><video playsinline muted></video></div>',
-    `${sOpen}\n    ${js}\n  ${sClose}`,
-    "</body></html>",
-  ].join("");
+	return [
+		"<!doctype html><html><head>",
+		'<meta charset="utf-8">',
+		'<meta name="viewport" content="width=device-width, initial-scale=1.0">',
+		`<link rel="stylesheet" href="${CDN_BASE}/ui/theme.css">`,
+		"<style>*{margin:0;padding:0;box-sizing:border-box}",
+		":root{--vide-accent:#7EC8C8;--vide-accent-hover:#92d4d4}",
+		"html,body{width:100%;height:100%;background:#000}",
+		"#player{position:relative;width:100%;height:100%}",
+		"video{position:absolute;top:0;left:0;width:100%;height:100%}</style>",
+		"</head><body>",
+		'<div id="player"><video playsinline muted></video></div>',
+		`${sOpen}\n    ${js}\n  ${sClose}`,
+		"</body></html>",
+	].join("");
 }
 
 const srcdoc = buildSrcdoc();
 
 onMounted(() => {
-  if (!container.value) return;
-  observer = new IntersectionObserver(
-    (entries) => {
-      if (entries[0].isIntersecting) {
-        visible.value = true;
-        observer?.disconnect();
-        observer = null;
-      }
-    },
-    { threshold: 0.1 },
-  );
-  observer.observe(container.value);
+	if (!container.value) return;
+	observer = new IntersectionObserver(
+		(entries) => {
+			if (entries[0].isIntersecting) {
+				visible.value = true;
+				observer?.disconnect();
+				observer = null;
+			}
+		},
+		{ threshold: 0.1 },
+	);
+	observer.observe(container.value);
 });
 
 onBeforeUnmount(() => {
-  observer?.disconnect();
-  observer = null;
+	observer?.disconnect();
+	observer = null;
 });
 
 function onLoad() {
-  loading.value = false;
+	loading.value = false;
 }
 </script>
 
