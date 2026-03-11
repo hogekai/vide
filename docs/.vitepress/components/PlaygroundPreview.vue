@@ -40,7 +40,9 @@ function onLoad() {
       class="pg-preview__frame"
       @load="onLoad"
     />
-    <div v-if="loading" class="pg-preview__loading">Loading...</div>
+    <div v-if="loading" class="pg-preview__loading">
+      <div class="pg-preview__spinner" />
+    </div>
     <div v-if="error" class="pg-preview__error">
       <span class="pg-preview__error-text">{{ error }}</span>
       <button class="pg-preview__error-dismiss" @click="$emit('dismissError')">
@@ -58,6 +60,8 @@ function onLoad() {
   width: 100%;
   height: 100%;
   background: #000;
+  border-radius: inherit;
+  overflow: hidden;
 }
 
 .pg-preview__frame {
@@ -72,9 +76,20 @@ function onLoad() {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #888;
-  font-size: 14px;
   pointer-events: none;
+}
+
+.pg-preview__spinner {
+  width: 24px;
+  height: 24px;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-top-color: var(--vp-c-brand-1);
+  border-radius: 50%;
+  animation: pg-spin 0.7s linear infinite;
+}
+
+@keyframes pg-spin {
+  to { transform: rotate(360deg); }
 }
 
 .pg-preview__error {

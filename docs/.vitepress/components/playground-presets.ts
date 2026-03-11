@@ -4,6 +4,7 @@ export interface PluginToggle {
 	enabled: boolean;
 	locked?: boolean;
 	requires?: string[];
+	gzipSize?: string;
 }
 
 export interface PlaygroundPreset {
@@ -24,8 +25,8 @@ export const PRESETS: PlaygroundPreset[] = [
 		sourceUrl: "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8",
 		sourceType: "hls",
 		plugins: [
-			{ id: "hls", label: "HLS", enabled: true, locked: true },
-			{ id: "ui", label: "UI", enabled: true },
+			{ id: "hls", label: "HLS", enabled: true, locked: true, gzipSize: "1.4 KB" },
+			{ id: "ui", label: "UI", enabled: true, gzipSize: "5.7 KB" },
 		],
 	},
 	{
@@ -34,8 +35,8 @@ export const PRESETS: PlaygroundPreset[] = [
 		sourceUrl: "https://dash.akamaized.net/akamai/bbb_30fps/bbb_30fps.mpd",
 		sourceType: "dash",
 		plugins: [
-			{ id: "dash", label: "DASH", enabled: true, locked: true },
-			{ id: "ui", label: "UI", enabled: true },
+			{ id: "dash", label: "DASH", enabled: true, locked: true, gzipSize: "1.4 KB" },
+			{ id: "ui", label: "UI", enabled: true, gzipSize: "5.7 KB" },
 		],
 	},
 	{
@@ -44,9 +45,9 @@ export const PRESETS: PlaygroundPreset[] = [
 		sourceUrl: "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8",
 		sourceType: "hls",
 		plugins: [
-			{ id: "hls", label: "HLS", enabled: true, locked: true },
-			{ id: "ui", label: "UI", enabled: true, locked: true },
-			{ id: "vast", label: "VAST", enabled: true, locked: true },
+			{ id: "hls", label: "HLS", enabled: true, locked: true, gzipSize: "1.4 KB" },
+			{ id: "ui", label: "UI", enabled: true, locked: true, gzipSize: "5.7 KB" },
+			{ id: "vast", label: "VAST", enabled: true, locked: true, gzipSize: "7.9 KB" },
 		],
 	},
 	{
@@ -55,7 +56,7 @@ export const PRESETS: PlaygroundPreset[] = [
 		sourceUrl:
 			"https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
 		sourceType: "mp4",
-		plugins: [{ id: "ui", label: "UI", enabled: true }],
+		plugins: [{ id: "ui", label: "UI", enabled: true, gzipSize: "5.7 KB" }],
 	},
 	{
 		id: "custom",
@@ -63,13 +64,35 @@ export const PRESETS: PlaygroundPreset[] = [
 		sourceUrl: "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8",
 		sourceType: "hls",
 		plugins: [
-			{ id: "hls", label: "HLS", enabled: true },
-			{ id: "dash", label: "DASH", enabled: false },
-			{ id: "ui", label: "UI", enabled: true },
-			{ id: "vast", label: "VAST", enabled: false },
-			{ id: "ssai", label: "SSAI", enabled: false, requires: ["hls"] },
+			{ id: "hls", label: "HLS", enabled: true, gzipSize: "1.4 KB" },
+			{ id: "dash", label: "DASH", enabled: false, gzipSize: "1.4 KB" },
+			{ id: "ui", label: "UI", enabled: true, gzipSize: "5.7 KB" },
+			{ id: "vast", label: "VAST", enabled: false, gzipSize: "7.9 KB" },
+			{ id: "vmap", label: "VMAP", enabled: false, gzipSize: "8.8 KB" },
+			{ id: "drm", label: "DRM", enabled: false, requires: ["hls", "dash"], gzipSize: "2.6 KB" },
+			{ id: "ssai", label: "SSAI", enabled: false, requires: ["hls"], gzipSize: "2.3 KB" },
 		],
 	},
 ];
+
+export const UI_COMPONENT_NAMES = [
+	"play",
+	"progress",
+	"time",
+	"volume",
+	"fullscreen",
+	"loader",
+	"error",
+	"bigplay",
+	"poster",
+	"ad-countdown",
+	"ad-skip",
+	"ad-overlay",
+	"ad-label",
+	"ad-learn-more",
+	"keyboard",
+	"clickplay",
+	"autohide",
+] as const;
 
 export const DEFAULT_VAST_TAG_URL = VAST_TAG_URL;

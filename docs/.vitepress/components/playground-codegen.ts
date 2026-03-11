@@ -4,7 +4,18 @@ export interface PlaygroundConfig {
 	sourceUrl: string;
 	sourceType: "hls" | "dash" | "mp4";
 	enabledPlugins: string[];
+	posterUrl?: string;
+	autoplay?: boolean;
+	muted?: boolean;
+	loop?: boolean;
+	playsinline?: boolean;
 	vastTagUrl?: string;
+	vastTimeout?: number;
+	vastAllowSkip?: boolean;
+	vmapUrl?: string;
+	uiExclude?: string[];
+	drmKeySystem?: "widevine" | "fairplay" | "playready" | "clearkey";
+	drmLicenseUrl?: string;
 }
 
 const CDN_VERSION = "0.9";
@@ -17,6 +28,55 @@ const ERROR_REPORTING = `
     window.addEventListener("unhandledrejection", (e) => {
       parent.postMessage({ type: "vide-playground-error", message: e.reason?.message || String(e.reason) }, "*");
     });`;
+
+const INSPECTOR_BRIDGE = `
+    // Inspector bridge — forwards player data to parent
+    const _events = [
+      "play","pause","ended","timeupdate","statechange","error",
+      "volumechange","ratechange","seeking","seeked",
+      "qualitiesavailable","qualitychange",
+      "ad:start","ad:end","ad:skip","ad:click","ad:error","ad:impression",
+      "ad:loaded","ad:quartile","ad:breakStart","ad:breakEnd",
+      "texttrackchange","texttracksavailable","cuechange",
+      "drm:keystatus","drm:ready","livestatechange"
+    ];
+    for (const ev of _events) {
+      player.on(ev, (data) => {
+        parent.postMessage({ type: "vide-pg-event", event: ev, data: JSON.parse(JSON.stringify(data ?? {})), ts: Date.now() }, "*");
+      });
+    }
+    player.on("statechange", ({ from, to }) => {
+      parent.postMessage({ type: "vide-pg-statechange", from, to }, "*");
+    });
+    player.on("qualitiesavailable", () => {
+      const qs = player.qualities.map(q => ({ id: q.id, label: q.label, width: q.width, height: q.height, bitrate: q.bitrate }));
+      parent.postMessage({ type: "vide-pg-qualities", qualities: qs }, "*");
+    });
+    setInterval(() => {
+      parent.postMessage({ type: "vide-pg-state",
+        state: player.state,
+        src: player.src || "",
+        currentTime: player.currentTime,
+        duration: player.duration,
+        volume: player.volume,
+        muted: player.muted,
+        paused: player.paused,
+        loop: player.loop,
+        playbackRate: player.playbackRate,
+        isAutoQuality: player.isAutoQuality ?? null,
+        isLive: player.isLive ?? false,
+      }, "*");
+    }, 250);
+    parent.postMessage({ type: "vide-pg-ready" }, "*");`;
+
+function videoAttrs(config: PlaygroundConfig): string {
+	const attrs: string[] = ["playsinline"];
+	if (config.muted !== false) attrs.push("muted");
+	if (config.autoplay) attrs.push("autoplay");
+	if (config.loop) attrs.push("loop");
+	if (config.posterUrl) attrs.push(`poster="${config.posterUrl}"`);
+	return attrs.join(" ");
+}
 
 function buildHtmlShell(
 	esmImports: string,
@@ -42,7 +102,7 @@ function buildHtmlShell(
 </head>
 <body>
   <div id="player">
-    <video playsinline muted></video>
+    <video></video>
   </div>
   <script type="module">${ERROR_REPORTING}
     ${esmImports}
@@ -50,6 +110,8 @@ function buildHtmlShell(
     const video = document.querySelector("video");
     try {
       ${jsSetup}
+
+      ${INSPECTOR_BRIDGE}
     } catch (e) {
       console.error("[vide playground]", e);
       parent.postMessage({ type: "vide-playground-error", message: e.message || String(e) }, "*");
@@ -78,6 +140,12 @@ export function generateCode(config: PlaygroundConfig): string {
 	if (plugins.includes("vast")) {
 		imports.push('import { vast } from "@videts/vide/vast";');
 	}
+	if (plugins.includes("vmap")) {
+		imports.push('import { vmap } from "@videts/vide/vmap";');
+	}
+	if (plugins.includes("drm")) {
+		imports.push('import { drm } from "@videts/vide/drm";');
+	}
 	if (plugins.includes("ssai")) {
 		imports.push('import { ssai } from "@videts/vide/ssai";');
 	}
@@ -91,25 +159,77 @@ export function generateCode(config: PlaygroundConfig): string {
 		setup.push("player.use(dash());");
 	}
 
-	if (plugins.includes("ui") && plugins.includes("vast")) {
+	// DRM
+	if (plugins.includes("drm") && config.drmKeySystem) {
+		const ks = config.drmKeySystem;
+		if (ks === "clearkey") {
+			setup.push("player.use(drm({");
+			setup.push('  clearkey: { keys: { "key-id": "key" } },');
+			setup.push("}));");
+		} else {
+			const url = config.drmLicenseUrl || "https://license.example.com/...";
+			setup.push("player.use(drm({");
+			setup.push(`  ${ks}: { licenseUrl: "${url}" },`);
+			setup.push("}));");
+		}
+	}
+
+	// UI
+	if (plugins.includes("ui") && (plugins.includes("vast") || plugins.includes("vmap"))) {
+		const excludeOpt =
+			config.uiExclude?.length
+				? `, exclude: [${config.uiExclude.map((c) => `"${c}"`).join(", ")}]`
+				: "";
 		setup.push(
-			'const uiPlugin = ui({ container: document.getElementById("player")! });',
+			`const uiPlugin = ui({ container: document.getElementById("player")!${excludeOpt} });`,
 		);
 		setup.push("player.use(uiPlugin);");
-		const tagUrl = config.vastTagUrl || DEFAULT_VAST_TAG_URL;
-		setup.push("player.use(vast({");
-		setup.push(`  tagUrl: "${tagUrl}" + Date.now(),`);
-		setup.push("  adPlugins: uiPlugin.getAdPlugin(),");
-		setup.push("}));");
 	} else if (plugins.includes("ui")) {
+		const excludeOpt =
+			config.uiExclude?.length
+				? `, exclude: [${config.uiExclude.map((c) => `"${c}"`).join(", ")}]`
+				: "";
 		setup.push(
-			'player.use(ui({ container: document.getElementById("player")! }));',
+			`player.use(ui({ container: document.getElementById("player")!${excludeOpt} }));`,
 		);
 	}
 
+	// VAST
+	if (plugins.includes("vast")) {
+		const tagUrl = config.vastTagUrl || DEFAULT_VAST_TAG_URL;
+		const opts: string[] = [];
+		opts.push(`  tagUrl: "${tagUrl}" + Date.now(),`);
+		if (config.vastTimeout && config.vastTimeout !== 5000) {
+			opts.push(`  timeout: ${config.vastTimeout},`);
+		}
+		if (config.vastAllowSkip === false) {
+			opts.push("  allowSkip: false,");
+		}
+		if (plugins.includes("ui")) {
+			opts.push("  adPlugins: uiPlugin.getAdPlugin(),");
+		}
+		setup.push(`player.use(vast({\n${opts.join("\n")}\n}));`);
+	}
+
+	// VMAP
+	if (plugins.includes("vmap")) {
+		const url = config.vmapUrl || "https://example.com/vmap.xml";
+		const vmapOpts: string[] = [`  url: "${url}",`];
+		if (plugins.includes("ui")) {
+			vmapOpts.push("  adPlugins: uiPlugin.getAdPlugin(),");
+		}
+		setup.push(`player.use(vmap({\n${vmapOpts.join("\n")}\n}));`);
+	}
+
+	// SSAI
 	if (plugins.includes("ssai")) {
 		setup.push("player.use(ssai());");
 	}
+
+	// Video attributes
+	if (config.muted) setup.push("player.muted = true;");
+	if (config.loop) setup.push("player.loop = true;");
+	if (config.autoplay) setup.push("player.autoplay = true;");
 
 	setup.push(`player.src = "${config.sourceUrl}";`);
 
@@ -127,6 +247,8 @@ export function generateIframeHtml(config: PlaygroundConfig): string {
 	if (plugins.includes("dash")) importMap.dash = `${CDN_BASE}/dash`;
 	if (plugins.includes("ui")) importMap.ui = `${CDN_BASE}/ui`;
 	if (plugins.includes("vast")) importMap.vast = `${CDN_BASE}/vast`;
+	if (plugins.includes("vmap")) importMap.vmap = `${CDN_BASE}/vmap`;
+	if (plugins.includes("drm")) importMap.drm = `${CDN_BASE}/drm`;
 	if (plugins.includes("ssai")) importMap.ssai = `${CDN_BASE}/ssai`;
 
 	const esmImports = Object.entries(importMap)
@@ -138,25 +260,80 @@ export function generateIframeHtml(config: PlaygroundConfig): string {
 
 	let jsSetup = "const player = createPlayer(video);";
 
+	// Video attributes
+	const attrs: string[] = [];
+	if (config.playsinline !== false) attrs.push("video.playsInline = true;");
+	if (config.muted !== false) attrs.push("video.muted = true;");
+	if (config.autoplay) attrs.push("video.autoplay = true;");
+	if (config.loop) attrs.push("video.loop = true;");
+	if (config.posterUrl) attrs.push(`video.poster = "${config.posterUrl}";`);
+	if (attrs.length) {
+		jsSetup += `\n      ${attrs.join("\n      ")}`;
+	}
+
 	if (plugins.includes("hls")) {
 		jsSetup += "\n      player.use(hls());";
 	}
 	if (plugins.includes("dash")) {
 		jsSetup += "\n      player.use(dash());";
 	}
-	if (plugins.includes("ui") && plugins.includes("vast")) {
-		jsSetup +=
-			"\n      const uiPlugin = ui({ container: document.getElementById('player') });";
+
+	// DRM
+	if (plugins.includes("drm") && config.drmKeySystem) {
+		const ks = config.drmKeySystem;
+		if (ks === "clearkey") {
+			jsSetup += '\n      player.use(drm({ clearkey: { keys: { "key-id": "key" } } }));';
+		} else {
+			const url = config.drmLicenseUrl || "https://license.example.com/...";
+			jsSetup += `\n      player.use(drm({ ${ks}: { licenseUrl: "${url}" } }));`;
+		}
+	}
+
+	// UI
+	if (plugins.includes("ui") && (plugins.includes("vast") || plugins.includes("vmap"))) {
+		const excludeOpt =
+			config.uiExclude?.length
+				? `, exclude: [${config.uiExclude.map((c) => `"${c}"`).join(", ")}]`
+				: "";
+		jsSetup += `\n      const uiPlugin = ui({ container: document.getElementById('player')${excludeOpt} });`;
 		jsSetup += "\n      player.use(uiPlugin);";
+	} else if (plugins.includes("ui")) {
+		const excludeOpt =
+			config.uiExclude?.length
+				? `, exclude: [${config.uiExclude.map((c) => `"${c}"`).join(", ")}]`
+				: "";
+		jsSetup += `\n      player.use(ui({ container: document.getElementById('player')${excludeOpt} }));`;
+	}
+
+	// VAST
+	if (plugins.includes("vast")) {
 		const tagUrl = config.vastTagUrl || DEFAULT_VAST_TAG_URL;
 		jsSetup += "\n      player.use(vast({";
 		jsSetup += `\n        tagUrl: "${tagUrl}" + Date.now(),`;
-		jsSetup += "\n        adPlugins: uiPlugin.getAdPlugin(),";
+		if (config.vastTimeout && config.vastTimeout !== 5000) {
+			jsSetup += `\n        timeout: ${config.vastTimeout},`;
+		}
+		if (config.vastAllowSkip === false) {
+			jsSetup += "\n        allowSkip: false,";
+		}
+		if (plugins.includes("ui")) {
+			jsSetup += "\n        adPlugins: uiPlugin.getAdPlugin(),";
+		}
 		jsSetup += "\n      }));";
-	} else if (plugins.includes("ui")) {
-		jsSetup +=
-			"\n      player.use(ui({ container: document.getElementById('player') }));";
 	}
+
+	// VMAP
+	if (plugins.includes("vmap")) {
+		const url = config.vmapUrl || "https://example.com/vmap.xml";
+		jsSetup += "\n      player.use(vmap({";
+		jsSetup += `\n        url: "${url}",`;
+		if (plugins.includes("ui")) {
+			jsSetup += "\n        adPlugins: uiPlugin.getAdPlugin(),";
+		}
+		jsSetup += "\n      }));";
+	}
+
+	// SSAI
 	if (plugins.includes("ssai")) {
 		jsSetup += "\n      player.use(ssai());";
 	}
@@ -166,53 +343,3 @@ export function generateIframeHtml(config: PlaygroundConfig): string {
 	return buildHtmlShell(esmImports, jsSetup, plugins.includes("ui"));
 }
 
-/** Transform user-edited display code into executable iframe HTML */
-export function codeToIframeHtml(displayCode: string): string {
-	// Detect if UI plugin is used (for theme.css link)
-	const hasUi = /from\s+["']@videts\/vide\/ui["']/.test(displayCode);
-
-	// Strip CSS import lines (handled via <link> tag)
-	let code = displayCode.replace(
-		/import\s+["']@videts\/vide\/ui\/theme\.css["'];?\n?/g,
-		"",
-	);
-
-	// Replace @videts/vide imports with CDN URLs
-	code = code.replace(
-		/from\s+["']@videts\/vide(\/[^"']*)?\s*["']/g,
-		(_, subpath) => `from "${CDN_BASE}${subpath || ""}"`,
-	);
-
-	// Replace document.querySelector("video")! with video (already declared in shell)
-	code = code.replace(
-		/document\.querySelector\(\s*["']video["']\s*\)\s*!?/g,
-		"video",
-	);
-
-	// Replace document.getElementById("player")! with document.getElementById('player')
-	code = code.replace(
-		/document\.getElementById\(\s*["']player["']\s*\)\s*!?/g,
-		"document.getElementById('player')",
-	);
-
-	// Split into import lines and setup lines
-	const lines = code.split("\n");
-	const importLines: string[] = [];
-	const setupLines: string[] = [];
-	let pastImports = false;
-
-	for (const line of lines) {
-		const trimmed = line.trim();
-		if (!pastImports && (trimmed.startsWith("import ") || trimmed === "")) {
-			if (trimmed !== "") importLines.push(trimmed);
-		} else {
-			pastImports = true;
-			if (trimmed !== "") setupLines.push(trimmed);
-		}
-	}
-
-	const esmImports = importLines.join("\n    ");
-	const jsSetup = setupLines.join("\n      ");
-
-	return buildHtmlShell(esmImports, jsSetup, hasUi);
-}

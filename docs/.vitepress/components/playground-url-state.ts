@@ -3,7 +3,6 @@ import type { PlaygroundConfig } from "./playground-codegen";
 export interface PlaygroundUrlState {
 	presetId: string;
 	config: PlaygroundConfig;
-	customCode?: string;
 }
 
 const PREFIX = "#pg=";
