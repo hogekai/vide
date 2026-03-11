@@ -6,7 +6,7 @@ const visible = ref(false);
 const loading = ref(true);
 let observer: IntersectionObserver | null = null;
 
-const CDN_VERSION = "0.9";
+const CDN_VERSION = "0.10";
 const CDN_BASE = `https://esm.sh/@videts/vide@${CDN_VERSION}`;
 const HLS_SOURCE = "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8";
 

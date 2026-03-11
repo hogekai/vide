@@ -8,14 +8,14 @@ Use an ESM CDN like [esm.sh](https://esm.sh) with an import map:
 <script type="importmap">
 {
   "imports": {
-    "@videts/vide": "https://esm.sh/@videts/vide@0.9",
-    "@videts/vide/ui": "https://esm.sh/@videts/vide@0.9/ui",
-    "@videts/vide/hls": "https://esm.sh/@videts/vide@0.9/hls"
+    "@videts/vide": "https://esm.sh/@videts/vide@0.10",
+    "@videts/vide/ui": "https://esm.sh/@videts/vide@0.10/ui",
+    "@videts/vide/hls": "https://esm.sh/@videts/vide@0.10/hls"
   }
 }
 </script>
 
-<link rel="stylesheet" href="https://esm.sh/@videts/vide@0.9/ui/theme.css">
+<link rel="stylesheet" href="https://esm.sh/@videts/vide@0.10/ui/theme.css">
 
 <div id="player-container">
   <video src="video.mp4"></video>
@@ -34,7 +34,7 @@ Or use bare URLs without an import map:
 
 ```html
 <script type="module">
-  import { createPlayer } from "https://esm.sh/@videts/vide@0.9";
+  import { createPlayer } from "https://esm.sh/@videts/vide@0.10";
 </script>
 ```
 

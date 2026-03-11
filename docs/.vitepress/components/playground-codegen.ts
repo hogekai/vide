@@ -21,7 +21,7 @@ export interface PlaygroundConfig {
 	ssaiTolerance?: number;
 }
 
-const CDN_VERSION = "0.9";
+const CDN_VERSION = "0.10";
 const CDN_BASE = `https://esm.sh/@videts/vide@${CDN_VERSION}`;
 
 const ERROR_REPORTING = `

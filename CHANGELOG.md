@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-03-11
+
+### Changed
+- Redesign UI controls: inline progress bar layout, stroke-based SVG icons, mockup-matched styling
+- Redesign Playground: 3-column layout with config sidebar, live inspector, and read-only code panel
+
 ## [0.9.11] - 2026-03-06
 
 ### Changed
