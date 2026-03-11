@@ -84,9 +84,6 @@ function onLoad() {
         <div class="hero-demo__spinner" />
       </div>
     </div>
-    <div class="hero-demo__footer">
-      <span class="hero-demo__badge">HLS + UI — 10 KB gzip total</span>
-    </div>
   </div>
 </template>
 
@@ -132,16 +129,4 @@ function onLoad() {
   to { transform: rotate(360deg); }
 }
 
-.hero-demo__footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 12px;
-  padding: 0 4px;
-  font-size: 13px;
-}
-
-.hero-demo__badge {
-  color: var(--vp-c-text-2, #5a5650);
-}
 </style>

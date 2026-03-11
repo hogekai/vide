@@ -23,9 +23,9 @@
 	--vide-dark: #0f1614;
 
 	/* ── Layout ── */
-	--vide-controls-height: 44px;
-	--vide-controls-padding-x: 14px;
-	--vide-controls-padding-bottom: 14px;
+	--vide-controls-height: 48px;
+	--vide-controls-padding-x: 16px;
+	--vide-controls-padding-bottom: 16px;
 	--vide-controls-gap: 6px;
 
 	/* ── Typography ── */
@@ -37,8 +37,8 @@
 	--vide-line-height: 1;
 
 	/* ── Icons ── */
-	--vide-icon-size: 15px;
-	--vide-btn-size: 30px;
+	--vide-icon-size: 18px;
+	--vide-btn-size: 34px;
 	--vide-btn-padding: 5px 6px;
 
 	/* ── Radius ── */
@@ -47,8 +47,8 @@
 	--vide-radius-round: 50%;
 
 	/* ── Progress ── */
-	--vide-progress-height: 2.5px;
-	--vide-progress-height-hover: 4px;
+	--vide-progress-height: 4px;
+	--vide-progress-height-hover: 6px;
 	--vide-progress-hit-area: 18px;
 	--vide-handle-size: 12px;
 
@@ -264,7 +264,7 @@
 	bottom: 100%;
 	left: 50%;
 	transform: translateX(-50%) translateY(-6px);
-	padding: 3px 9px;
+	padding: 5px 12px;
 	background: var(--vide-chip);
 	color: #dce9e8;
 	font-family: var(--vide-font);
@@ -351,6 +351,23 @@
 	align-items: center;
 	cursor: pointer;
 	position: relative;
+}
+
+.vide-progress::before {
+	content: "";
+	position: absolute;
+	left: 0;
+	right: 0;
+	height: var(--vide-progress-height);
+	border-radius: 999px;
+	background: rgba(255, 255, 255, 0.25);
+	pointer-events: none;
+	transition: height 0.15s var(--vide-ease);
+}
+
+.vide-progress:hover::before,
+.vide-progress--dragging::before {
+	height: var(--vide-progress-height-hover);
 }
 
 .vide-progress__buffered,
