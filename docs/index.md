@@ -3,7 +3,8 @@ layout: home
 
 hero:
   name: Vide
-  tagline: Modular video player. Use only what you need.
+  text: 3 KB gzip. The video player that gets out of your way.
+  tagline: Add streaming, ads, DRM, and UI — only when you need them.
   actions:
     - theme: brand
       text: Get Started
@@ -17,24 +18,36 @@ hero:
 
 features:
   - icon: 🪶
-    title: Lightweight
-    details: Core under 3 KB gzip. Each plugin adds only what it needs.
-  - icon: 🔌
-    title: Modular
-    details: Every feature is a plugin. Import only what you use — HLS, VAST, UI, DRM, and more.
+    title: 3 KB Core
+    details: Core under 3 KB gzip. video.js is ~240 KB. Every plugin is a separate import — pay only for what you use.
   - icon: 🌐
-    title: Web Standards First
-    details: If the browser can do it natively, Vide doesn't reinvent it. Proxies HTMLVideoElement directly.
-  - icon: 📡
-    title: Streaming
-    details: HLS and DASH with adaptive bitrate. Thin wrappers around hls.js and dashjs.
+    title: You Already Know the API
+    details: Proxies HTMLVideoElement directly. play(), pause(), currentTime — it's the same API you already know.
   - icon: 📺
     title: Full Ad Stack
-    details: VAST 4.2, VMAP, SSAI, VPAID, SIMID, Google IMA, and OMID viewability.
+    details: VAST 4.2, VMAP, SSAI, VPAID, SIMID, OMID — built-in, without Google's 500 KB IMA SDK.
+  - icon: 📡
+    title: Streaming & DRM
+    details: HLS and DASH with adaptive bitrate, plus Widevine, FairPlay, PlayReady, and ClearKey.
+  - icon: 🔌
+    title: Zero Dependencies
+    details: No runtime dependencies. TypeScript strict. ESM only. sideEffects false. Tree-shakeable.
   - icon: ⚛️
     title: Framework Ready
-    details: React hooks, Vue composables, Svelte 5 — all first-class integrations.
+    details: React hooks, Vue 3 composables, Svelte 5 — all first-class with dedicated components.
 ---
+
+## What Do You Need?
+
+| Use case | Start here |
+|----------|-----------|
+| Play a video | [Getting Started](/getting-started) |
+| HLS / DASH streaming | [HLS](/plugins/hls) · [DASH](/plugins/dash) |
+| Pre-roll / mid-roll ads | [Ads Overview](/guides/ads-setup) |
+| DRM-protected content | [DRM](/plugins/drm) |
+| React / Vue / Svelte | [React](/frameworks/react) · [Vue](/frameworks/vue) · [Svelte](/frameworks/svelte) |
+| Migrating from video.js | [Migration Guide](/guides/migration-from-videojs) |
+| CDN / no build tool | [CDN Guide](/cdn) |
 
 ## Plugin Sizes
 

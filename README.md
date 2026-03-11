@@ -8,14 +8,20 @@ Modular video player library. Use only what you need.
 
 **[Documentation](https://hogekai.github.io/vide/)** · **[Getting Started](https://hogekai.github.io/vide/getting-started)** · **[Playground](https://hogekai.github.io/vide/demo)**
 
+<p align="center">
+  <img src="docs/public/player-screenshot.png" alt="Vide player with default theme" width="720" />
+</p>
+
+> **video.js 8: ~240 KB min+gzip** · **vide core + HLS + UI + theme: ~10 KB**
+
 ```html
 <video src="video.mp4"></video>
 ```
 
 ```ts
 import { createPlayer } from "@videts/vide";
-import { vast } from "@videts/vide/vast";
 import { hls } from "@videts/vide/hls";
+import { vast } from "@videts/vide/vast";
 
 const player = createPlayer(document.querySelector("video")!);
 player.use(hls());
@@ -27,16 +33,15 @@ Web standards first — if the browser can do it, we don't reinvent it.
 
 ## Features
 
+- **Tiny** — Core 3.0 KB gzip. Tree-shakeable. Each plugin is a separate import.
+- **Web standards first** — Proxies `HTMLVideoElement`. Fullscreen API, `<track>` subtitles, native HLS on Safari.
+- **Zero dependencies** — No runtime dependencies. Peer deps only for optional integrations.
+- **TypeScript** — Strict types throughout. Type-safe plugin data, events, and state machine.
 - **Streaming** — HLS and DASH with adaptive bitrate. Thin wrappers around hls.js and dashjs.
-- **Advertising** — VAST 4.2 parsing, VMAP scheduling, SSAI, VPAID 2.0, SIMID interactive ads, Google IMA SDK bridge.
-- **Viewability** — Open Measurement (OMID) with automatic `AdVerification` extraction from VAST.
+- **Advertising** — VAST 4.2, VMAP scheduling, SSAI, VPAID 2.0, SIMID, Google IMA SDK bridge, OMID viewability.
 - **DRM** — Widevine, FairPlay, PlayReady, ClearKey. Auto-detection, retry with backoff, key status events.
 - **UI** — 17 headless components with optional theme. No UI / headless / themed — pick your level.
 - **Frameworks** — React hooks, Vue 3 composables, Svelte 5 — all first-class.
-- **Tiny** — Core 3.0 KB gzip. Tree-shakeable. Each plugin is a separate import.
-- **TypeScript** — Strict types throughout. Type-safe plugin data, events, and state machine.
-- **Zero dependencies** — No runtime dependencies. Peer deps only for optional integrations.
-- **Web standards first** — Proxies `HTMLVideoElement`. Fullscreen API, `<track>` subtitles, native HLS on Safari.
 
 ## Install
 
@@ -60,18 +65,21 @@ import { ui } from "@videts/vide/ui";
 import "@videts/vide/ui/theme.css";
 
 const player = createPlayer(document.querySelector("video")!);
-
-// Optional — add UI controls
 player.use(ui({ container: document.getElementById("player-container")! }));
-
-// HTMLVideoElement-compatible — play, pause, src, currentTime, … all proxied
-player.play();
-
-// player.el — direct access to the underlying <video> element
-// player.on() — typed custom events (statechange, ad:start, error, …)
 ```
 
 See the [Getting Started guide](https://hogekai.github.io/vide/getting-started) for more.
+
+## Pick Your Stack
+
+| Stack | Start here |
+|-------|-----------|
+| Vanilla JS / TS | [Getting Started](https://hogekai.github.io/vide/getting-started) |
+| React | [React Guide](https://hogekai.github.io/vide/frameworks/react) |
+| Vue 3 | [Vue Guide](https://hogekai.github.io/vide/frameworks/vue) |
+| Svelte 5 | [Svelte Guide](https://hogekai.github.io/vide/frameworks/svelte) |
+| CDN / No build tool | [CDN Guide](https://hogekai.github.io/vide/cdn) |
+| Migrating from video.js | [Migration Guide](https://hogekai.github.io/vide/guides/migration-from-videojs) |
 
 ## Plugins
 
@@ -96,14 +104,6 @@ Plugins are explicit opt-in. Import only what you need.
 > HLS and DASH plugins require `hls.js` and `dashjs` as peer dependencies.
 
 See the [plugin documentation](https://hogekai.github.io/vide/plugins/hls) for usage examples and configuration options.
-
-## Documentation
-
-- [Getting Started](https://hogekai.github.io/vide/getting-started) — install, basic setup
-- [Plugin Guides](https://hogekai.github.io/vide/plugins/hls) — HLS, DASH, DRM, VAST, UI, and more
-- [API Reference](https://hogekai.github.io/vide/api-reference/) — auto-generated from TypeScript
-- [Browser Support](https://hogekai.github.io/vide/browser-support) — compatibility notes
-- [Demo](https://hogekai.github.io/vide/demo) — live examples
 
 ## License
 

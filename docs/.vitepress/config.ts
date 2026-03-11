@@ -15,12 +15,10 @@ export default defineConfig({
 
 		sidebar: [
 			{
-				text: "Introduction",
+				text: "Getting Started",
 				items: [
 					{ text: "Getting Started", link: "/getting-started" },
 					{ text: "CDN / No Build Tool", link: "/cdn" },
-					{ text: "Audio", link: "/audio" },
-					{ text: "Playground", link: "/demo" },
 					{ text: "Browser Support", link: "/browser-support" },
 				],
 			},
@@ -33,27 +31,39 @@ export default defineConfig({
 				],
 			},
 			{
-				text: "Plugins",
+				text: "Streaming & Playback",
 				items: [
 					{ text: "HLS", link: "/plugins/hls" },
 					{ text: "DASH", link: "/plugins/dash" },
 					{ text: "DRM", link: "/plugins/drm" },
-					{ text: "SSAI", link: "/plugins/ssai" },
+					{ text: "Audio", link: "/audio" },
+					{ text: "Text Tracks", link: "/guides/text-tracks" },
+				],
+			},
+			{
+				text: "Advertising",
+				items: [
+					{ text: "Ads Overview", link: "/guides/ads-setup" },
 					{ text: "VAST", link: "/plugins/vast" },
 					{ text: "VMAP", link: "/plugins/vmap" },
+					{ text: "SSAI", link: "/plugins/ssai" },
 					{ text: "IMA", link: "/plugins/ima" },
-					{ text: "UI", link: "/plugins/ui" },
 					{ text: "OMID", link: "/plugins/omid" },
 					{ text: "SIMID", link: "/plugins/simid" },
 					{ text: "VPAID", link: "/plugins/vpaid" },
 				],
 			},
 			{
-				text: "Guides",
+				text: "UI",
 				items: [
-					{ text: "Text Tracks", link: "/guides/text-tracks" },
-					{ text: "Ads Setup", link: "/guides/ads-setup" },
+					{ text: "UI Components", link: "/plugins/ui" },
+				],
+			},
+			{
+				text: "Advanced",
+				items: [
 					{ text: "Custom Plugin", link: "/guides/custom-plugin" },
+					{ text: "Troubleshooting", link: "/guides/troubleshooting" },
 					{
 						text: "Migration from video.js",
 						link: "/guides/migration-from-videojs",
@@ -61,8 +71,12 @@ export default defineConfig({
 				],
 			},
 			{
-				text: "API",
-				items: [{ text: "Reference", link: "/api-reference/" }],
+				text: "Resources",
+				items: [
+					{ text: "Playground", link: "/demo" },
+					{ text: "API Overview", link: "/api-overview" },
+					{ text: "API Reference", link: "/api-reference/" },
+				],
 			},
 		],
 

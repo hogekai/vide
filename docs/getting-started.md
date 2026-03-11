@@ -191,10 +191,13 @@ Calls all plugin cleanup functions, removes event listeners, and clears internal
 
 ## Next Steps
 
-- [Playground](/demo) — interactive playground
-- [HLS Streaming](/plugins/hls) — play `.m3u8` streams
-- [VAST Ads](/plugins/vast) — client-side video ads
-- [UI](/plugins/ui) — player controls and theme
-- [DRM](/plugins/drm) — encrypted content playback
-- [CDN / No Build Tool](/cdn) — use without a bundler
-- [Browser Support](/browser-support) — compatibility matrix
+| What you need | Where to go |
+|---------------|-------------|
+| Play HLS / DASH streams | [HLS](/plugins/hls) · [DASH](/plugins/dash) |
+| Add pre-roll / mid-roll ads | [Ads Overview](/guides/ads-setup) |
+| DRM-protected content | [DRM](/plugins/drm) |
+| Player controls and theme | [UI Components](/plugins/ui) |
+| React / Vue / Svelte | [React](/frameworks/react) · [Vue](/frameworks/vue) · [Svelte](/frameworks/svelte) |
+| Use without a bundler | [CDN / No Build Tool](/cdn) |
+| Try it live | [Playground](/demo) |
+| Something not working? | [Troubleshooting](/guides/troubleshooting) |

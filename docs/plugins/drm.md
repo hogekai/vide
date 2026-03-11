@@ -217,3 +217,12 @@ support.forEach((supported, ks) => {
 - Server certificates (Widevine optional, FairPlay required) reduce round-trips by avoiding individualization requests.
 - License and certificate requests use exponential backoff when `retry` is configured.
 
+## Common Issues
+
+**"No supported key system found"** — Error code `4000`. Check that your DRM configuration matches the browser. Widevine works on Chrome/Firefox/Edge, FairPlay on Safari, PlayReady on Edge. Use `detectKeySystem()` to check at runtime.
+
+**License request fails** — Error code `4002`. Verify the license URL, check CORS headers on the license server, and ensure any required auth headers are set via the `headers` option.
+
+**FairPlay certificate error** — Error code `4003`. FairPlay requires a valid `certificateUrl`. Unlike Widevine, the certificate is mandatory.
+
+See [Troubleshooting](/guides/troubleshooting) for more.

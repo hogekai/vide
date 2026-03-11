@@ -116,3 +116,12 @@ The HLS plugin emits `qualitiesavailable` when the manifest is parsed and `quali
 - The hls.js instance is exposed via `player.getPluginData("hls")` for advanced use cases.
 - Works with the [DRM plugin](/plugins/drm) — plugin order doesn't matter.
 
+## Common Issues
+
+**hls.js not installed** — Error code `2001` (`ERR_HLS_IMPORT`). Run `npm install hls.js`. The plugin dynamically imports it at runtime.
+
+**CORS errors on manifest** — The server hosting `.m3u8` and `.ts` files must include CORS headers. This is a server-side configuration issue.
+
+**Safari plays but other browsers don't** — Safari uses native HLS; other browsers need hls.js. Install the peer dependency.
+
+See [Troubleshooting](/guides/troubleshooting) for more.

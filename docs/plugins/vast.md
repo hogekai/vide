@@ -358,3 +358,15 @@ When a VAST response contains a `<Wrapper>`, the plugin follows the `<VASTAdTagU
 - The plugin saves/restores the content source after ad playback.
 - Ad Pods and Waterfall are automatically detected from the VAST response structure.
 - `classifyAds`, `playSingleAd`, `playPod`, `playWaterfall`, and `selectMediaFile` are all exported for advanced use cases.
+
+## Common Issues
+
+**Empty VAST response** — `vastErrorCode: 303` (no VAST response after wrappers). Verify your tag URL returns valid XML. Test with `curl` or your browser's network tab.
+
+**Wrapper timeout** — `vastErrorCode: 301`. The wrapper chain took too long. Increase the `timeout` option or check the wrapper ad server latency.
+
+**No supported media file** — `vastErrorCode: 403`. The VAST response contains media files, but none match the browser's supported codecs. Ensure your ad server provides MP4 (H.264) as a fallback.
+
+**Ad blocker** — If using the [IMA plugin](/plugins/ima) instead, ad blockers will prevent the SDK from loading (error `5000`). The built-in VAST plugin does not depend on external scripts and is not affected.
+
+See [Troubleshooting](/guides/troubleshooting) for more.
