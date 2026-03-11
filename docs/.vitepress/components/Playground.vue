@@ -1,14 +1,16 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from "vue";
-import PlaygroundCode from "./PlaygroundCode.vue";
-import PlaygroundControls from "./PlaygroundControls.vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import PlaygroundEditor from "./PlaygroundEditor.vue";
 import PlaygroundPreview from "./PlaygroundPreview.vue";
+import PlaygroundToolbar from "./PlaygroundToolbar.vue";
 import {
 	type PlaygroundConfig,
+	codeToIframeHtml,
 	generateCode,
 	generateIframeHtml,
 } from "./playground-codegen";
 import { DEFAULT_VAST_TAG_URL, PRESETS } from "./playground-presets";
+import { decodeState, saveToUrl } from "./playground-url-state";
 
 const container = ref<HTMLElement>();
 let observer: IntersectionObserver | null = null;
@@ -27,18 +29,58 @@ const config = ref<PlaygroundConfig>({
 		: undefined,
 });
 
-const displayCode = computed(() => generateCode(config.value));
-const iframeHtml = computed(() => generateIframeHtml(config.value));
+const customCode = ref<string | null>(null);
+const iframeError = ref<string | null>(null);
 
-function onConfigUpdate(newConfig: PlaygroundConfig) {
-	config.value = newConfig;
+const displayCode = computed(() =>
+	customCode.value ?? generateCode(config.value),
+);
+
+const iframeHtml = computed(() =>
+	customCode.value
+		? codeToIframeHtml(customCode.value)
+		: generateIframeHtml(config.value),
+);
+
+// --- URL state ---
+
+let urlTimer: ReturnType<typeof setTimeout> | undefined;
+
+function syncToUrl() {
+	clearTimeout(urlTimer);
+	urlTimer = setTimeout(() => {
+		saveToUrl({
+			presetId: presetId.value,
+			config: config.value,
+			customCode: customCode.value ?? undefined,
+		});
+	}, 300);
 }
 
-function onPresetIdUpdate(id: string) {
-	presetId.value = id;
+watch([config, customCode], syncToUrl, { deep: true });
+
+function restoreFromUrl() {
+	const state = decodeState(location.hash);
+	if (!state) return;
+	presetId.value = state.presetId;
+	config.value = state.config;
+	customCode.value = state.customCode ?? null;
 }
+
+// --- iframe error handling ---
+
+function onMessage(e: MessageEvent) {
+	if (e.data?.type === "vide-playground-error") {
+		iframeError.value = e.data.message || "Unknown error";
+	}
+}
+
+// --- Lifecycle ---
 
 onMounted(() => {
+	restoreFromUrl();
+	window.addEventListener("message", onMessage);
+
 	if (!container.value) return;
 	observer = new IntersectionObserver(
 		(entries) => {
@@ -56,23 +98,84 @@ onMounted(() => {
 onBeforeUnmount(() => {
 	observer?.disconnect();
 	observer = null;
+	window.removeEventListener("message", onMessage);
+	clearTimeout(urlTimer);
 });
+
+// --- Event handlers ---
+
+function onConfigUpdate(newConfig: PlaygroundConfig) {
+	config.value = newConfig;
+}
+
+function onPresetIdUpdate(id: string) {
+	presetId.value = id;
+	customCode.value = null;
+	iframeError.value = null;
+}
+
+function onCodeEdit(code: string) {
+	customCode.value = code;
+}
+
+function onOpenNewTab() {
+	const blob = new Blob([iframeHtml.value], { type: "text/html" });
+	const url = URL.createObjectURL(blob);
+	window.open(url, "_blank");
+}
+
+async function onShare() {
+	syncToUrl();
+	try {
+		await navigator.clipboard.writeText(location.href);
+	} catch {
+		// ignore
+	}
+}
+
+function onReset() {
+	const preset = PRESETS[0];
+	presetId.value = preset.id;
+	config.value = {
+		sourceUrl: preset.sourceUrl,
+		sourceType: preset.sourceType,
+		enabledPlugins: preset.plugins.filter((p) => p.enabled).map((p) => p.id),
+		vastTagUrl: preset.plugins.some((p) => p.id === "vast" && p.enabled)
+			? DEFAULT_VAST_TAG_URL
+			: undefined,
+	};
+	customCode.value = null;
+	iframeError.value = null;
+}
 </script>
 
 <template>
   <div ref="container" class="playground">
     <template v-if="visible">
-      <div class="playground__top">
-        <PlaygroundPreview :html="iframeHtml" class="playground__preview" />
-        <PlaygroundControls
-          :config="config"
-          :preset-id="presetId"
-          class="playground__controls"
-          @update:config="onConfigUpdate"
-          @update:preset-id="onPresetIdUpdate"
+      <PlaygroundToolbar
+        :config="config"
+        :preset-id="presetId"
+        :custom-code="customCode"
+        @update:config="onConfigUpdate"
+        @update:preset-id="onPresetIdUpdate"
+        @open-new-tab="onOpenNewTab"
+        @share="onShare"
+        @reset="onReset"
+      />
+      <div class="playground__panels">
+        <PlaygroundEditor
+          :code="displayCode"
+          class="playground__editor"
+          @update:code="onCodeEdit"
+        />
+        <div class="playground__divider" />
+        <PlaygroundPreview
+          :html="iframeHtml"
+          :error="iframeError"
+          class="playground__preview"
+          @dismiss-error="iframeError = null"
         />
       </div>
-      <PlaygroundCode :code="displayCode" class="playground__code" />
     </template>
     <div v-else class="playground__placeholder" />
   </div>
@@ -81,37 +184,59 @@ onBeforeUnmount(() => {
 <style scoped>
 .playground {
   margin: 1rem 0;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 8px;
+  overflow: hidden;
 }
 
-.playground__top {
+.playground__panels {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  min-height: 400px;
+}
+
+.playground__editor {
+  min-height: 200px;
+}
+
+.playground__divider {
+  height: 1px;
+  background: var(--vp-c-divider);
+  flex-shrink: 0;
+}
+
+.playground__preview {
+  min-height: 200px;
+  flex: 1;
 }
 
 @media (min-width: 768px) {
-  .playground__top {
+  .playground__panels {
     flex-direction: row;
+    min-height: 480px;
+  }
+
+  .playground__editor {
+    flex: 1;
+    min-width: 0;
+    min-height: unset;
+  }
+
+  .playground__divider {
+    width: 1px;
+    height: auto;
+    flex-shrink: 0;
   }
 
   .playground__preview {
     flex: 1;
     min-width: 0;
+    min-height: unset;
   }
-
-  .playground__controls {
-    width: 220px;
-    flex-shrink: 0;
-  }
-}
-
-.playground__code {
-  margin-top: 16px;
 }
 
 .playground__placeholder {
   aspect-ratio: 16 / 9;
   background: var(--vp-c-bg-soft);
-  border-radius: 8px;
 }
 </style>

@@ -10,6 +10,55 @@ export interface PlaygroundConfig {
 const CDN_VERSION = "0.9";
 const CDN_BASE = `https://esm.sh/@videts/vide@${CDN_VERSION}`;
 
+const ERROR_REPORTING = `
+    window.addEventListener("error", (e) => {
+      parent.postMessage({ type: "vide-playground-error", message: e.message }, "*");
+    });
+    window.addEventListener("unhandledrejection", (e) => {
+      parent.postMessage({ type: "vide-playground-error", message: e.reason?.message || String(e.reason) }, "*");
+    });`;
+
+function buildHtmlShell(
+	esmImports: string,
+	jsSetup: string,
+	hasUi: boolean,
+): string {
+	const themeCssLink = hasUi
+		? `<link rel="stylesheet" href="${CDN_BASE}/ui/theme.css">`
+		: "";
+
+	return `<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  ${themeCssLink}
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; background: #000; }
+    #player { position: relative; width: 100%; height: 100%; }
+    video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+  </style>
+</head>
+<body>
+  <div id="player">
+    <video playsinline muted></video>
+  </div>
+  <script type="module">${ERROR_REPORTING}
+    ${esmImports}
+
+    const video = document.querySelector("video");
+    try {
+      ${jsSetup}
+    } catch (e) {
+      console.error("[vide playground]", e);
+      parent.postMessage({ type: "vide-playground-error", message: e.message || String(e) }, "*");
+    }
+  </script>
+</body>
+</html>`;
+}
+
 /** Generate display code using clean @videts/vide imports */
 export function generateCode(config: PlaygroundConfig): string {
 	const imports: string[] = ['import { createPlayer } from "@videts/vide";'];
@@ -114,37 +163,56 @@ export function generateIframeHtml(config: PlaygroundConfig): string {
 
 	jsSetup += `\n      player.src = "${config.sourceUrl}";`;
 
-	const themeCssLink = plugins.includes("ui")
-		? `<link rel="stylesheet" href="${CDN_BASE}/ui/theme.css">`
-		: "";
+	return buildHtmlShell(esmImports, jsSetup, plugins.includes("ui"));
+}
 
-	return `<!doctype html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  ${themeCssLink}
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { width: 100%; height: 100%; background: #000; }
-    #player { position: relative; width: 100%; height: 100%; }
-    video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
-  </style>
-</head>
-<body>
-  <div id="player">
-    <video playsinline muted></video>
-  </div>
-  <script type="module">
-    ${esmImports}
+/** Transform user-edited display code into executable iframe HTML */
+export function codeToIframeHtml(displayCode: string): string {
+	// Detect if UI plugin is used (for theme.css link)
+	const hasUi = /from\s+["']@videts\/vide\/ui["']/.test(displayCode);
 
-    const video = document.querySelector("video");
-    try {
-      ${jsSetup}
-    } catch (e) {
-      console.error("[vide playground]", e);
-    }
-  </script>
-</body>
-</html>`;
+	// Strip CSS import lines (handled via <link> tag)
+	let code = displayCode.replace(
+		/import\s+["']@videts\/vide\/ui\/theme\.css["'];?\n?/g,
+		"",
+	);
+
+	// Replace @videts/vide imports with CDN URLs
+	code = code.replace(
+		/from\s+["']@videts\/vide(\/[^"']*)?\s*["']/g,
+		(_, subpath) => `from "${CDN_BASE}${subpath || ""}"`,
+	);
+
+	// Replace document.querySelector("video")! with video (already declared in shell)
+	code = code.replace(
+		/document\.querySelector\(\s*["']video["']\s*\)\s*!?/g,
+		"video",
+	);
+
+	// Replace document.getElementById("player")! with document.getElementById('player')
+	code = code.replace(
+		/document\.getElementById\(\s*["']player["']\s*\)\s*!?/g,
+		"document.getElementById('player')",
+	);
+
+	// Split into import lines and setup lines
+	const lines = code.split("\n");
+	const importLines: string[] = [];
+	const setupLines: string[] = [];
+	let pastImports = false;
+
+	for (const line of lines) {
+		const trimmed = line.trim();
+		if (!pastImports && (trimmed.startsWith("import ") || trimmed === "")) {
+			if (trimmed !== "") importLines.push(trimmed);
+		} else {
+			pastImports = true;
+			if (trimmed !== "") setupLines.push(trimmed);
+		}
+	}
+
+	const esmImports = importLines.join("\n    ");
+	const jsSetup = setupLines.join("\n      ");
+
+	return buildHtmlShell(esmImports, jsSetup, hasUi);
 }
