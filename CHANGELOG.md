@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+## [0.10.2] - 2026-03-11
+
+### Changed
+- Larger UI controls: icon 18px, button 34px, controls height 48px
+- Thicker progress bar (4px/6px) with visible track background
+- More spacious tooltip padding
+- Remove hero demo footer badge
+
 ## [0.10.1] - 2026-03-11
 
 ### Fixed
