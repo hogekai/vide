@@ -16,6 +16,9 @@ export interface PlaygroundConfig {
 	uiExclude?: string[];
 	drmKeySystem?: "widevine" | "fairplay" | "playready" | "clearkey";
 	drmLicenseUrl?: string;
+	imaAdTagUrl?: string;
+	imaTimeout?: number;
+	ssaiTolerance?: number;
 }
 
 const CDN_VERSION = "0.9";
@@ -121,6 +124,26 @@ function buildHtmlShell(
 </html>`;
 }
 
+/** Check if any ad plugins (OMID/SIMID/VPAID) need the adPlugins array */
+function hasAdPlugins(plugins: string[]): boolean {
+	return plugins.some((p) => ["omid", "simid", "vpaid"].includes(p));
+}
+
+/** Build the adPlugins array entries for display code */
+function buildAdPluginsEntries(plugins: string[], hasUi: boolean): string[] {
+	const entries: string[] = [];
+	if (hasUi) entries.push("uiPlugin.getAdPlugin()");
+	if (plugins.includes("omid"))
+		entries.push(
+			'omid({ partner: { name: "your-company", version: "1.0.0" } })',
+		);
+	if (plugins.includes("simid"))
+		entries.push('simid({ container: document.getElementById("player")! })');
+	if (plugins.includes("vpaid"))
+		entries.push('vpaid({ container: document.getElementById("player")! })');
+	return entries;
+}
+
 /** Generate display code using clean @videts/vide imports */
 export function generateCode(config: PlaygroundConfig): string {
 	const imports: string[] = ['import { createPlayer } from "@videts/vide";'];
@@ -143,11 +166,23 @@ export function generateCode(config: PlaygroundConfig): string {
 	if (plugins.includes("vmap")) {
 		imports.push('import { vmap } from "@videts/vide/vmap";');
 	}
+	if (plugins.includes("ima")) {
+		imports.push('import { ima } from "@videts/vide/ima";');
+	}
 	if (plugins.includes("drm")) {
 		imports.push('import { drm } from "@videts/vide/drm";');
 	}
 	if (plugins.includes("ssai")) {
 		imports.push('import { ssai } from "@videts/vide/ssai";');
+	}
+	if (plugins.includes("omid")) {
+		imports.push('import { omid } from "@videts/vide/omid";');
+	}
+	if (plugins.includes("simid")) {
+		imports.push('import { simid } from "@videts/vide/simid";');
+	}
+	if (plugins.includes("vpaid")) {
+		imports.push('import { vpaid } from "@videts/vide/vpaid";');
 	}
 
 	setup.push('const player = createPlayer(document.querySelector("video")!);');
@@ -174,24 +209,38 @@ export function generateCode(config: PlaygroundConfig): string {
 		}
 	}
 
-	// UI
-	if (plugins.includes("ui") && (plugins.includes("vast") || plugins.includes("vmap"))) {
-		const excludeOpt =
-			config.uiExclude?.length
-				? `, exclude: [${config.uiExclude.map((c) => `"${c}"`).join(", ")}]`
-				: "";
+	// UI — extract as variable when VAST/VMAP need adPlugins
+	const needsUiVar =
+		plugins.includes("ui") &&
+		(plugins.includes("vast") || plugins.includes("vmap"));
+	if (needsUiVar) {
+		const excludeOpt = config.uiExclude?.length
+			? `, exclude: [${config.uiExclude.map((c) => `"${c}"`).join(", ")}]`
+			: "";
 		setup.push(
 			`const uiPlugin = ui({ container: document.getElementById("player")!${excludeOpt} });`,
 		);
 		setup.push("player.use(uiPlugin);");
 	} else if (plugins.includes("ui")) {
-		const excludeOpt =
-			config.uiExclude?.length
-				? `, exclude: [${config.uiExclude.map((c) => `"${c}"`).join(", ")}]`
-				: "";
+		const excludeOpt = config.uiExclude?.length
+			? `, exclude: [${config.uiExclude.map((c) => `"${c}"`).join(", ")}]`
+			: "";
 		setup.push(
 			`player.use(ui({ container: document.getElementById("player")!${excludeOpt} }));`,
 		);
+	}
+
+	// Ad plugins array (OMID/SIMID/VPAID + UI's getAdPlugin)
+	const useAdPluginsArray =
+		hasAdPlugins(plugins) &&
+		(plugins.includes("vast") || plugins.includes("vmap"));
+	if (useAdPluginsArray) {
+		const entries = buildAdPluginsEntries(plugins, needsUiVar);
+		if (entries.length === 1) {
+			setup.push(`const adPlugins = [${entries[0]}];`);
+		} else {
+			setup.push(`const adPlugins = [\n  ${entries.join(",\n  ")},\n];`);
+		}
 	}
 
 	// VAST
@@ -205,7 +254,9 @@ export function generateCode(config: PlaygroundConfig): string {
 		if (config.vastAllowSkip === false) {
 			opts.push("  allowSkip: false,");
 		}
-		if (plugins.includes("ui")) {
+		if (useAdPluginsArray) {
+			opts.push("  adPlugins,");
+		} else if (needsUiVar) {
 			opts.push("  adPlugins: uiPlugin.getAdPlugin(),");
 		}
 		setup.push(`player.use(vast({\n${opts.join("\n")}\n}));`);
@@ -215,15 +266,33 @@ export function generateCode(config: PlaygroundConfig): string {
 	if (plugins.includes("vmap")) {
 		const url = config.vmapUrl || "https://example.com/vmap.xml";
 		const vmapOpts: string[] = [`  url: "${url}",`];
-		if (plugins.includes("ui")) {
+		if (useAdPluginsArray) {
+			vmapOpts.push("  adPlugins,");
+		} else if (needsUiVar) {
 			vmapOpts.push("  adPlugins: uiPlugin.getAdPlugin(),");
 		}
 		setup.push(`player.use(vmap({\n${vmapOpts.join("\n")}\n}));`);
 	}
 
+	// IMA
+	if (plugins.includes("ima")) {
+		const tagUrl = config.imaAdTagUrl || DEFAULT_VAST_TAG_URL;
+		const opts: string[] = [];
+		opts.push(`  adTagUrl: "${tagUrl}" + Date.now(),`);
+		opts.push('  adContainer: document.getElementById("player")!,');
+		if (config.imaTimeout && config.imaTimeout !== 6000) {
+			opts.push(`  timeout: ${config.imaTimeout},`);
+		}
+		setup.push(`player.use(ima({\n${opts.join("\n")}\n}));`);
+	}
+
 	// SSAI
 	if (plugins.includes("ssai")) {
-		setup.push("player.use(ssai());");
+		if (config.ssaiTolerance && config.ssaiTolerance !== 0.5) {
+			setup.push(`player.use(ssai({ tolerance: ${config.ssaiTolerance} }));`);
+		} else {
+			setup.push("player.use(ssai());");
+		}
 	}
 
 	// Video attributes
@@ -248,8 +317,12 @@ export function generateIframeHtml(config: PlaygroundConfig): string {
 	if (plugins.includes("ui")) importMap.ui = `${CDN_BASE}/ui`;
 	if (plugins.includes("vast")) importMap.vast = `${CDN_BASE}/vast`;
 	if (plugins.includes("vmap")) importMap.vmap = `${CDN_BASE}/vmap`;
+	if (plugins.includes("ima")) importMap.ima = `${CDN_BASE}/ima`;
 	if (plugins.includes("drm")) importMap.drm = `${CDN_BASE}/drm`;
 	if (plugins.includes("ssai")) importMap.ssai = `${CDN_BASE}/ssai`;
+	if (plugins.includes("omid")) importMap.omid = `${CDN_BASE}/omid`;
+	if (plugins.includes("simid")) importMap.simid = `${CDN_BASE}/simid`;
+	if (plugins.includes("vpaid")) importMap.vpaid = `${CDN_BASE}/vpaid`;
 
 	const esmImports = Object.entries(importMap)
 		.map(([key, url]) => {
@@ -282,27 +355,38 @@ export function generateIframeHtml(config: PlaygroundConfig): string {
 	if (plugins.includes("drm") && config.drmKeySystem) {
 		const ks = config.drmKeySystem;
 		if (ks === "clearkey") {
-			jsSetup += '\n      player.use(drm({ clearkey: { keys: { "key-id": "key" } } }));';
+			jsSetup +=
+				'\n      player.use(drm({ clearkey: { keys: { "key-id": "key" } } }));';
 		} else {
 			const url = config.drmLicenseUrl || "https://license.example.com/...";
 			jsSetup += `\n      player.use(drm({ ${ks}: { licenseUrl: "${url}" } }));`;
 		}
 	}
 
-	// UI
-	if (plugins.includes("ui") && (plugins.includes("vast") || plugins.includes("vmap"))) {
-		const excludeOpt =
-			config.uiExclude?.length
-				? `, exclude: [${config.uiExclude.map((c) => `"${c}"`).join(", ")}]`
-				: "";
+	// UI — extract as variable when VAST/VMAP need adPlugins
+	const needsUiVar =
+		plugins.includes("ui") &&
+		(plugins.includes("vast") || plugins.includes("vmap"));
+	if (needsUiVar) {
+		const excludeOpt = config.uiExclude?.length
+			? `, exclude: [${config.uiExclude.map((c) => `"${c}"`).join(", ")}]`
+			: "";
 		jsSetup += `\n      const uiPlugin = ui({ container: document.getElementById('player')${excludeOpt} });`;
 		jsSetup += "\n      player.use(uiPlugin);";
 	} else if (plugins.includes("ui")) {
-		const excludeOpt =
-			config.uiExclude?.length
-				? `, exclude: [${config.uiExclude.map((c) => `"${c}"`).join(", ")}]`
-				: "";
+		const excludeOpt = config.uiExclude?.length
+			? `, exclude: [${config.uiExclude.map((c) => `"${c}"`).join(", ")}]`
+			: "";
 		jsSetup += `\n      player.use(ui({ container: document.getElementById('player')${excludeOpt} }));`;
+	}
+
+	// Ad plugins array (OMID/SIMID/VPAID + UI's getAdPlugin)
+	const useAdPluginsArray =
+		hasAdPlugins(plugins) &&
+		(plugins.includes("vast") || plugins.includes("vmap"));
+	if (useAdPluginsArray) {
+		const entries = buildAdPluginsEntries(plugins, needsUiVar);
+		jsSetup += `\n      const adPlugins = [${entries.join(", ")}];`;
 	}
 
 	// VAST
@@ -316,7 +400,9 @@ export function generateIframeHtml(config: PlaygroundConfig): string {
 		if (config.vastAllowSkip === false) {
 			jsSetup += "\n        allowSkip: false,";
 		}
-		if (plugins.includes("ui")) {
+		if (useAdPluginsArray) {
+			jsSetup += "\n        adPlugins,";
+		} else if (needsUiVar) {
 			jsSetup += "\n        adPlugins: uiPlugin.getAdPlugin(),";
 		}
 		jsSetup += "\n      }));";
@@ -327,19 +413,36 @@ export function generateIframeHtml(config: PlaygroundConfig): string {
 		const url = config.vmapUrl || "https://example.com/vmap.xml";
 		jsSetup += "\n      player.use(vmap({";
 		jsSetup += `\n        url: "${url}",`;
-		if (plugins.includes("ui")) {
+		if (useAdPluginsArray) {
+			jsSetup += "\n        adPlugins,";
+		} else if (needsUiVar) {
 			jsSetup += "\n        adPlugins: uiPlugin.getAdPlugin(),";
+		}
+		jsSetup += "\n      }));";
+	}
+
+	// IMA
+	if (plugins.includes("ima")) {
+		const tagUrl = config.imaAdTagUrl || DEFAULT_VAST_TAG_URL;
+		jsSetup += "\n      player.use(ima({";
+		jsSetup += `\n        adTagUrl: "${tagUrl}" + Date.now(),`;
+		jsSetup += "\n        adContainer: document.getElementById('player'),";
+		if (config.imaTimeout && config.imaTimeout !== 6000) {
+			jsSetup += `\n        timeout: ${config.imaTimeout},`;
 		}
 		jsSetup += "\n      }));";
 	}
 
 	// SSAI
 	if (plugins.includes("ssai")) {
-		jsSetup += "\n      player.use(ssai());";
+		if (config.ssaiTolerance && config.ssaiTolerance !== 0.5) {
+			jsSetup += `\n      player.use(ssai({ tolerance: ${config.ssaiTolerance} }));`;
+		} else {
+			jsSetup += "\n      player.use(ssai());";
+		}
 	}
 
 	jsSetup += `\n      player.src = "${config.sourceUrl}";`;
 
 	return buildHtmlShell(esmImports, jsSetup, plugins.includes("ui"));
 }
-

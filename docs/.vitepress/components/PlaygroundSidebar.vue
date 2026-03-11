@@ -4,8 +4,8 @@ import type { PlaygroundConfig } from "./playground-codegen";
 import {
 	DEFAULT_VAST_TAG_URL,
 	PRESETS,
-	UI_COMPONENT_NAMES,
 	type PluginToggle,
+	UI_COMPONENT_NAMES,
 } from "./playground-presets";
 
 const props = defineProps<{
@@ -38,9 +38,12 @@ const pluginToggles = computed(() => currentPreset.value.plugins);
 function isPluginDisabled(plugin: PluginToggle): boolean {
 	if (plugin.locked) return true;
 	if (plugin.requires) {
-		return !plugin.requires.some((r) =>
-			props.config.enabledPlugins.includes(r),
-		);
+		if (!plugin.requires.some((r) => props.config.enabledPlugins.includes(r)))
+			return true;
+	}
+	if (plugin.excludes) {
+		if (plugin.excludes.some((r) => props.config.enabledPlugins.includes(r)))
+			return true;
 	}
 	return false;
 }
@@ -51,13 +54,13 @@ function onPresetChange(e: Event) {
 	if (!preset) return;
 
 	emit("update:presetId", id);
+	const enabledIds = preset.plugins.filter((p) => p.enabled).map((p) => p.id);
 	const newConfig: PlaygroundConfig = {
 		sourceUrl: preset.sourceUrl,
 		sourceType: preset.sourceType,
-		enabledPlugins: preset.plugins.filter((p) => p.enabled).map((p) => p.id),
-		vastTagUrl: preset.plugins.some((p) => p.id === "vast" && p.enabled)
-			? DEFAULT_VAST_TAG_URL
-			: undefined,
+		enabledPlugins: enabledIds,
+		vastTagUrl: enabledIds.includes("vast") ? DEFAULT_VAST_TAG_URL : undefined,
+		imaAdTagUrl: enabledIds.includes("ima") ? DEFAULT_VAST_TAG_URL : undefined,
 	};
 	emit("update:config", newConfig);
 	draftSourceUrl.value = preset.sourceUrl;
@@ -73,6 +76,15 @@ function onPluginToggle(pluginId: string) {
 		enabled.push(pluginId);
 		if (pluginId === "hls") enabled = enabled.filter((p) => p !== "dash");
 		if (pluginId === "dash") enabled = enabled.filter((p) => p !== "hls");
+		// IMA is mutually exclusive with VAST/VMAP (and their ad plugins)
+		if (pluginId === "ima") {
+			enabled = enabled.filter(
+				(p) => !["vast", "vmap", "omid", "simid", "vpaid"].includes(p),
+			);
+		}
+		if (pluginId === "vast" || pluginId === "vmap") {
+			enabled = enabled.filter((p) => p !== "ima");
+		}
 	} else {
 		enabled = enabled.filter((p) => p !== pluginId);
 		for (const t of pluginToggles.value) {
@@ -102,6 +114,16 @@ function onPluginToggle(pluginId: string) {
 	if (!enabled.includes("vmap")) {
 		update.vmapUrl = undefined;
 	}
+	if (enabled.includes("ima") && !update.imaAdTagUrl) {
+		update.imaAdTagUrl = DEFAULT_VAST_TAG_URL;
+	}
+	if (!enabled.includes("ima")) {
+		update.imaAdTagUrl = undefined;
+		update.imaTimeout = undefined;
+	}
+	if (!enabled.includes("ssai")) {
+		update.ssaiTolerance = undefined;
+	}
 
 	emit("update:config", update);
 }
@@ -111,7 +133,7 @@ function toggleExpand(pluginId: string) {
 }
 
 function hasOptions(pluginId: string): boolean {
-	return ["vast", "vmap", "ui", "drm"].includes(pluginId);
+	return ["vast", "vmap", "ui", "drm", "ima", "ssai"].includes(pluginId);
 }
 
 function applySource() {
@@ -163,7 +185,8 @@ function onVmapUrlChange(e: Event) {
 function onDrmKeySystemChange(e: Event) {
 	emit("update:config", {
 		...props.config,
-		drmKeySystem: (e.target as HTMLSelectElement).value as PlaygroundConfig["drmKeySystem"],
+		drmKeySystem: (e.target as HTMLSelectElement)
+			.value as PlaygroundConfig["drmKeySystem"],
 	});
 }
 
@@ -171,6 +194,28 @@ function onDrmUrlChange(e: Event) {
 	emit("update:config", {
 		...props.config,
 		drmLicenseUrl: (e.target as HTMLInputElement).value,
+	});
+}
+
+function onImaTagChange(e: Event) {
+	emit("update:config", {
+		...props.config,
+		imaAdTagUrl: (e.target as HTMLInputElement).value,
+	});
+}
+
+function onImaTimeoutChange(e: Event) {
+	emit("update:config", {
+		...props.config,
+		imaTimeout: Number.parseInt((e.target as HTMLInputElement).value) || 6000,
+	});
+}
+
+function onSsaiToleranceChange(e: Event) {
+	emit("update:config", {
+		...props.config,
+		ssaiTolerance:
+			Number.parseFloat((e.target as HTMLInputElement).value) || 0.5,
 	});
 }
 
@@ -376,6 +421,49 @@ function fillExample() {
                 :value="config.drmLicenseUrl"
                 placeholder="https://license.example.com/…"
                 @change="onDrmUrlChange"
+              />
+            </div>
+          </div>
+
+          <!-- IMA options -->
+          <div
+            v-if="plugin.id === 'ima' && config.enabledPlugins.includes('ima') && expandedPlugin === 'ima'"
+            class="pg-sidebar__plugin-opts"
+          >
+            <div class="pg-sidebar__field">
+              <div class="pg-sidebar__opt-label">adTagUrl</div>
+              <input
+                type="url"
+                class="pg-sidebar__input"
+                :value="config.imaAdTagUrl"
+                placeholder="https://…/vast.xml or vmap.xml"
+                @change="onImaTagChange"
+              />
+            </div>
+            <div class="pg-sidebar__field">
+              <div class="pg-sidebar__opt-label">timeout (ms)</div>
+              <input
+                type="number"
+                class="pg-sidebar__input"
+                :value="config.imaTimeout || 6000"
+                @change="onImaTimeoutChange"
+              />
+            </div>
+          </div>
+
+          <!-- SSAI options -->
+          <div
+            v-if="plugin.id === 'ssai' && config.enabledPlugins.includes('ssai') && expandedPlugin === 'ssai'"
+            class="pg-sidebar__plugin-opts"
+          >
+            <div class="pg-sidebar__field">
+              <div class="pg-sidebar__opt-label">tolerance (seconds)</div>
+              <input
+                type="number"
+                class="pg-sidebar__input"
+                :value="config.ssaiTolerance || 0.5"
+                step="0.1"
+                @change="onSsaiToleranceChange"
               />
             </div>
           </div>

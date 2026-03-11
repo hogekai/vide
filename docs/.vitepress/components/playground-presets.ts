@@ -4,6 +4,7 @@ export interface PluginToggle {
 	enabled: boolean;
 	locked?: boolean;
 	requires?: string[];
+	excludes?: string[];
 	gzipSize?: string;
 }
 
@@ -25,7 +26,13 @@ export const PRESETS: PlaygroundPreset[] = [
 		sourceUrl: "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8",
 		sourceType: "hls",
 		plugins: [
-			{ id: "hls", label: "HLS", enabled: true, locked: true, gzipSize: "1.4 KB" },
+			{
+				id: "hls",
+				label: "HLS",
+				enabled: true,
+				locked: true,
+				gzipSize: "1.4 KB",
+			},
 			{ id: "ui", label: "UI", enabled: true, gzipSize: "5.7 KB" },
 		],
 	},
@@ -35,7 +42,13 @@ export const PRESETS: PlaygroundPreset[] = [
 		sourceUrl: "https://dash.akamaized.net/akamai/bbb_30fps/bbb_30fps.mpd",
 		sourceType: "dash",
 		plugins: [
-			{ id: "dash", label: "DASH", enabled: true, locked: true, gzipSize: "1.4 KB" },
+			{
+				id: "dash",
+				label: "DASH",
+				enabled: true,
+				locked: true,
+				gzipSize: "1.4 KB",
+			},
 			{ id: "ui", label: "UI", enabled: true, gzipSize: "5.7 KB" },
 		],
 	},
@@ -45,9 +58,104 @@ export const PRESETS: PlaygroundPreset[] = [
 		sourceUrl: "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8",
 		sourceType: "hls",
 		plugins: [
-			{ id: "hls", label: "HLS", enabled: true, locked: true, gzipSize: "1.4 KB" },
-			{ id: "ui", label: "UI", enabled: true, locked: true, gzipSize: "5.7 KB" },
-			{ id: "vast", label: "VAST", enabled: true, locked: true, gzipSize: "7.9 KB" },
+			{
+				id: "hls",
+				label: "HLS",
+				enabled: true,
+				locked: true,
+				gzipSize: "1.4 KB",
+			},
+			{
+				id: "ui",
+				label: "UI",
+				enabled: true,
+				locked: true,
+				gzipSize: "5.7 KB",
+			},
+			{
+				id: "vast",
+				label: "VAST",
+				enabled: true,
+				locked: true,
+				gzipSize: "7.9 KB",
+			},
+		],
+	},
+	{
+		id: "hls-ima",
+		label: "HLS + IMA",
+		sourceUrl: "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8",
+		sourceType: "hls",
+		plugins: [
+			{
+				id: "hls",
+				label: "HLS",
+				enabled: true,
+				locked: true,
+				gzipSize: "1.4 KB",
+			},
+			{
+				id: "ui",
+				label: "UI",
+				enabled: true,
+				locked: true,
+				gzipSize: "5.7 KB",
+			},
+			{
+				id: "ima",
+				label: "IMA",
+				enabled: true,
+				locked: true,
+				gzipSize: "3.4 KB",
+			},
+		],
+	},
+	{
+		id: "hls-drm",
+		label: "HLS + DRM",
+		sourceUrl: "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8",
+		sourceType: "hls",
+		plugins: [
+			{
+				id: "hls",
+				label: "HLS",
+				enabled: true,
+				locked: true,
+				gzipSize: "1.4 KB",
+			},
+			{ id: "ui", label: "UI", enabled: true, gzipSize: "5.7 KB" },
+			{
+				id: "drm",
+				label: "DRM",
+				enabled: true,
+				locked: true,
+				requires: ["hls", "dash"],
+				gzipSize: "2.6 KB",
+			},
+		],
+	},
+	{
+		id: "hls-ssai",
+		label: "HLS + SSAI",
+		sourceUrl: "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8",
+		sourceType: "hls",
+		plugins: [
+			{
+				id: "hls",
+				label: "HLS",
+				enabled: true,
+				locked: true,
+				gzipSize: "1.4 KB",
+			},
+			{ id: "ui", label: "UI", enabled: true, gzipSize: "5.7 KB" },
+			{
+				id: "ssai",
+				label: "SSAI",
+				enabled: true,
+				locked: true,
+				requires: ["hls"],
+				gzipSize: "2.3 KB",
+			},
 		],
 	},
 	{
@@ -69,8 +177,48 @@ export const PRESETS: PlaygroundPreset[] = [
 			{ id: "ui", label: "UI", enabled: true, gzipSize: "5.7 KB" },
 			{ id: "vast", label: "VAST", enabled: false, gzipSize: "7.9 KB" },
 			{ id: "vmap", label: "VMAP", enabled: false, gzipSize: "8.8 KB" },
-			{ id: "drm", label: "DRM", enabled: false, requires: ["hls", "dash"], gzipSize: "2.6 KB" },
-			{ id: "ssai", label: "SSAI", enabled: false, requires: ["hls"], gzipSize: "2.3 KB" },
+			{
+				id: "ima",
+				label: "IMA",
+				enabled: false,
+				excludes: ["vast", "vmap"],
+				gzipSize: "3.4 KB",
+			},
+			{
+				id: "drm",
+				label: "DRM",
+				enabled: false,
+				requires: ["hls", "dash"],
+				gzipSize: "2.6 KB",
+			},
+			{
+				id: "ssai",
+				label: "SSAI",
+				enabled: false,
+				requires: ["hls"],
+				gzipSize: "2.3 KB",
+			},
+			{
+				id: "omid",
+				label: "OMID",
+				enabled: false,
+				requires: ["vast", "vmap"],
+				gzipSize: "1.7 KB",
+			},
+			{
+				id: "simid",
+				label: "SIMID",
+				enabled: false,
+				requires: ["vast", "vmap"],
+				gzipSize: "2.4 KB",
+			},
+			{
+				id: "vpaid",
+				label: "VPAID",
+				enabled: false,
+				requires: ["vast", "vmap"],
+				gzipSize: "1.8 KB",
+			},
 		],
 	},
 ];

@@ -38,14 +38,21 @@ const props = defineProps<{
 	enabledPlugins: string[];
 }>();
 
-const emit = defineEmits<{
-	(e: "clearEvents"): void;
-}>();
+const emit = defineEmits<(e: "clearEvents") => void>();
 
 const logEl = ref<HTMLElement>();
 const autoScroll = ref(true);
 
-const CORE_STATES = ["idle", "loading", "ready", "playing", "paused", "buffering", "ended", "error"];
+const CORE_STATES = [
+	"idle",
+	"loading",
+	"ready",
+	"playing",
+	"paused",
+	"buffering",
+	"ended",
+	"error",
+];
 const AD_STATES = ["ad:loading", "ad:playing", "ad:paused"];
 
 const currentState = computed(() => props.playerState?.state || "idle");
@@ -53,7 +60,8 @@ const currentState = computed(() => props.playerState?.state || "idle");
 function stateClass(state: string) {
 	return {
 		"pg-insp__sn--active": currentState.value === state,
-		"pg-insp__sn--visited": props.stateHistory.has(state) && currentState.value !== state,
+		"pg-insp__sn--visited":
+			props.stateHistory.has(state) && currentState.value !== state,
 	};
 }
 
@@ -69,14 +77,22 @@ const fmtTs = (ts: number) => {
 
 function eventColor(event: string): string {
 	if (event.startsWith("ad:")) return "pg-insp__ev--ad";
-	if (event === "statechange" || event === "livestatechange") return "pg-insp__ev--state";
-	if (event.startsWith("quality") || event.startsWith("textrack")) return "pg-insp__ev--quality";
-	if (event === "error" || event.startsWith("drm:")) return "pg-insp__ev--error";
+	if (event === "statechange" || event === "livestatechange")
+		return "pg-insp__ev--state";
+	if (event.startsWith("quality") || event.startsWith("textrack"))
+		return "pg-insp__ev--quality";
+	if (event === "error" || event.startsWith("drm:"))
+		return "pg-insp__ev--error";
 	return "pg-insp__ev--media";
 }
 
 function formatData(data: unknown): string {
-	if (data === null || data === undefined || (typeof data === "object" && Object.keys(data as object).length === 0)) return "";
+	if (
+		data === null ||
+		data === undefined ||
+		(typeof data === "object" && Object.keys(data as object).length === 0)
+	)
+		return "";
 	try {
 		return JSON.stringify(data);
 	} catch {
@@ -90,13 +106,16 @@ function onLogScroll() {
 	autoScroll.value = el.scrollTop + el.clientHeight >= el.scrollHeight - 20;
 }
 
-watch(() => props.events.length, async () => {
-	if (!autoScroll.value) return;
-	await nextTick();
-	if (logEl.value) {
-		logEl.value.scrollTop = logEl.value.scrollHeight;
-	}
-});
+watch(
+	() => props.events.length,
+	async () => {
+		if (!autoScroll.value) return;
+		await nextTick();
+		if (logEl.value) {
+			logEl.value.scrollTop = logEl.value.scrollHeight;
+		}
+	},
+);
 
 const properties = computed(() => {
 	const s = props.playerState;
@@ -113,21 +132,40 @@ const properties = computed(() => {
 			{ key: "isAutoQuality", value: "—" },
 		];
 	}
-	const src = s.src.length > 24 ? `"${s.src.slice(0, 24)}…"` : s.src ? `"${s.src}"` : '""';
-	return [
+	const src =
+		s.src.length > 24
+			? `"${s.src.slice(0, 24)}…"`
+			: s.src
+				? `"${s.src}"`
+				: '""';
+	const result = [
 		{ key: "player.src", value: src },
 		{ key: "currentTime", value: s.currentTime.toFixed(1), highlight: true },
-		{ key: "duration", value: Number.isFinite(s.duration) ? s.duration.toFixed(1) : "NaN" },
+		{
+			key: "duration",
+			value: Number.isFinite(s.duration) ? s.duration.toFixed(1) : "NaN",
+		},
 		{ key: "volume", value: s.volume.toFixed(2), highlight: true },
 		{ key: "muted", value: String(s.muted) },
 		{ key: "paused", value: String(s.paused) },
 		{ key: "loop", value: String(s.loop) },
 		{ key: "playbackRate", value: String(s.playbackRate), highlight: true },
-		{ key: "isAutoQuality", value: s.isAutoQuality != null ? String(s.isAutoQuality) : "—" },
+		{
+			key: "isAutoQuality",
+			value: s.isAutoQuality != null ? String(s.isAutoQuality) : "—",
+		},
 	];
+	if (props.enabledPlugins.some((p) => ["hls", "dash"].includes(p))) {
+		result.push({ key: "isLive", value: String(s.isLive) });
+	}
+	return result;
 });
 
-const hasAds = computed(() => props.enabledPlugins.some((p) => ["vast", "vmap"].includes(p)));
+const hasAds = computed(() =>
+	props.enabledPlugins.some((p) => ["vast", "vmap", "ima"].includes(p)),
+);
+
+const AD_PLUGIN_IDS = ["omid", "simid", "vpaid"];
 </script>
 
 <template>
@@ -196,6 +234,7 @@ const hasAds = computed(() => props.enabledPlugins.some((p) => ["vast", "vmap"].
             v-for="p in enabledPlugins"
             :key="p"
             class="pg-insp__atag"
+            :class="{ 'pg-insp__atag--adplugin': AD_PLUGIN_IDS.includes(p) }"
           >
             {{ p }}
           </span>
@@ -383,6 +422,11 @@ const hasAds = computed(() => props.enabledPlugins.some((p) => ["vast", "vmap"].
   background: var(--vp-c-brand-soft);
   color: var(--vp-c-brand-1);
   border: 1px solid var(--vp-c-brand-1);
+}
+
+.pg-insp__atag--adplugin {
+  border-style: dashed;
+  opacity: 0.8;
 }
 
 .pg-insp__none {
