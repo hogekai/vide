@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+## [0.10.1] - 2026-03-11
+
+### Fixed
+- Biome lint and formatting issues across docs, UI theme, and streaming plugins
+
 ## [0.10.0] - 2026-03-11
 
 ### Changed
