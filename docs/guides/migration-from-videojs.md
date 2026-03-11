@@ -537,15 +537,6 @@ In React, Vue, and Svelte, the framework hooks (`useVidePlayer` / `createVidePla
 
 video.js bundles streaming, UI, and core into one package. Vide ships each as a separate entry point — import only what you use.
 
-## Bundle Size
-
-| | video.js 8.x | Vide (core + HLS + UI) |
-|-|-------------|------------------------|
-| JS | [~690 KB min (~200 KB gzip)](https://bundlephobia.com/package/video.js@8) | ~10.1 KB gzip |
-| CSS | ~30 KB min | 4.6 KB gzip |
-
-Core player alone is 3.0 KB gzip. Each plugin adds only what it needs.
-
 ## Migration Checklist
 
 - Replace `videojs(el, options)` with `createPlayer(el)`
