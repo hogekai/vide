@@ -138,7 +138,10 @@ export function dash(options: DashPluginOptions = {}): Plugin {
 					.then((dashjsModule) => {
 						if (destroyed) return;
 
-						const djsNamespace = dashjsModule.default;
+						const djsNamespace =
+						dashjsModule.default ??
+						(dashjsModule as Record<string, unknown>).dashjs ??
+						dashjsModule;
 						const instance = djsNamespace
 							.MediaPlayer()
 							.create() as unknown as DashMediaPlayerLike;

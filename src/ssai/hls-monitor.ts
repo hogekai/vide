@@ -26,6 +26,12 @@ interface FragParsingMetadataData {
 	}>;
 }
 
+// hls.js 1.x event name strings (Hls.Events.LEVEL_UPDATED / FRAG_PARSING_METADATA).
+// These are hardcoded because SSAI avoids a compile-time dependency on hls.js.
+// If hls.js changes these strings in a future major version, update here.
+const HLS_EVENT_LEVEL_UPDATED = "hlsLevelUpdated";
+const HLS_EVENT_FRAG_PARSING_METADATA = "hlsFragParsingMetadata";
+
 const HLS_INTERSTITIAL_CLASS = "com.apple.hls.interstitial";
 const SCTE35_OUT_ATTR = "SCTE35-OUT";
 
@@ -169,9 +175,8 @@ export function createHlsMonitor(
 		}
 	}
 
-	// hls.js event name strings (avoids importing Hls.Events)
-	hls.on("hlsLevelUpdated", onLevelUpdated);
-	hls.on("hlsFragParsingMetadata", onFragParsingMetadata);
+	hls.on(HLS_EVENT_LEVEL_UPDATED, onLevelUpdated);
+	hls.on(HLS_EVENT_FRAG_PARSING_METADATA, onFragParsingMetadata);
 
 	// Process any level details that were already loaded before we
 	// attached (race between async hls.js init and SSAI plugin attach).
@@ -181,7 +186,7 @@ export function createHlsMonitor(
 	}
 
 	return () => {
-		hls.off("hlsLevelUpdated", onLevelUpdated);
-		hls.off("hlsFragParsingMetadata", onFragParsingMetadata);
+		hls.off(HLS_EVENT_LEVEL_UPDATED, onLevelUpdated);
+		hls.off(HLS_EVENT_FRAG_PARSING_METADATA, onFragParsingMetadata);
 	};
 }

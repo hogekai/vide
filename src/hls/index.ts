@@ -144,7 +144,10 @@ export function hls(options: HlsPluginOptions = {}): Plugin {
 					.then((HlsModule) => {
 						if (destroyed) return;
 
-						const Hls = HlsModule.default;
+						const Hls =
+						HlsModule.default ??
+						(HlsModule as Record<string, unknown>).Hls ??
+						HlsModule;
 
 						if (!Hls.isSupported()) {
 							// hls.js not supported (e.g. Safari) — fall back

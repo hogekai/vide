@@ -12,7 +12,7 @@ Modular video player library. Use only what you need.
   <img src="docs/public/player-screenshot.png" alt="Vide player with default theme" width="720" />
 </p>
 
-> **video.js 8: ~240 KB min+gzip** · **vide core + HLS + UI + theme: ~10 KB**
+> **video.js 8: ~240 KB min+gzip** · **vide core + HLS + UI + theme: ~10 KB** (+ hls.js ~160 KB as peer dep)
 
 ```html
 <video src="video.mp4"></video>
@@ -101,7 +101,7 @@ Plugins are explicit opt-in. Import only what you need.
 | `@videts/vide/ui` | Headless UI | 5.7 KB |
 | `@videts/vide/ui/theme.css` | Default theme | 4.6 KB |
 
-> HLS and DASH plugins require `hls.js` and `dashjs` as peer dependencies.
+> HLS and DASH plugins require `hls.js` (~160 KB gzip) and `dashjs` (~220 KB gzip) as peer dependencies. Sizes above are vide wrapper code only.
 
 See the [plugin documentation](https://hogekai.github.io/vide/plugins/hls) for usage examples and configuration options.
 
