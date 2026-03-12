@@ -25,7 +25,7 @@ const base = site.value.base;
     <!-- Nav -->
     <nav class="lnav">
       <a :href="base" class="logo">
-        <div class="logo-mark">&#9654;</div>
+        <div class="logo-mark"><svg width="8" height="9" viewBox="0 0 8 9" fill="#0e1c1a"><path d="M0 .5 L8 4.5 L0 8.5Z"/></svg></div>
         vide
       </a>
       <div class="nav-links">
@@ -108,7 +108,7 @@ const base = site.value.base;
               </svg>
             </div>
             <div class="ftitle">Full Ad Stack</div>
-            <div class="fdesc">VAST 4.2, VMAP, SSAI, VPAID, SIMID, OMID &mdash; built-in, without Google's 500 KB IMA SDK.</div>
+            <div class="fdesc">VAST 4.2, VMAP, SSAI, VPAID, SIMID, OMID, and Google IMA &mdash; every ad format, built-in.</div>
           </div>
           <div class="fcard">
             <div class="ficon">
@@ -248,7 +248,7 @@ player.<span class="fn">on</span>(<span class="str">"play"</span>, () =&gt; {
     <!-- Footer -->
     <footer class="lfooter">
       <div class="flogo">
-        <div class="logo-mark" style="width: 20px; height: 20px; font-size: 8px">&#9654;</div>
+        <div class="logo-mark" style="width: 20px; height: 20px"><svg width="7" height="8" viewBox="0 0 8 9" fill="#0e1c1a"><path d="M0 .5 L8 4.5 L0 8.5Z"/></svg></div>
         vide
       </div>
       <div class="flinks">
@@ -364,9 +364,6 @@ player.<span class="fn">on</span>(<span class="str">"play"</span>, () =&gt; {
   align-items: center;
   justify-content: center;
   color: #0e1c1a;
-  font-size: 9px;
-  font-family: 'Nunito', sans-serif;
-  font-weight: 700;
 }
 
 .nav-links {
@@ -953,8 +950,19 @@ h2 {
     grid-template-columns: 1fr 1fr;
   }
 
+  .nav-links {
+    display: none;
+  }
+
   .lnav {
     padding: 0 18px;
+  }
+
+  .lfooter {
+    flex-direction: column;
+    gap: 16px;
+    text-align: center;
+    padding: 28px 20px;
   }
 
   .hero {

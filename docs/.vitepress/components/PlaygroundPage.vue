@@ -10,7 +10,7 @@ const base = site.value.base;
   <div class="pg-page">
     <nav class="pg-nav">
       <a :href="base" class="pg-logo">
-        <div class="pg-logo-mark">&#9654;</div>
+        <div class="pg-logo-mark"><svg width="8" height="9" viewBox="0 0 8 9" fill="#0e1c1a"><path d="M0 .5 L8 4.5 L0 8.5Z"/></svg></div>
         vide <span class="pg-badge">/ playground</span>
       </a>
       <div class="pg-nav-links">
@@ -41,7 +41,7 @@ const base = site.value.base;
   font-family: 'Nunito', system-ui, sans-serif;
   background: var(--vp-c-bg);
   color: var(--vp-c-text-1);
-  height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -79,9 +79,6 @@ const base = site.value.base;
   align-items: center;
   justify-content: center;
   color: #0e1c1a;
-  font-size: 9px;
-  font-family: 'Nunito', sans-serif;
-  font-weight: 700;
 }
 
 .pg-badge {
@@ -120,5 +117,23 @@ const base = site.value.base;
 
 .pg-body :deep(.playground) {
   height: 100%;
+}
+
+@media (max-width: 1023px) {
+  .pg-page {
+    height: auto;
+    min-height: 100dvh;
+    overflow-y: auto;
+  }
+
+  .pg-body {
+    overflow: visible;
+  }
+}
+
+@media (max-width: 640px) {
+  .pg-nav-links {
+    display: none;
+  }
 }
 </style>

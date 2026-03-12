@@ -300,20 +300,36 @@ function onClearEvents() {
 
   .playground__sidebar {
     width: 100%;
-    max-height: 300px;
+    max-height: 240px;
     border-right: none;
     border-bottom: 1px solid var(--vp-c-divider);
+    overflow-y: auto;
   }
 
   .playground__center {
-    min-height: 400px;
+    min-height: 300px;
   }
 
   .playground__inspector {
     width: 100%;
-    max-height: 350px;
+    max-height: 280px;
     border-left: none;
     border-top: 1px solid var(--vp-c-divider);
+    overflow-y: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .playground__sidebar {
+    max-height: 200px;
+  }
+
+  .playground__center {
+    min-height: 250px;
+  }
+
+  .playground__inspector {
+    max-height: 240px;
   }
 }
 </style>
