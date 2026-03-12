@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+## [0.10.3] - 2026-03-12
+
+### Fixed
+- IMA ResizeObserver loop causing continuous resize during ad playback
+
+### Added
+- Framework selector to playground code generation
+- `data-tooltip` attributes to React, Vue, and Svelte framework wrappers
+
+### Changed
+- Fix responsive layout, replace emoji logo with SVG, update IMA text
+
 ## [0.10.2] - 2026-03-11
 
 ### Changed
