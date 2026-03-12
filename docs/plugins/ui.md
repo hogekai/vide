@@ -271,6 +271,42 @@ The root `.vide-ui` element receives state modifier classes that track player st
 }
 ```
 
+#### Showing / Hiding Custom Components by State
+
+Combine [standalone components](#standalone-components) with state classes to show controls only during ads — or only during normal playback:
+
+```ts
+import { createPlayButton } from "@videts/vide/ui";
+
+// Mount a custom play button into your own container
+const play = createPlayButton();
+play.mount(document.querySelector(".my-content-controls")!);
+play.connect(player);
+```
+
+```css
+/* Only visible during normal playback — hidden during ads */
+.my-content-controls {
+  display: block;
+}
+.vide-ui--ad-loading .my-content-controls,
+.vide-ui--ad-playing .my-content-controls,
+.vide-ui--ad-paused .my-content-controls {
+  display: none;
+}
+
+/* Only visible during ad playback — hidden otherwise */
+.my-ad-controls {
+  display: none;
+}
+.vide-ui--ad-playing .my-ad-controls,
+.vide-ui--ad-paused .my-ad-controls {
+  display: block;
+}
+```
+
+Place your custom containers inside the `.vide-ui` root so they receive state classes from the parent.
+
 ### BEM Classes
 
 The UI does not use Shadow DOM — all classes are global. Target them directly in your CSS.
