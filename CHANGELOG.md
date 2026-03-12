@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+## [0.10.4] - 2026-03-12
+
+### Changed
+- Mark `Player.duration` as `readonly` and remove no-op setter
+- Expose `setState` on `PluginPlayer` via typed object literal instead of `as unknown as` cast
+- Extract `resolveAndLoadSource()` to deduplicate handler matching in `processSourceElements` and `src` setter
+
 ## [0.10.3] - 2026-03-12
 
 ### Fixed

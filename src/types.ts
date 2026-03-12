@@ -297,7 +297,7 @@ export interface Player extends EventBus {
 	play(): Promise<void>;
 	pause(): void;
 	currentTime: number;
-	duration: number;
+	readonly duration: number;
 	volume: number;
 	muted: boolean;
 	playbackRate: number;

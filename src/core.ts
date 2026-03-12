@@ -48,6 +48,19 @@ export function createPlayer(el: MediaElement): Player {
 		setState,
 	});
 
+	function resolveAndLoadSource(url: string, type?: string): boolean {
+		for (const handler of sourceHandlers) {
+			if (handler.canHandle(url, type)) {
+				activeHandler = handler;
+				currentSrc = url;
+				setState("loading");
+				handler.load(url, el);
+				return true;
+			}
+		}
+		return false;
+	}
+
 	function processSourceElements(): void {
 		if (activeHandler || srcExplicitlySet) return;
 		const sources = el.querySelectorAll("source");
@@ -55,22 +68,14 @@ export function createPlayer(el: MediaElement): Player {
 			const sourceUrl = sourceEl.getAttribute("src");
 			const sourceType = sourceEl.getAttribute("type") ?? undefined;
 			if (!sourceUrl) continue;
-			for (const handler of sourceHandlers) {
-				if (handler.canHandle(sourceUrl, sourceType)) {
-					activeHandler = handler;
-					currentSrc = sourceUrl;
-					setState("loading");
-					handler.load(sourceUrl, el);
-					for (const s of sources) {
-						s.remove();
-					}
-					return;
-				}
+			if (resolveAndLoadSource(sourceUrl, sourceType)) {
+				for (const s of sources) s.remove();
+				return;
 			}
 		}
 	}
 
-	const player: Player = {
+	const player: PluginPlayer = {
 		get el() {
 			return el;
 		},
@@ -112,9 +117,6 @@ export function createPlayer(el: MediaElement): Player {
 		},
 		get duration() {
 			return el.duration;
-		},
-		set duration(_v: number) {
-			// read-only on HTMLVideoElement, no-op
 		},
 		get volume() {
 			return el.volume;
@@ -315,15 +317,9 @@ export function createPlayer(el: MediaElement): Player {
 				el.removeAttribute("src");
 				return;
 			}
-			for (const handler of sourceHandlers) {
-				if (handler.canHandle(url)) {
-					activeHandler = handler;
-					setState("loading");
-					handler.load(url, el);
-					return;
-				}
+			if (!resolveAndLoadSource(url)) {
+				el.src = url;
 			}
-			el.src = url;
 		},
 		registerSourceHandler(handler: SourceHandler): void {
 			if (destroyed) {
@@ -353,12 +349,14 @@ export function createPlayer(el: MediaElement): Player {
 		},
 
 		// --- vide specific ---
+		setState,
+
 		use(plugin: Plugin): void {
 			if (destroyed) {
 				console.warn("[vide] Cannot use plugin after destroy");
 				return;
 			}
-			const cleanup = plugin.setup(player as PluginPlayer);
+			const cleanup = plugin.setup(player);
 			if (cleanup) {
 				cleanups.push(cleanup);
 			}
@@ -408,9 +406,6 @@ export function createPlayer(el: MediaElement): Player {
 			pluginData.clear();
 		},
 	};
-
-	// Expose setState for plugins (e.g. VAST plugin needs to set ad states)
-	(player as unknown as { setState: typeof setState }).setState = setState;
 
 	return player;
 }
