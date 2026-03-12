@@ -90,6 +90,7 @@ export function Volume({ className, children }: VolumeProps) {
 				type="button"
 				className="vide-volume__button"
 				aria-label={muted ? "Unmute" : "Mute"}
+				data-tooltip={muted ? "Unmute" : "Mute"}
 				onClick={onMuteClick}
 			>
 				{children ??

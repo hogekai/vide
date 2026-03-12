@@ -50,6 +50,7 @@ export const VideMuteButton = defineComponent({
 					type: "button",
 					class: cx("vide-mute", attrs.class as string),
 					"aria-label": muted.value ? "Unmute" : "Mute",
+					"data-tooltip": muted.value ? "Unmute" : "Mute",
 					"data-muted": muted.value || undefined,
 					onClick,
 				},

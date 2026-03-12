@@ -42,6 +42,7 @@ function onClick() {
 	type="button"
 	class={["vide-mute", className].filter(Boolean).join(" ")}
 	aria-label={muted ? "Unmute" : "Mute"}
+	data-tooltip={muted ? "Unmute" : "Mute"}
 	data-muted={muted || undefined}
 	onclick={onClick}
 >

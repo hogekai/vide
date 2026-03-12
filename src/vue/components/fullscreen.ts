@@ -53,6 +53,7 @@ export const VideFullscreenButton = defineComponent({
 					type: "button",
 					class: cx("vide-fullscreen", attrs.class as string),
 					"aria-label": active.value ? "Exit fullscreen" : "Fullscreen",
+					"data-tooltip": active.value ? "Exit fullscreen" : "Fullscreen",
 					"data-fullscreen": active.value || undefined,
 					onClick,
 				},

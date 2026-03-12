@@ -86,6 +86,7 @@ function onPointerUp(e: PointerEvent) {
 		type="button"
 		class="vide-volume__button"
 		aria-label={muted ? "Unmute" : "Mute"}
+		data-tooltip={muted ? "Unmute" : "Mute"}
 		onclick={onMuteClick}
 	>
 		{#if children}

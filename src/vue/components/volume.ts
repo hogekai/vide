@@ -97,6 +97,7 @@ export const VideVolume = defineComponent({
 							type: "button",
 							class: "vide-volume__button",
 							"aria-label": muted.value ? "Unmute" : "Mute",
+							"data-tooltip": muted.value ? "Unmute" : "Mute",
 							onClick: onMuteClick,
 						},
 						slots.default?.() ?? [

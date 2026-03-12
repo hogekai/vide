@@ -50,6 +50,7 @@ export function FullscreenButton({
 			type="button"
 			className={["vide-fullscreen", className].filter(Boolean).join(" ")}
 			aria-label={active ? "Exit fullscreen" : "Fullscreen"}
+			data-tooltip={active ? "Exit fullscreen" : "Fullscreen"}
 			onClick={onClick}
 			data-fullscreen={active || undefined}
 		>

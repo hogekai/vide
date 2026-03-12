@@ -50,6 +50,7 @@ function onClick() {
 	type="button"
 	class={["vide-play", className].filter(Boolean).join(" ")}
 	aria-label={playing ? "Pause" : "Play"}
+	data-tooltip={playing ? "Pause" : "Play"}
 	data-playing={playing || undefined}
 	onclick={onClick}
 >

@@ -44,6 +44,7 @@ export function MuteButton({ className, children }: MuteButtonProps) {
 			type="button"
 			className={["vide-mute", className].filter(Boolean).join(" ")}
 			aria-label={muted ? "Unmute" : "Mute"}
+			data-tooltip={muted ? "Unmute" : "Mute"}
 			onClick={onClick}
 			data-muted={muted || undefined}
 		>

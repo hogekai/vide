@@ -49,6 +49,7 @@ export const VidePlayButton = defineComponent({
 					type: "button",
 					class: cx("vide-play", attrs.class as string),
 					"aria-label": playing.value ? "Pause" : "Play",
+					"data-tooltip": playing.value ? "Pause" : "Play",
 					"data-playing": playing.value || undefined,
 					onClick,
 				},

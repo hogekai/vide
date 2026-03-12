@@ -44,6 +44,7 @@ export function PlayButton({ className, children }: PlayButtonProps) {
 			type="button"
 			className={["vide-play", className].filter(Boolean).join(" ")}
 			aria-label={playing ? "Pause" : "Play"}
+			data-tooltip={playing ? "Pause" : "Play"}
 			onClick={onClick}
 			data-playing={playing || undefined}
 		>
