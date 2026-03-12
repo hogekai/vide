@@ -10,6 +10,7 @@ import type {
 import PlaygroundPreview from "./PlaygroundPreview.vue";
 import PlaygroundSidebar from "./PlaygroundSidebar.vue";
 import {
+	type FrameworkType,
 	type PlaygroundConfig,
 	generateCode,
 	generateIframeHtml,
@@ -36,6 +37,7 @@ const config = ref<PlaygroundConfig>({
 	playsinline: true,
 });
 
+const framework = ref<FrameworkType>("vanilla");
 const iframeError = ref<string | null>(null);
 
 // Inspector state
@@ -45,7 +47,7 @@ const inspectorQualities = ref<InspectorQuality[]>([]);
 const stateHistory = ref(new Set<string>(["idle"]));
 let nextEventId = 0;
 
-const displayCode = computed(() => generateCode(config.value));
+const displayCode = computed(() => generateCode(config.value, framework.value));
 const iframeHtml = computed(() => generateIframeHtml(config.value));
 
 // Reset inspector data when iframe HTML changes
@@ -219,7 +221,9 @@ function onClearEvents() {
         </div>
         <PlaygroundCodePanel
           :code="displayCode"
+          :framework="framework"
           class="playground__code"
+          @update:framework="framework = $event"
         />
       </div>
       <PlaygroundInspector

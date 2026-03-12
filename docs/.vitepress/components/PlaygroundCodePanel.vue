@@ -1,9 +1,21 @@
 <script setup lang="ts">
 import { onMounted, ref, watch } from "vue";
+import { type FrameworkType, frameworkToLang } from "./playground-codegen";
+
+const FRAMEWORK_OPTIONS: { value: FrameworkType; label: string }[] = [
+	{ value: "vanilla", label: "Vanilla" },
+	{ value: "react", label: "React" },
+	{ value: "vue", label: "Vue" },
+	{ value: "svelte", label: "Svelte" },
+];
 
 const props = defineProps<{
 	code: string;
+	framework: FrameworkType;
 }>();
+
+const emit =
+	defineEmits<(e: "update:framework", value: FrameworkType) => void>();
 
 const codeOpen = ref(true);
 const highlighted = ref("");
@@ -38,7 +50,7 @@ async function highlight(code: string) {
 		return;
 	}
 	highlighted.value = await highlighter.codeToHtml(code, {
-		lang: "typescript",
+		lang: frameworkToLang(props.framework),
 		themes: { light: "github-light", dark: "github-dark" },
 	});
 }
@@ -49,6 +61,10 @@ function scheduleHighlight(code: string) {
 }
 
 watch(() => props.code, scheduleHighlight);
+watch(
+	() => props.framework,
+	() => scheduleHighlight(props.code),
+);
 onMounted(loadHighlighter);
 
 function toggleCode() {
@@ -68,6 +84,17 @@ function copyCode() {
 <template>
   <div class="pg-code">
     <div class="pg-code__body" :class="{ 'pg-code__body--open': codeOpen }">
+      <div class="pg-code__tabs">
+        <button
+          v-for="opt in FRAMEWORK_OPTIONS"
+          :key="opt.value"
+          class="pg-code__tab"
+          :class="{ 'pg-code__tab--active': framework === opt.value }"
+          @click="emit('update:framework', opt.value)"
+        >
+          {{ opt.label }}
+        </button>
+      </div>
       <div class="pg-code__scroll">
         <div
           v-if="highlighterReady"
@@ -80,7 +107,7 @@ function copyCode() {
     <div class="pg-code__toggle" :class="{ 'pg-code__toggle--open': codeOpen }" @click="toggleCode">
       <div class="pg-code__toggle-left">
         <span class="pg-code__label">Generated code</span>
-        <span class="pg-code__arrow">▲</span>
+        <span class="pg-code__arrow">&#x25B2;</span>
       </div>
       <button class="pg-code__copy" @click.stop="copyCode">{{ copyLabel }}</button>
     </div>
@@ -105,8 +132,39 @@ function copyCode() {
   max-height: 260px;
 }
 
+.pg-code__tabs {
+  display: flex;
+  gap: 0;
+  padding: 6px 16px 0;
+  border-bottom: 1px solid var(--vp-c-divider);
+  flex-shrink: 0;
+}
+
+.pg-code__tab {
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--vp-c-text-3);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  padding: 4px 10px 6px;
+  transition: color 0.12s, border-color 0.12s;
+}
+
+.pg-code__tab:hover {
+  color: var(--vp-c-text-2);
+}
+
+.pg-code__tab--active {
+  color: var(--vp-c-brand-1);
+  border-bottom-color: var(--vp-c-brand-1);
+}
+
 .pg-code__scroll {
-  height: 100%;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding: 12px 16px;
 }

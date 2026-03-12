@@ -1,5 +1,7 @@
 import { DEFAULT_VAST_TAG_URL } from "./playground-presets";
 
+export type FrameworkType = "vanilla" | "react" | "vue" | "svelte";
+
 export interface PlaygroundConfig {
 	sourceUrl: string;
 	sourceType: "hls" | "dash" | "mp4";
@@ -72,15 +74,6 @@ const INSPECTOR_BRIDGE = `
     }, 250);
     parent.postMessage({ type: "vide-pg-ready" }, "*");`;
 
-function videoAttrs(config: PlaygroundConfig): string {
-	const attrs: string[] = ["playsinline"];
-	if (config.muted !== false) attrs.push("muted");
-	if (config.autoplay) attrs.push("autoplay");
-	if (config.loop) attrs.push("loop");
-	if (config.posterUrl) attrs.push(`poster="${config.posterUrl}"`);
-	return attrs.join(" ");
-}
-
 function buildHtmlShell(
 	esmImports: string,
 	jsSetup: string,
@@ -144,8 +137,77 @@ function buildAdPluginsEntries(plugins: string[], hasUi: boolean): string[] {
 	return entries;
 }
 
-/** Generate display code using clean @videts/vide imports */
-export function generateCode(config: PlaygroundConfig): string {
+// ---------------------------------------------------------------------------
+// Shared helpers for plugin option generation
+// ---------------------------------------------------------------------------
+
+function buildDrmOption(config: PlaygroundConfig): string | null {
+	if (!config.enabledPlugins.includes("drm") || !config.drmKeySystem)
+		return null;
+	const ks = config.drmKeySystem;
+	if (ks === "clearkey") {
+		return '{\n  clearkey: { keys: { "key-id": "key" } },\n}';
+	}
+	const url = config.drmLicenseUrl || "https://license.example.com/...";
+	return `{\n  ${ks}: { licenseUrl: "${url}" },\n}`;
+}
+
+function buildUiExcludeFragment(config: PlaygroundConfig): string {
+	return config.uiExclude?.length
+		? `, exclude: [${config.uiExclude.map((c) => `"${c}"`).join(", ")}]`
+		: "";
+}
+
+function buildVastOpts(
+	config: PlaygroundConfig,
+	adPluginsRef: string | null,
+): string {
+	const opts: string[] = [];
+	const tagUrl = config.vastTagUrl || DEFAULT_VAST_TAG_URL;
+	opts.push(`  tagUrl: "${tagUrl}" + Date.now(),`);
+	if (config.vastTimeout && config.vastTimeout !== 5000) {
+		opts.push(`  timeout: ${config.vastTimeout},`);
+	}
+	if (config.vastAllowSkip === false) {
+		opts.push("  allowSkip: false,");
+	}
+	if (adPluginsRef) opts.push(`  ${adPluginsRef},`);
+	return `{\n${opts.join("\n")}\n}`;
+}
+
+function buildVmapOpts(
+	config: PlaygroundConfig,
+	adPluginsRef: string | null,
+): string {
+	const url = config.vmapUrl || "https://example.com/vmap.xml";
+	const opts: string[] = [`  url: "${url}",`];
+	if (adPluginsRef) opts.push(`  ${adPluginsRef},`);
+	return `{\n${opts.join("\n")}\n}`;
+}
+
+function buildImaOpts(config: PlaygroundConfig): string {
+	const tagUrl = config.imaAdTagUrl || DEFAULT_VAST_TAG_URL;
+	const opts: string[] = [];
+	opts.push(`  adTagUrl: "${tagUrl}" + Date.now(),`);
+	opts.push('  adContainer: document.getElementById("player")!,');
+	if (config.imaTimeout && config.imaTimeout !== 6000) {
+		opts.push(`  timeout: ${config.imaTimeout},`);
+	}
+	return `{\n${opts.join("\n")}\n}`;
+}
+
+function buildSsaiCall(config: PlaygroundConfig): string {
+	if (config.ssaiTolerance && config.ssaiTolerance !== 0.5) {
+		return `ssai({ tolerance: ${config.ssaiTolerance} })`;
+	}
+	return "ssai()";
+}
+
+// ---------------------------------------------------------------------------
+// Vanilla code generation (original logic)
+// ---------------------------------------------------------------------------
+
+function generateVanillaCode(config: PlaygroundConfig): string {
 	const imports: string[] = ['import { createPlayer } from "@videts/vide";'];
 	const setup: string[] = [];
 	const plugins = config.enabledPlugins;
@@ -195,18 +257,9 @@ export function generateCode(config: PlaygroundConfig): string {
 	}
 
 	// DRM
-	if (plugins.includes("drm") && config.drmKeySystem) {
-		const ks = config.drmKeySystem;
-		if (ks === "clearkey") {
-			setup.push("player.use(drm({");
-			setup.push('  clearkey: { keys: { "key-id": "key" } },');
-			setup.push("}));");
-		} else {
-			const url = config.drmLicenseUrl || "https://license.example.com/...";
-			setup.push("player.use(drm({");
-			setup.push(`  ${ks}: { licenseUrl: "${url}" },`);
-			setup.push("}));");
-		}
+	const drmOpt = buildDrmOption(config);
+	if (drmOpt) {
+		setup.push(`player.use(drm(${drmOpt}));`);
 	}
 
 	// UI — extract as variable when VAST/VMAP need adPlugins
@@ -214,17 +267,13 @@ export function generateCode(config: PlaygroundConfig): string {
 		plugins.includes("ui") &&
 		(plugins.includes("vast") || plugins.includes("vmap"));
 	if (needsUiVar) {
-		const excludeOpt = config.uiExclude?.length
-			? `, exclude: [${config.uiExclude.map((c) => `"${c}"`).join(", ")}]`
-			: "";
+		const excludeOpt = buildUiExcludeFragment(config);
 		setup.push(
 			`const uiPlugin = ui({ container: document.getElementById("player")!${excludeOpt} });`,
 		);
 		setup.push("player.use(uiPlugin);");
 	} else if (plugins.includes("ui")) {
-		const excludeOpt = config.uiExclude?.length
-			? `, exclude: [${config.uiExclude.map((c) => `"${c}"`).join(", ")}]`
-			: "";
+		const excludeOpt = buildUiExcludeFragment(config);
 		setup.push(
 			`player.use(ui({ container: document.getElementById("player")!${excludeOpt} }));`,
 		);
@@ -243,59 +292,27 @@ export function generateCode(config: PlaygroundConfig): string {
 		}
 	}
 
-	// VAST
+	// Resolve adPlugins reference for VAST/VMAP
+	let adPluginsRef: string | null = null;
+	if (useAdPluginsArray) {
+		adPluginsRef = "adPlugins";
+	} else if (needsUiVar) {
+		adPluginsRef = "adPlugins: uiPlugin.getAdPlugin()";
+	}
+
 	if (plugins.includes("vast")) {
-		const tagUrl = config.vastTagUrl || DEFAULT_VAST_TAG_URL;
-		const opts: string[] = [];
-		opts.push(`  tagUrl: "${tagUrl}" + Date.now(),`);
-		if (config.vastTimeout && config.vastTimeout !== 5000) {
-			opts.push(`  timeout: ${config.vastTimeout},`);
-		}
-		if (config.vastAllowSkip === false) {
-			opts.push("  allowSkip: false,");
-		}
-		if (useAdPluginsArray) {
-			opts.push("  adPlugins,");
-		} else if (needsUiVar) {
-			opts.push("  adPlugins: uiPlugin.getAdPlugin(),");
-		}
-		setup.push(`player.use(vast({\n${opts.join("\n")}\n}));`);
+		setup.push(`player.use(vast(${buildVastOpts(config, adPluginsRef)}));`);
 	}
-
-	// VMAP
 	if (plugins.includes("vmap")) {
-		const url = config.vmapUrl || "https://example.com/vmap.xml";
-		const vmapOpts: string[] = [`  url: "${url}",`];
-		if (useAdPluginsArray) {
-			vmapOpts.push("  adPlugins,");
-		} else if (needsUiVar) {
-			vmapOpts.push("  adPlugins: uiPlugin.getAdPlugin(),");
-		}
-		setup.push(`player.use(vmap({\n${vmapOpts.join("\n")}\n}));`);
+		setup.push(`player.use(vmap(${buildVmapOpts(config, adPluginsRef)}));`);
 	}
-
-	// IMA
 	if (plugins.includes("ima")) {
-		const tagUrl = config.imaAdTagUrl || DEFAULT_VAST_TAG_URL;
-		const opts: string[] = [];
-		opts.push(`  adTagUrl: "${tagUrl}" + Date.now(),`);
-		opts.push('  adContainer: document.getElementById("player")!,');
-		if (config.imaTimeout && config.imaTimeout !== 6000) {
-			opts.push(`  timeout: ${config.imaTimeout},`);
-		}
-		setup.push(`player.use(ima({\n${opts.join("\n")}\n}));`);
+		setup.push(`player.use(ima(${buildImaOpts(config)}));`);
 	}
-
-	// SSAI
 	if (plugins.includes("ssai")) {
-		if (config.ssaiTolerance && config.ssaiTolerance !== 0.5) {
-			setup.push(`player.use(ssai({ tolerance: ${config.ssaiTolerance} }));`);
-		} else {
-			setup.push("player.use(ssai());");
-		}
+		setup.push(`player.use(${buildSsaiCall(config)});`);
 	}
 
-	// Video attributes
 	if (config.muted) setup.push("player.muted = true;");
 	if (config.loop) setup.push("player.loop = true;");
 	if (config.autoplay) setup.push("player.autoplay = true;");
@@ -303,6 +320,324 @@ export function generateCode(config: PlaygroundConfig): string {
 	setup.push(`player.src = "${config.sourceUrl}";`);
 
 	return `${imports.join("\n")}\n\n${setup.join("\n")}`;
+}
+
+// ---------------------------------------------------------------------------
+// Framework: React
+// ---------------------------------------------------------------------------
+
+/** Map plugin id to React hook name and import */
+const REACT_HOOK_MAP: Record<string, { hook: string; import: string }> = {
+	hls: { hook: "useHls", import: "useHls" },
+	dash: { hook: "useDash", import: "useDash" },
+	drm: { hook: "useDrm", import: "useDrm" },
+	ui: { hook: "useUi", import: "useUi" },
+	vast: { hook: "useVast", import: "useVast" },
+	vmap: { hook: "useVmap", import: "useVmap" },
+	ssai: { hook: "useSsai", import: "useSsai" },
+	ima: { hook: "useIma", import: "useIma" },
+};
+
+function generateReactCode(config: PlaygroundConfig): string {
+	const plugins = config.enabledPlugins;
+	const hookImports: string[] = ["useVidePlayer"];
+	const body: string[] = [];
+
+	// Collect hook imports
+	for (const p of plugins) {
+		if (REACT_HOOK_MAP[p]) hookImports.push(REACT_HOOK_MAP[p].import);
+	}
+
+	const lines: string[] = [];
+	lines.push(`import { ${hookImports.join(", ")} } from "@videts/vide/react";`);
+	if (plugins.includes("ui")) {
+		lines.push('import "@videts/vide/ui/theme.css";');
+	}
+	lines.push("");
+	lines.push("function Player() {");
+	lines.push("  const player = useVidePlayer();");
+
+	// Streaming
+	if (plugins.includes("hls")) body.push("  useHls(player);");
+	if (plugins.includes("dash")) body.push("  useDash(player);");
+
+	// DRM
+	const drmOpt = buildDrmOption(config);
+	if (drmOpt) {
+		body.push(`  useDrm(player, ${drmOpt.replace(/\n/g, "\n  ")});`);
+	}
+
+	// UI
+	if (plugins.includes("ui")) {
+		const excludeOpt = buildUiExcludeFragment(config);
+		body.push(
+			`  useUi(player, { container: document.getElementById("player")!${excludeOpt} });`,
+		);
+	}
+
+	// VAST
+	if (plugins.includes("vast")) {
+		body.push(
+			`  useVast(player, ${buildVastOpts(config, null).replace(/\n/g, "\n  ")});`,
+		);
+	}
+
+	// VMAP
+	if (plugins.includes("vmap")) {
+		body.push(
+			`  useVmap(player, ${buildVmapOpts(config, null).replace(/\n/g, "\n  ")});`,
+		);
+	}
+
+	// IMA
+	if (plugins.includes("ima")) {
+		body.push(
+			`  useIma(player, ${buildImaOpts(config).replace(/\n/g, "\n  ")});`,
+		);
+	}
+
+	// SSAI
+	if (plugins.includes("ssai")) {
+		if (config.ssaiTolerance && config.ssaiTolerance !== 0.5) {
+			body.push(`  useSsai(player, { tolerance: ${config.ssaiTolerance} });`);
+		} else {
+			body.push("  useSsai(player);");
+		}
+	}
+
+	lines.push(...body);
+	lines.push("");
+
+	// JSX return
+	const videoAttrs: string[] = [];
+	videoAttrs.push("ref={player._registerEl}");
+	if (config.muted) videoAttrs.push("muted");
+	if (config.loop) videoAttrs.push("loop");
+	if (config.autoplay) videoAttrs.push("autoPlay");
+	if (config.posterUrl) videoAttrs.push(`poster="${config.posterUrl}"`);
+
+	lines.push("  return (");
+	lines.push('    <div id="player">');
+	lines.push(`      <video ${videoAttrs.join(" ")} />`);
+	lines.push("    </div>");
+	lines.push("  );");
+	lines.push("}");
+
+	return lines.join("\n");
+}
+
+// ---------------------------------------------------------------------------
+// Framework: Vue
+// ---------------------------------------------------------------------------
+
+function generateVueCode(config: PlaygroundConfig): string {
+	const plugins = config.enabledPlugins;
+	const hookImports: string[] = ["useVidePlayer"];
+	const body: string[] = [];
+
+	for (const p of plugins) {
+		if (REACT_HOOK_MAP[p]) hookImports.push(REACT_HOOK_MAP[p].import);
+	}
+
+	const lines: string[] = [];
+	lines.push('<script setup lang="ts">');
+	lines.push(`import { ${hookImports.join(", ")} } from "@videts/vide/vue";`);
+	if (plugins.includes("ui")) {
+		lines.push('import "@videts/vide/ui/theme.css";');
+	}
+	lines.push("");
+	lines.push("const player = useVidePlayer();");
+
+	// Streaming
+	if (plugins.includes("hls")) body.push("useHls(player);");
+	if (plugins.includes("dash")) body.push("useDash(player);");
+
+	// DRM
+	const drmOpt = buildDrmOption(config);
+	if (drmOpt) {
+		body.push(`useDrm(player, ${drmOpt});`);
+	}
+
+	// UI
+	if (plugins.includes("ui")) {
+		const excludeOpt = buildUiExcludeFragment(config);
+		body.push(
+			`useUi(player, { container: document.getElementById("player")!${excludeOpt} });`,
+		);
+	}
+
+	// VAST
+	if (plugins.includes("vast")) {
+		body.push(`useVast(player, ${buildVastOpts(config, null)});`);
+	}
+
+	// VMAP
+	if (plugins.includes("vmap")) {
+		body.push(`useVmap(player, ${buildVmapOpts(config, null)});`);
+	}
+
+	// IMA
+	if (plugins.includes("ima")) {
+		body.push(`useIma(player, ${buildImaOpts(config)});`);
+	}
+
+	// SSAI
+	if (plugins.includes("ssai")) {
+		if (config.ssaiTolerance && config.ssaiTolerance !== 0.5) {
+			body.push(`useSsai(player, { tolerance: ${config.ssaiTolerance} });`);
+		} else {
+			body.push("useSsai(player);");
+		}
+	}
+
+	lines.push(...body);
+	lines.push("</script>");
+	lines.push("");
+
+	// Template
+	const videoAttrs: string[] = [];
+	if (config.muted) videoAttrs.push("muted");
+	if (config.loop) videoAttrs.push("loop");
+	if (config.autoplay) videoAttrs.push("autoplay");
+	if (config.posterUrl) videoAttrs.push(`:poster='"${config.posterUrl}"'`);
+	const attrStr = videoAttrs.length ? ` ${videoAttrs.join(" ")}` : "";
+
+	lines.push("<template>");
+	lines.push('  <div id="player">');
+	lines.push(`    <video${attrStr} />`);
+	lines.push("  </div>");
+	lines.push("</template>");
+
+	return lines.join("\n");
+}
+
+// ---------------------------------------------------------------------------
+// Framework: Svelte
+// ---------------------------------------------------------------------------
+
+function generateSvelteCode(config: PlaygroundConfig): string {
+	const plugins = config.enabledPlugins;
+	const hookImports: string[] = ["createVidePlayer"];
+
+	for (const p of plugins) {
+		// Svelte uses same hook names as React/Vue except createVidePlayer
+		if (REACT_HOOK_MAP[p]) hookImports.push(REACT_HOOK_MAP[p].import);
+	}
+
+	const body: string[] = [];
+	const lines: string[] = [];
+	lines.push('<script lang="ts">');
+	lines.push(
+		`  import { ${hookImports.join(", ")} } from "@videts/vide/svelte";`,
+	);
+	if (plugins.includes("ui")) {
+		lines.push('  import "@videts/vide/ui/theme.css";');
+	}
+	lines.push("");
+	lines.push("  const getPlayer = createVidePlayer();");
+
+	// Streaming
+	if (plugins.includes("hls")) body.push("  useHls(getPlayer);");
+	if (plugins.includes("dash")) body.push("  useDash(getPlayer);");
+
+	// DRM
+	const drmOpt = buildDrmOption(config);
+	if (drmOpt) {
+		body.push(`  useDrm(getPlayer, ${drmOpt.replace(/\n/g, "\n  ")});`);
+	}
+
+	// UI
+	if (plugins.includes("ui")) {
+		const excludeOpt = buildUiExcludeFragment(config);
+		body.push(
+			`  useUi(getPlayer, { container: document.getElementById("player")!${excludeOpt} });`,
+		);
+	}
+
+	// VAST
+	if (plugins.includes("vast")) {
+		body.push(
+			`  useVast(getPlayer, ${buildVastOpts(config, null).replace(/\n/g, "\n  ")});`,
+		);
+	}
+
+	// VMAP
+	if (plugins.includes("vmap")) {
+		body.push(
+			`  useVmap(getPlayer, ${buildVmapOpts(config, null).replace(/\n/g, "\n  ")});`,
+		);
+	}
+
+	// IMA
+	if (plugins.includes("ima")) {
+		body.push(
+			`  useIma(getPlayer, ${buildImaOpts(config).replace(/\n/g, "\n  ")});`,
+		);
+	}
+
+	// SSAI
+	if (plugins.includes("ssai")) {
+		if (config.ssaiTolerance && config.ssaiTolerance !== 0.5) {
+			body.push(
+				`  useSsai(getPlayer, { tolerance: ${config.ssaiTolerance} });`,
+			);
+		} else {
+			body.push("  useSsai(getPlayer);");
+		}
+	}
+
+	lines.push(...body);
+	lines.push("</script>");
+	lines.push("");
+
+	// Markup
+	const videoAttrs: string[] = [];
+	if (config.muted) videoAttrs.push("muted");
+	if (config.loop) videoAttrs.push("loop");
+	if (config.autoplay) videoAttrs.push("autoplay");
+	if (config.posterUrl) videoAttrs.push(`poster="${config.posterUrl}"`);
+	const attrStr = videoAttrs.length ? ` ${videoAttrs.join(" ")}` : "";
+
+	lines.push('<div id="player">');
+	lines.push(`  <video${attrStr} />`);
+	lines.push("</div>");
+
+	return lines.join("\n");
+}
+
+// ---------------------------------------------------------------------------
+// Public API
+// ---------------------------------------------------------------------------
+
+/** Generate display code for the selected framework */
+export function generateCode(
+	config: PlaygroundConfig,
+	framework: FrameworkType = "vanilla",
+): string {
+	switch (framework) {
+		case "react":
+			return generateReactCode(config);
+		case "vue":
+			return generateVueCode(config);
+		case "svelte":
+			return generateSvelteCode(config);
+		default:
+			return generateVanillaCode(config);
+	}
+}
+
+/** Map framework to syntax highlighting language */
+export function frameworkToLang(framework: FrameworkType): string {
+	switch (framework) {
+		case "react":
+			return "tsx";
+		case "vue":
+			return "vue";
+		case "svelte":
+			return "svelte";
+		default:
+			return "typescript";
+	}
 }
 
 /** Generate a complete HTML document for iframe execution */
