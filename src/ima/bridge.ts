@@ -176,14 +176,21 @@ export function createImaBridge(options: BridgeOptions): () => void {
 	let resizeObserver: ResizeObserver | null = null;
 	if (typeof ResizeObserver !== "undefined") {
 		const resizeTarget = player.el.parentElement ?? player.el;
+		let lastW = 0;
+		let lastH = 0;
+		let lastFullscreen = false;
 		resizeObserver = new ResizeObserver(() => {
-			const viewMode = document.fullscreenElement
-				? ima.ViewMode.FULLSCREEN
-				: ima.ViewMode.NORMAL;
+			const w = player.el.clientWidth;
+			const h = player.el.clientHeight;
+			const fs = !!document.fullscreenElement;
+			if (w === lastW && h === lastH && fs === lastFullscreen) return;
+			lastW = w;
+			lastH = h;
+			lastFullscreen = fs;
 			adsManager.resize(
-				player.el.clientWidth,
-				player.el.clientHeight,
-				viewMode,
+				w,
+				h,
+				fs ? ima.ViewMode.FULLSCREEN : ima.ViewMode.NORMAL,
 			);
 		});
 		resizeObserver.observe(resizeTarget);
