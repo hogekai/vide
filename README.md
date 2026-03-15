@@ -8,12 +8,6 @@ Modular video player library. Use only what you need.
 
 **[Documentation](https://hogekai.github.io/vide/)** · **[Getting Started](https://hogekai.github.io/vide/getting-started)** · **[Playground](https://hogekai.github.io/vide/demo)**
 
-<p align="center">
-  <img src="docs/public/player-screenshot.png" alt="Vide player with default theme" width="720" />
-</p>
-
-> **video.js 8: ~240 KB min+gzip** · **vide core + HLS + UI + theme: ~10 KB** (+ hls.js ~160 KB as peer dep)
-
 ```html
 <video src="video.mp4"></video>
 ```
