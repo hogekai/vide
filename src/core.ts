@@ -75,6 +75,9 @@ export function createPlayer(el: MediaElement): Player {
 		}
 	}
 
+	// biome-ignore lint/complexity/noBannedTypes: WeakMap needs Function key for handler→wrapper mapping
+	const onceWrappers = new WeakMap<Function, Function>();
+
 	const player: PluginPlayer = {
 		get el() {
 			return el;
@@ -90,15 +93,23 @@ export function createPlayer(el: MediaElement): Player {
 		},
 		// biome-ignore lint/suspicious/noExplicitAny: implementation signature covers both overloads
 		off(event: string, handler: any): void {
-			offEvent(bus, el, event, handler);
+			const wrapper = onceWrappers.get(handler);
+			if (wrapper) {
+				onceWrappers.delete(handler);
+				offEvent(bus, el, event, wrapper);
+			} else {
+				offEvent(bus, el, event, handler);
+			}
 		},
 		emit: bus.emit,
 		// biome-ignore lint/suspicious/noExplicitAny: implementation signature covers both overloads
 		once(event: string, handler: any): void {
 			const wrapper = (data: unknown) => {
+				onceWrappers.delete(handler);
 				player.off(event, wrapper);
 				handler(data);
 			};
+			onceWrappers.set(handler, wrapper);
 			player.on(event, wrapper);
 		},
 

@@ -221,6 +221,39 @@ describe("state transitions", () => {
 		expect(player.state).toBe("loading");
 	});
 
+	it("buffering → paused on pause during buffering", () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		el.dispatchEvent(new Event("loadstart"));
+		el.dispatchEvent(new Event("canplay"));
+		el.dispatchEvent(new Event("play"));
+		el.dispatchEvent(new Event("waiting"));
+		expect(player.state).toBe("buffering");
+		el.dispatchEvent(new Event("pause"));
+		expect(player.state).toBe("paused");
+	});
+
+	it("buffering → ended on ended during buffering", () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		el.dispatchEvent(new Event("loadstart"));
+		el.dispatchEvent(new Event("canplay"));
+		el.dispatchEvent(new Event("play"));
+		el.dispatchEvent(new Event("waiting"));
+		expect(player.state).toBe("buffering");
+		el.dispatchEvent(new Event("ended"));
+		expect(player.state).toBe("ended");
+	});
+
+	it("error → ready via setState", () => {
+		const el = makeVideo();
+		const player = createPlayer(el);
+		el.dispatchEvent(new Event("error"));
+		expect(player.state).toBe("error");
+		player.setState("ready");
+		expect(player.state).toBe("ready");
+	});
+
 	it("warns on invalid transition", () => {
 		const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
 		const el = makeVideo();
@@ -248,6 +281,15 @@ describe("EventBus", () => {
 		const player = createPlayer(makeVideo());
 		const handler = vi.fn();
 		player.on("statechange", handler);
+		player.off("statechange", handler);
+		player.el.dispatchEvent(new Event("loadstart"));
+		expect(handler).not.toHaveBeenCalled();
+	});
+
+	it("off() removes a once() handler before it fires", () => {
+		const player = createPlayer(makeVideo());
+		const handler = vi.fn();
+		player.once("statechange", handler);
 		player.off("statechange", handler);
 		player.el.dispatchEvent(new Event("loadstart"));
 		expect(handler).not.toHaveBeenCalled();
@@ -357,6 +399,26 @@ describe("EventBus fallback to HTMLVideoElement", () => {
 		el.dispatchEvent(new Event("volumechange"));
 		el.dispatchEvent(new Event("volumechange"));
 		expect(handler).toHaveBeenCalledTimes(1);
+	});
+
+	it("does not forward drm:keystatus to el (routes through EventBus)", () => {
+		const el = makeVideo();
+		const addSpy = vi.spyOn(el, "addEventListener");
+		const player = createPlayer(el);
+		const callsBefore = addSpy.mock.calls.length;
+		const handler = vi.fn();
+		player.on("drm:keystatus", handler);
+		expect(addSpy.mock.calls.length).toBe(callsBefore);
+	});
+
+	it("does not forward drm:ready to el (routes through EventBus)", () => {
+		const el = makeVideo();
+		const addSpy = vi.spyOn(el, "addEventListener");
+		const player = createPlayer(el);
+		const callsBefore = addSpy.mock.calls.length;
+		const handler = vi.fn();
+		player.on("drm:ready", handler);
+		expect(addSpy.mock.calls.length).toBe(callsBefore);
 	});
 
 	it("does not forward known player events to el", () => {

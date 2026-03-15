@@ -6,12 +6,12 @@ export const transitions: Record<PlayerState, PlayerState[]> = {
 	ready: ["playing", "loading", "ad:loading", "ended", "error"],
 	playing: ["paused", "buffering", "loading", "ad:loading", "ended", "error"],
 	paused: ["playing", "loading", "ad:loading", "ended", "error"],
-	buffering: ["playing", "loading", "error"],
+	buffering: ["playing", "paused", "loading", "ended", "error"],
 	"ad:loading": ["ad:playing", "playing", "error"],
 	"ad:playing": ["ad:paused", "ad:loading", "playing", "error"],
 	"ad:paused": ["ad:playing", "ad:loading", "playing", "error"],
 	ended: ["idle", "loading", "ad:loading", "error"],
-	error: ["idle", "loading"],
+	error: ["idle", "loading", "ready"],
 };
 
 export function canTransition(from: PlayerState, to: PlayerState): boolean {

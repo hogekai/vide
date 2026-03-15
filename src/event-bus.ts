@@ -38,6 +38,8 @@ export const PLAYER_EVENTS = new Set<string>([
 	"texttrackchange",
 	"texttracksavailable",
 	"cuechange",
+	"drm:keystatus",
+	"drm:ready",
 	"destroy",
 ]);
 
