@@ -79,12 +79,7 @@ export function vmap(options: VmapPluginOptions): Plugin {
 					function onAdsDone(): void {
 						if (aborted) return;
 						setState("playing");
-						restoreVmapContent(
-							player,
-							prevSrc,
-							originalTime,
-							originalPaused,
-						);
+						restoreVmapContent(player, prevSrc, originalTime, originalPaused);
 					}
 
 					switch (classified.type) {

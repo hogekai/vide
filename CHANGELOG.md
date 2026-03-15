@@ -6,6 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+## [0.10.5] - 2026-03-15
+
+### Fixed
+- State machine missing transitions: buffering→paused/ended and error→ready
+- `once()`/`off()` removal bug — track wrappers in WeakMap so `off()` removes pre-fire handlers
+- EventBus event drift — route `drm:keystatus` and `drm:ready` through EventBus
+- VAST content restore timeout and error state listener to prevent `onReady` leaks
+- VMAP content restore using `player.src` instead of `player.el.src` for HLS/DASH routing
+- `sendBeacon` fallback to Image pixel when return value is false
+- DRM/HLS race condition — await `drmReady` promise before config merge
+- Destroy guards on `on/off/emit/once/play/pause/src` to prevent post-destroy leaks
+- Copy cleanups array before iterating in `destroy()` to prevent mutation during loop
+
+### Changed
+- Replace `noExplicitAny` suppressions with `EventHandler<never>` in event system
+
+### Added
+- `devicePixelRatio` in `MediaSelectionHints` for Retina-aware media scoring
+- Error codes `ERR_VAST_RESTORE_TIMEOUT` (6000) and `ERR_VMAP_RESTORE_TIMEOUT` (7000)
+
 ## [0.10.4] - 2026-03-12
 
 ### Changed
