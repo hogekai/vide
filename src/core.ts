@@ -3,6 +3,7 @@ import { attachMediaListeners } from "./media-listeners.js";
 import { canTransition, inferInitialState } from "./state-machine.js";
 import { buildVideCues, buildVideTextTrack } from "./text-track.js";
 import type {
+	EventHandler,
 	MediaElement,
 	Player,
 	PlayerState,
@@ -75,8 +76,10 @@ export function createPlayer(el: MediaElement): Player {
 		}
 	}
 
-	// biome-ignore lint/complexity/noBannedTypes: WeakMap needs Function key for handler→wrapper mapping
-	const onceWrappers = new WeakMap<Function, Function>();
+	const onceWrappers = new WeakMap<
+		EventHandler<never>,
+		EventHandler<unknown>
+	>();
 
 	const player: PluginPlayer = {
 		get el() {
@@ -87,15 +90,15 @@ export function createPlayer(el: MediaElement): Player {
 		},
 
 		// --- EventBus ---
-		// biome-ignore lint/suspicious/noExplicitAny: implementation signature covers both overloads
-		on(event: string, handler: any): void {
+		on(event: string, handler: EventHandler<never>): void {
 			if (destroyed) return;
 			onEvent(bus, el, event, handler);
 		},
-		// biome-ignore lint/suspicious/noExplicitAny: implementation signature covers both overloads
-		off(event: string, handler: any): void {
+		off(event: string, handler: EventHandler<never>): void {
 			if (destroyed) return;
-			const wrapper = onceWrappers.get(handler);
+			const wrapper = onceWrappers.get(handler) as
+				| EventHandler<never>
+				| undefined;
 			if (wrapper) {
 				onceWrappers.delete(handler);
 				offEvent(bus, el, event, wrapper);
@@ -107,13 +110,12 @@ export function createPlayer(el: MediaElement): Player {
 			if (destroyed) return;
 			bus.emit(...args);
 		},
-		// biome-ignore lint/suspicious/noExplicitAny: implementation signature covers both overloads
-		once(event: string, handler: any): void {
+		once(event: string, handler: EventHandler<never>): void {
 			if (destroyed) return;
 			const wrapper = (data: unknown) => {
 				onceWrappers.delete(handler);
 				player.off(event, wrapper);
-				handler(data);
+				(handler as EventHandler<unknown>)(data);
 			};
 			onceWrappers.set(handler, wrapper);
 			player.on(event, wrapper);
@@ -415,14 +417,15 @@ export function createPlayer(el: MediaElement): Player {
 				activeHandler.unload(el);
 				activeHandler = null;
 			}
-			for (const cleanup of cleanups) {
+			const pending = [...cleanups];
+			cleanups.length = 0;
+			for (const cleanup of pending) {
 				try {
 					cleanup();
 				} catch (err) {
 					console.error("[vide] Plugin cleanup error:", err);
 				}
 			}
-			cleanups.length = 0;
 			bus.emit("destroy", undefined as undefined);
 			removeMediaListeners();
 			bus.handlers.clear();

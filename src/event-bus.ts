@@ -83,8 +83,7 @@ export function onEvent(
 	bus: EventBus,
 	el: MediaElement,
 	event: string,
-	// biome-ignore lint/suspicious/noExplicitAny: implementation signature covers both overloads
-	handler: any,
+	handler: EventHandler<never>,
 ): void {
 	if (PLAYER_EVENTS.has(event)) {
 		bus.getHandlers(event).add(handler as EventHandler<unknown>);
@@ -97,8 +96,7 @@ export function offEvent(
 	bus: EventBus,
 	el: MediaElement,
 	event: string,
-	// biome-ignore lint/suspicious/noExplicitAny: implementation signature covers both overloads
-	handler: any,
+	handler: EventHandler<never>,
 ): void {
 	if (PLAYER_EVENTS.has(event)) {
 		bus.getHandlers(event).delete(handler as EventHandler<unknown>);

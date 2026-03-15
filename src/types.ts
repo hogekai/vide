@@ -178,8 +178,7 @@ export interface EventBus {
 		event: K,
 		handler: (ev: HTMLMediaElementEventMap[K]) => void,
 	): void;
-	// biome-ignore lint/suspicious/noExplicitAny: catch-all for dynamic event names
-	on(event: string, handler: (...args: any[]) => void): void;
+	on(event: string, handler: EventHandler<never>): void;
 
 	off<K extends PlayerEvent>(
 		event: K,
@@ -189,8 +188,7 @@ export interface EventBus {
 		event: K,
 		handler: (ev: HTMLMediaElementEventMap[K]) => void,
 	): void;
-	// biome-ignore lint/suspicious/noExplicitAny: catch-all for dynamic event names
-	off(event: string, handler: (...args: any[]) => void): void;
+	off(event: string, handler: EventHandler<never>): void;
 
 	emit<K extends PlayerEvent>(event: K, data: PlayerEventMap[K]): void;
 
@@ -202,8 +200,7 @@ export interface EventBus {
 		event: K,
 		handler: (ev: HTMLMediaElementEventMap[K]) => void,
 	): void;
-	// biome-ignore lint/suspicious/noExplicitAny: catch-all for dynamic event names
-	once(event: string, handler: (...args: any[]) => void): void;
+	once(event: string, handler: EventHandler<never>): void;
 }
 
 // === Seekable Range ===
