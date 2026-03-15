@@ -29,3 +29,9 @@ export const ERR_DRM_KEY_STATUS = 4004;
 
 /** IMA: SDK script failed to load (ad blocker, network error). */
 export const ERR_IMA_SDK_LOAD = 5000;
+
+/** VAST: timed out restoring content after ad playback. */
+export const ERR_VAST_RESTORE_TIMEOUT = 6000;
+
+/** VMAP: timed out restoring content after ad break. */
+export const ERR_VMAP_RESTORE_TIMEOUT = 7000;

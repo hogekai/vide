@@ -1,3 +1,4 @@
+import { ERR_VMAP_RESTORE_TIMEOUT } from "../errors.js";
 import type { PlayerState, Plugin, PluginPlayer } from "../types.js";
 import {
 	VAST_NO_ADS,
@@ -71,22 +72,19 @@ export function vmap(options: VmapPluginOptions): Plugin {
 					}
 
 					// Save content state
-					const originalTime = player.el.currentTime;
+					const originalTime = player.currentTime;
 					const originalPaused = player.el.paused;
-					const prevSrc = player.el.src;
+					const prevSrc = player.src;
 
 					function onAdsDone(): void {
 						if (aborted) return;
 						setState("playing");
-						player.el.src = prevSrc;
-						player.el.load();
-						player.el.currentTime = originalTime;
-						if (!originalPaused) {
-							player.el.play().catch(() => {
-								player.el.muted = true;
-								player.el.play().catch(() => {});
-							});
-						}
+						restoreVmapContent(
+							player,
+							prevSrc,
+							originalTime,
+							originalPaused,
+						);
 					}
 
 					switch (classified.type) {
@@ -225,4 +223,45 @@ export function vmap(options: VmapPluginOptions): Plugin {
 			};
 		},
 	};
+}
+
+function restoreVmapContent(
+	player: PluginPlayer,
+	prevSrc: string,
+	originalTime: number,
+	originalPaused: boolean,
+): void {
+	let settled = false;
+	function cleanup(): void {
+		if (settled) return;
+		settled = true;
+		clearTimeout(timer);
+		player.off("statechange", onStateChange);
+	}
+	function onStateChange({ to }: { from: string; to: string }): void {
+		if (to === "ready") {
+			cleanup();
+			if (originalTime > 0) {
+				player.currentTime = originalTime;
+			}
+			if (!originalPaused) {
+				player.play().catch(() => {
+					player.muted = true;
+					player.play().catch(() => {});
+				});
+			}
+		} else if (to === "error") {
+			cleanup();
+		}
+	}
+	const timer = setTimeout(() => {
+		cleanup();
+		player.emit("error", {
+			code: ERR_VMAP_RESTORE_TIMEOUT,
+			message: "Timed out waiting for content to become ready after VMAP ad",
+			source: "vmap",
+		});
+	}, 10_000);
+	player.on("statechange", onStateChange);
+	player.src = prevSrc;
 }

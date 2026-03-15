@@ -1,3 +1,4 @@
+import { ERR_VAST_RESTORE_TIMEOUT } from "../errors.js";
 import type { Player, PlayerState, Plugin, PluginPlayer } from "../types.js";
 import {
 	VAST_NO_ADS,
@@ -203,18 +204,36 @@ function restoreContent(
 	prevSrc: string,
 	originalTime: number,
 ): void {
-	function onReady({ to }: { from: string; to: string }): void {
-		if (to !== "ready") return;
-		player.off("statechange", onReady);
-		if (originalTime > 0) {
-			player.currentTime = originalTime;
-		}
-		player.play().catch(() => {
-			player.muted = true;
-			player.play().catch(() => {});
-		});
+	let settled = false;
+	function cleanup(): void {
+		if (settled) return;
+		settled = true;
+		clearTimeout(timer);
+		player.off("statechange", onStateChange);
 	}
-	player.on("statechange", onReady);
+	function onStateChange({ to }: { from: string; to: string }): void {
+		if (to === "ready") {
+			cleanup();
+			if (originalTime > 0) {
+				player.currentTime = originalTime;
+			}
+			player.play().catch(() => {
+				player.muted = true;
+				player.play().catch(() => {});
+			});
+		} else if (to === "error") {
+			cleanup();
+		}
+	}
+	const timer = setTimeout(() => {
+		cleanup();
+		player.emit("error", {
+			code: ERR_VAST_RESTORE_TIMEOUT,
+			message: "Timed out waiting for content to become ready after ad",
+			source: "vast",
+		});
+	}, 10_000);
+	player.on("statechange", onStateChange);
 	player.src = prevSrc;
 }
 
@@ -225,14 +244,32 @@ function restoreContentEnded(
 	prevSrc: string,
 	originalTime: number,
 ): void {
-	function onReady({ to }: { from: string; to: string }): void {
-		if (to !== "ready") return;
-		player.off("statechange", onReady);
-		if (originalTime > 0) {
-			player.currentTime = originalTime;
-		}
-		setState("ended");
+	let settled = false;
+	function cleanup(): void {
+		if (settled) return;
+		settled = true;
+		clearTimeout(timer);
+		player.off("statechange", onStateChange);
 	}
-	player.on("statechange", onReady);
+	function onStateChange({ to }: { from: string; to: string }): void {
+		if (to === "ready") {
+			cleanup();
+			if (originalTime > 0) {
+				player.currentTime = originalTime;
+			}
+			setState("ended");
+		} else if (to === "error") {
+			cleanup();
+		}
+	}
+	const timer = setTimeout(() => {
+		cleanup();
+		player.emit("error", {
+			code: ERR_VAST_RESTORE_TIMEOUT,
+			message: "Timed out waiting for content to become ready after ad",
+			source: "vast",
+		});
+	}, 10_000);
+	player.on("statechange", onStateChange);
 	player.src = prevSrc;
 }

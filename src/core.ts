@@ -89,10 +89,12 @@ export function createPlayer(el: MediaElement): Player {
 		// --- EventBus ---
 		// biome-ignore lint/suspicious/noExplicitAny: implementation signature covers both overloads
 		on(event: string, handler: any): void {
+			if (destroyed) return;
 			onEvent(bus, el, event, handler);
 		},
 		// biome-ignore lint/suspicious/noExplicitAny: implementation signature covers both overloads
 		off(event: string, handler: any): void {
+			if (destroyed) return;
 			const wrapper = onceWrappers.get(handler);
 			if (wrapper) {
 				onceWrappers.delete(handler);
@@ -101,9 +103,13 @@ export function createPlayer(el: MediaElement): Player {
 				offEvent(bus, el, event, handler);
 			}
 		},
-		emit: bus.emit,
+		emit(...args: Parameters<typeof bus.emit>) {
+			if (destroyed) return;
+			bus.emit(...args);
+		},
 		// biome-ignore lint/suspicious/noExplicitAny: implementation signature covers both overloads
 		once(event: string, handler: any): void {
+			if (destroyed) return;
 			const wrapper = (data: unknown) => {
 				onceWrappers.delete(handler);
 				player.off(event, wrapper);
@@ -115,9 +121,14 @@ export function createPlayer(el: MediaElement): Player {
 
 		// --- HTMLVideoElement proxy ---
 		play() {
+			if (destroyed)
+				return Promise.reject(
+					new DOMException("Player is destroyed", "InvalidStateError"),
+				);
 			return el.play();
 		},
 		pause() {
+			if (destroyed) return;
 			el.pause();
 		},
 		get currentTime() {
@@ -313,6 +324,7 @@ export function createPlayer(el: MediaElement): Player {
 			return currentSrc;
 		},
 		set src(url: string) {
+			if (destroyed) return;
 			if (activeHandler) {
 				activeHandler.unload(el);
 				activeHandler = null;
