@@ -13,13 +13,25 @@ import type {
 
 describe("track", () => {
 	it("uses sendBeacon when available", () => {
-		const beacon = vi.fn();
+		const beacon = vi.fn().mockReturnValue(true);
 		vi.stubGlobal("navigator", { sendBeacon: beacon });
 
 		track(["http://example.com/impression1", "http://example.com/impression2"]);
 		expect(beacon).toHaveBeenCalledTimes(2);
 		expect(beacon).toHaveBeenCalledWith("http://example.com/impression1");
 		expect(beacon).toHaveBeenCalledWith("http://example.com/impression2");
+
+		vi.unstubAllGlobals();
+	});
+
+	it("falls back to Image pixel when sendBeacon returns false", () => {
+		const beacon = vi.fn().mockReturnValue(false);
+		vi.stubGlobal("navigator", { sendBeacon: beacon });
+
+		// sendBeacon called but returned false — should not throw
+		// (Image pixel fallback fires internally)
+		expect(() => track(["http://example.com/pixel"])).not.toThrow();
+		expect(beacon).toHaveBeenCalledWith("http://example.com/pixel");
 
 		vi.unstubAllGlobals();
 	});

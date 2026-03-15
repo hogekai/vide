@@ -139,113 +139,122 @@ export function hls(options: HlsPluginOptions = {}): Plugin {
 				},
 			};
 
-			function loadWithHlsJs(url: string, videoElement: MediaElement): void {
-				import("hls.js")
-					.then((HlsModule) => {
-						if (destroyed) return;
+			async function loadWithHlsJs(
+				url: string,
+				videoElement: MediaElement,
+			): Promise<void> {
+				try {
+					const HlsModule = await import("hls.js");
+					if (destroyed) return;
 
-						const Hls =
-							HlsModule.default ??
-							(HlsModule as Record<string, unknown>).Hls ??
-							HlsModule;
+					const Hls =
+						HlsModule.default ??
+						(HlsModule as Record<string, unknown>).Hls ??
+						HlsModule;
 
-						if (!Hls.isSupported()) {
-							// hls.js not supported (e.g. Safari) — fall back
-							// to native HLS if available.
-							if (videoElement.canPlayType("application/vnd.apple.mpegurl")) {
-								videoElement.src = url;
-								return;
-							}
-							player.emit("error", {
-								code: ERR_HLS_UNSUPPORTED,
-								message: "HLS is not supported in this browser",
-								source: "hls",
-							});
+					if (!Hls.isSupported()) {
+						// hls.js not supported (e.g. Safari) — fall back
+						// to native HLS if available.
+						if (videoElement.canPlayType("application/vnd.apple.mpegurl")) {
+							videoElement.src = url;
 							return;
 						}
-
-						const drmData = player.getPluginData("drm");
-						const mergedConfig = {
-							...((options.hlsConfig as object) ?? {}),
-							...(drmData?.hlsConfig ?? {}),
-						};
-						const instance = new Hls(mergedConfig);
-						hlsInstance = instance as HlsLike;
-						player.setPluginData("hls", instance);
-
-						instance.on(
-							Hls.Events.ERROR,
-							(_event: string, data: HlsErrorData) => {
-								if (!data.fatal) return;
-
-								const recovering = attemptRecovery(
-									instance as HlsLike,
-									data.type,
-								);
-
-								player.emit("error", {
-									code: ERR_HLS_FATAL,
-									message: `HLS fatal error: ${data.type} - ${data.details}`,
-									source: "hls",
-									recoverable: recovering,
-									retryCount: recovering ? retryCount : undefined,
-								});
-							},
-						);
-
-						instance.on(Hls.Events.FRAG_LOADED, () => {
-							if (retryCount > 0) {
-								retryCount = 0;
-								clearRecoveryTimer();
-							}
-						});
-
-						instance.on(Hls.Events.MANIFEST_PARSED, () => {
-							const qualities: QualityLevel[] = instance.levels.map(
-								(level: HlsLevel, index: number) => ({
-									id: index,
-									width: level.width,
-									height: level.height,
-									bitrate: level.bitrate,
-									label: qualityLabel(level.height),
-								}),
-							);
-							player.setPluginData("qualities", qualities);
-							player.setPluginData("qualitySetter", (id: number) => {
-								instance.currentLevel = id;
-								player.setPluginData("autoQuality", id === -1);
-							});
-						});
-
-						instance.on(
-							Hls.Events.LEVEL_SWITCHED,
-							(_event: string, data: { level: number }) => {
-								const qualities = player.qualities;
-								const quality = qualities[data.level];
-								if (quality) {
-									player.setPluginData("currentQuality", quality);
-									player.setPluginData(
-										"autoQuality",
-										instance.autoLevelEnabled,
-									);
-								}
-							},
-						);
-
-						instance.attachMedia(videoElement);
-						instance.loadSource(url);
-					})
-					.catch((err: unknown) => {
-						if (destroyed) return;
 						player.emit("error", {
-							code: ERR_HLS_IMPORT,
-							message:
-								err instanceof Error
-									? `Failed to load hls.js: ${err.message}`
-									: "Failed to load hls.js",
+							code: ERR_HLS_UNSUPPORTED,
+							message: "HLS is not supported in this browser",
 							source: "hls",
 						});
+						return;
+					}
+
+					// Wait for DRM detection if the DRM plugin is registered
+					// but hasn't resolved yet.
+					let drmData = player.getPluginData("drm");
+					if (!drmData) {
+						const drmReady = player.getPluginData("drmReady");
+						if (drmReady) {
+							drmData = (await drmReady) ?? undefined;
+							if (destroyed) return;
+						}
+					}
+
+					const mergedConfig = {
+						...((options.hlsConfig as object) ?? {}),
+						...(drmData?.hlsConfig ?? {}),
+					};
+					const instance = new Hls(mergedConfig);
+					hlsInstance = instance as HlsLike;
+					player.setPluginData("hls", instance);
+
+					instance.on(
+						Hls.Events.ERROR,
+						(_event: string, data: HlsErrorData) => {
+							if (!data.fatal) return;
+
+							const recovering = attemptRecovery(
+								instance as HlsLike,
+								data.type,
+							);
+
+							player.emit("error", {
+								code: ERR_HLS_FATAL,
+								message: `HLS fatal error: ${data.type} - ${data.details}`,
+								source: "hls",
+								recoverable: recovering,
+								retryCount: recovering ? retryCount : undefined,
+							});
+						},
+					);
+
+					instance.on(Hls.Events.FRAG_LOADED, () => {
+						if (retryCount > 0) {
+							retryCount = 0;
+							clearRecoveryTimer();
+						}
 					});
+
+					instance.on(Hls.Events.MANIFEST_PARSED, () => {
+						const qualities: QualityLevel[] = instance.levels.map(
+							(level: HlsLevel, index: number) => ({
+								id: index,
+								width: level.width,
+								height: level.height,
+								bitrate: level.bitrate,
+								label: qualityLabel(level.height),
+							}),
+						);
+						player.setPluginData("qualities", qualities);
+						player.setPluginData("qualitySetter", (id: number) => {
+							instance.currentLevel = id;
+							player.setPluginData("autoQuality", id === -1);
+						});
+					});
+
+					instance.on(
+						Hls.Events.LEVEL_SWITCHED,
+						(_event: string, data: { level: number }) => {
+							const qualities = player.qualities;
+							const quality = qualities[data.level];
+							if (quality) {
+								player.setPluginData("currentQuality", quality);
+								player.setPluginData("autoQuality", instance.autoLevelEnabled);
+							}
+						},
+					);
+
+					instance.attachMedia(videoElement);
+					instance.loadSource(url);
+				} catch (err: unknown) {
+					if (destroyed) return;
+					player.emit("error", {
+						code: ERR_HLS_IMPORT,
+						message:
+							err instanceof Error
+								? `Failed to load hls.js: ${err.message}`
+								: "Failed to load hls.js",
+						source: "hls",
+					});
+				}
 			}
 
 			player.registerSourceHandler(handler);

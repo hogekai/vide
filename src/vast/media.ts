@@ -6,6 +6,8 @@ export interface MediaSelectionHints {
 	width?: number;
 	/** Player element height in CSS pixels. */
 	height?: number;
+	/** Device pixel ratio (e.g. 2 for Retina). Defaults to 1. */
+	devicePixelRatio?: number;
 	/** Maximum acceptable bitrate in kbps (e.g. from network conditions). */
 	maxBitrate?: number;
 	/** Preferred delivery method. */
@@ -81,6 +83,9 @@ export function selectMediaFile(
 	if (playable.length === 0) return null;
 
 	const maxInSet = Math.max(...playable.map((f) => f.bitrate ?? 0), 1);
+	const dpr = hints?.devicePixelRatio ?? 1;
+	const effectiveHeight =
+		hints?.height != null ? hints.height * dpr : undefined;
 
 	let best: VastMediaFile | null = null;
 	let bestScore = -1;
@@ -88,7 +93,7 @@ export function selectMediaFile(
 	for (const f of playable) {
 		const score =
 			mimeScore(f.mimeType) * 1000 +
-			resolutionScore(f.height, hints?.height) * 100 +
+			resolutionScore(f.height, effectiveHeight) * 100 +
 			bitrateScore(f.bitrate, hints?.maxBitrate, maxInSet) * 10 +
 			deliveryScore(f.delivery, hints?.delivery);
 

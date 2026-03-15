@@ -207,6 +207,68 @@ describe("selectMediaFile", () => {
 		});
 	});
 
+	describe("devicePixelRatio hint", () => {
+		it("prefers matching physical resolution on Retina display", () => {
+			const result = selectMediaFile(
+				[
+					makeFile({
+						url: "http://example.com/360.mp4",
+						width: 640,
+						height: 360,
+						bitrate: 800,
+					}),
+					makeFile({
+						url: "http://example.com/720.mp4",
+						width: 1280,
+						height: 720,
+						bitrate: 1500,
+					}),
+				],
+				{ width: 320, height: 180, devicePixelRatio: 2 },
+			);
+			// 320×180 at DPR 2 = 640×360 physical — 360p is a perfect match
+			expect(result?.url).toBe("http://example.com/360.mp4");
+		});
+
+		it("defaults to DPR 1 when not specified", () => {
+			const withDpr = selectMediaFile(
+				[
+					makeFile({
+						url: "http://example.com/360.mp4",
+						width: 640,
+						height: 360,
+						bitrate: 800,
+					}),
+					makeFile({
+						url: "http://example.com/720.mp4",
+						width: 1280,
+						height: 720,
+						bitrate: 1500,
+					}),
+				],
+				{ width: 400, height: 300 },
+			);
+			const withExplicitDpr = selectMediaFile(
+				[
+					makeFile({
+						url: "http://example.com/360.mp4",
+						width: 640,
+						height: 360,
+						bitrate: 800,
+					}),
+					makeFile({
+						url: "http://example.com/720.mp4",
+						width: 1280,
+						height: 720,
+						bitrate: 1500,
+					}),
+				],
+				{ width: 400, height: 300, devicePixelRatio: 1 },
+			);
+			expect(withDpr?.url).toBe(withExplicitDpr?.url);
+		});
+	});
+
 	it("filters out VPAID files", () => {
 		const result = selectMediaFile([
 			makeFile({

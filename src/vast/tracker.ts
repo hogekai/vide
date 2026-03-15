@@ -18,7 +18,8 @@ export function track(urls: string[]): void {
 			typeof navigator !== "undefined" &&
 			typeof navigator.sendBeacon === "function"
 		) {
-			navigator.sendBeacon(url);
+			const queued = navigator.sendBeacon(url);
+			if (!queued) new Image().src = url;
 		} else {
 			new Image().src = url;
 		}

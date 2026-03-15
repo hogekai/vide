@@ -110,16 +110,30 @@ export function drm(options: DrmPluginOptions): Plugin {
 				return () => {};
 			}
 
+			// Expose a ready promise so streaming plugins (HLS/DASH)
+			// can await DRM detection before creating their instances.
+			let resolveDrmReady!: (config: ResolvedDrmConfig | null) => void;
+			const drmReadyPromise = new Promise<ResolvedDrmConfig | null>(
+				(resolve) => {
+					resolveDrmReady = resolve;
+				},
+			);
+			player.setPluginData("drmReady", drmReadyPromise);
+
 			// Detect key system eagerly at setup time.
 			detectKeySystem(candidates)
 				.then((keySystem) => {
-					if (destroyed) return;
+					if (destroyed) {
+						resolveDrmReady(null);
+						return;
+					}
 					if (!keySystem) {
 						player.emit("error", {
 							code: ERR_DRM_UNSUPPORTED,
 							message: "No supported DRM key system found",
 							source: "drm",
 						});
+						resolveDrmReady(null);
 						return;
 					}
 					const input = {
@@ -135,6 +149,7 @@ export function drm(options: DrmPluginOptions): Plugin {
 						dashConfig: dashDrmConfig(input),
 					};
 					player.setPluginData("drm", resolved);
+					resolveDrmReady(resolved);
 
 					// Set up standalone EME for direct MP4 / native HLS playback.
 					const emeOpts = buildEmeOptions(keySystem, options);
@@ -165,6 +180,7 @@ export function drm(options: DrmPluginOptions): Plugin {
 					player.emit("drm:ready", { keySystem });
 				})
 				.catch((err: unknown) => {
+					resolveDrmReady(null);
 					if (destroyed) return;
 					player.emit("error", {
 						code: ERR_DRM_DETECTION,

@@ -249,6 +249,7 @@ export interface PluginDataMap {
 	hls: PluginHlsInstance;
 	dash: PluginDashInstance;
 	drm: PluginDrmConfig;
+	drmReady: Promise<PluginDrmConfig | null>;
 	ima: PluginImaData;
 }
 

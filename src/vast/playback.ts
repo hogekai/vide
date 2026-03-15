@@ -95,6 +95,8 @@ export function playSingleAd(options: PlaySingleAdOptions): {
 	const mediaFile = selectMediaFile(linear.mediaFiles, {
 		width: player.el.clientWidth,
 		height: player.el.clientHeight,
+		devicePixelRatio:
+			typeof window !== "undefined" ? (window.devicePixelRatio ?? 1) : 1,
 	});
 	if (!mediaFile) {
 		cleanupAdPlugins();

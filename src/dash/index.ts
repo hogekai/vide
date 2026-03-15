@@ -130,138 +130,149 @@ export function dash(options: DashPluginOptions = {}): Plugin {
 				},
 			};
 
-			function loadWithDashJs(url: string, videoElement: MediaElement): void {
+			async function loadWithDashJs(
+				url: string,
+				videoElement: MediaElement,
+			): Promise<void> {
 				currentUrl = url;
 				currentVideoElement = videoElement;
 
-				import("dashjs")
-					.then((dashjsModule) => {
-						if (destroyed) return;
+				try {
+					const dashjsModule = await import("dashjs");
+					if (destroyed) return;
 
-						const djsNamespace =
-							dashjsModule.default ??
-							(dashjsModule as Record<string, unknown>).dashjs ??
-							dashjsModule;
-						const instance = djsNamespace
-							.MediaPlayer()
-							.create() as unknown as DashMediaPlayerLike;
-						dashInstance = instance;
-						player.setPluginData("dash", instance);
+					const djsNamespace =
+						dashjsModule.default ??
+						(dashjsModule as Record<string, unknown>).dashjs ??
+						dashjsModule;
+					const instance = djsNamespace
+						.MediaPlayer()
+						.create() as unknown as DashMediaPlayerLike;
+					dashInstance = instance;
+					player.setPluginData("dash", instance);
 
-						const drmData = player.getPluginData("drm");
-						if (drmData?.dashConfig) {
-							instance.updateSettings(drmData.dashConfig);
+					// Wait for DRM detection if the DRM plugin is registered
+					// but hasn't resolved yet.
+					let drmData = player.getPluginData("drm");
+					if (!drmData) {
+						const drmReady = player.getPluginData("drmReady");
+						if (drmReady) {
+							drmData = (await drmReady) ?? undefined;
+							if (destroyed) return;
 						}
-						if (options.dashConfig) {
-							instance.updateSettings(options.dashConfig);
-						}
+					}
+					if (drmData?.dashConfig) {
+						instance.updateSettings(drmData.dashConfig);
+					}
+					if (options.dashConfig) {
+						instance.updateSettings(options.dashConfig);
+					}
 
-						instance.on(
-							djsNamespace.MediaPlayer.events.ERROR,
-							(e: DashErrorEvent) => {
-								if (typeof e.error === "object" && e.error !== null) {
-									const recovering = attemptRecovery(instance);
+					instance.on(
+						djsNamespace.MediaPlayer.events.ERROR,
+						(e: DashErrorEvent) => {
+							if (typeof e.error === "object" && e.error !== null) {
+								const recovering = attemptRecovery(instance);
 
-									player.emit("error", {
-										code: e.error.code,
-										message: e.error.message,
-										source: "dash",
-										recoverable: recovering,
-										retryCount: recovering ? retryCount : undefined,
+								player.emit("error", {
+									code: e.error.code,
+									message: e.error.message,
+									source: "dash",
+									recoverable: recovering,
+									retryCount: recovering ? retryCount : undefined,
+								});
+							} else {
+								player.emit("error", {
+									code: ERR_DASH_PLAYBACK,
+									message: `DASH error: ${String(e.error)}`,
+									source: "dash",
+								});
+							}
+						},
+					);
+
+					instance.on(
+						djsNamespace.MediaPlayer.events.STREAM_INITIALIZED,
+						() => {
+							if (retryCount > 0) {
+								retryCount = 0;
+								clearRecoveryTimer();
+							}
+
+							const bitrateList = instance.getBitrateInfoListFor("video");
+							const qualities: QualityLevel[] = bitrateList.map(
+								(info: DashBitrateInfo) => ({
+									id: info.qualityIndex,
+									width: info.width,
+									height: info.height,
+									bitrate: info.bitrate,
+									label: qualityLabel(info.height),
+								}),
+							);
+							player.setPluginData("qualities", qualities);
+							player.setPluginData("qualitySetter", (id: number) => {
+								if (id === -1) {
+									instance.updateSettings({
+										streaming: {
+											abr: {
+												autoSwitchBitrate: { video: true },
+											},
+										},
 									});
 								} else {
-									player.emit("error", {
-										code: ERR_DASH_PLAYBACK,
-										message: `DASH error: ${String(e.error)}`,
-										source: "dash",
+									instance.updateSettings({
+										streaming: {
+											abr: {
+												autoSwitchBitrate: { video: false },
+											},
+										},
 									});
+									instance.setQualityFor("video", id, true);
 								}
-							},
-						);
+								player.setPluginData("autoQuality", id === -1);
+							});
+						},
+					);
 
-						instance.on(
-							djsNamespace.MediaPlayer.events.STREAM_INITIALIZED,
-							() => {
-								if (retryCount > 0) {
-									retryCount = 0;
-									clearRecoveryTimer();
-								}
-
-								const bitrateList = instance.getBitrateInfoListFor("video");
-								const qualities: QualityLevel[] = bitrateList.map(
-									(info: DashBitrateInfo) => ({
-										id: info.qualityIndex,
-										width: info.width,
-										height: info.height,
-										bitrate: info.bitrate,
-										label: qualityLabel(info.height),
-									}),
-								);
-								player.setPluginData("qualities", qualities);
-								player.setPluginData("qualitySetter", (id: number) => {
-									if (id === -1) {
-										instance.updateSettings({
-											streaming: {
-												abr: {
-													autoSwitchBitrate: { video: true },
-												},
-											},
-										});
-									} else {
-										instance.updateSettings({
-											streaming: {
-												abr: {
-													autoSwitchBitrate: { video: false },
-												},
-											},
-										});
-										instance.setQualityFor("video", id, true);
-									}
-									player.setPluginData("autoQuality", id === -1);
-								});
-							},
-						);
-
-						instance.on(
-							djsNamespace.MediaPlayer.events.QUALITY_CHANGE_RENDERED,
-							(e: {
-								mediaType: string;
-								oldQuality: number;
-								newQuality: number;
-							}) => {
-								if (e.mediaType !== "video") return;
-								const qualities = player.qualities;
-								const quality = qualities.find((q) => q.id === e.newQuality);
-								if (quality) {
-									player.setPluginData("currentQuality", quality);
-									const settings = instance.getSettings() as {
-										streaming?: {
-											abr?: {
-												autoSwitchBitrate?: { video?: boolean };
-											};
+					instance.on(
+						djsNamespace.MediaPlayer.events.QUALITY_CHANGE_RENDERED,
+						(e: {
+							mediaType: string;
+							oldQuality: number;
+							newQuality: number;
+						}) => {
+							if (e.mediaType !== "video") return;
+							const qualities = player.qualities;
+							const quality = qualities.find((q) => q.id === e.newQuality);
+							if (quality) {
+								player.setPluginData("currentQuality", quality);
+								const settings = instance.getSettings() as {
+									streaming?: {
+										abr?: {
+											autoSwitchBitrate?: { video?: boolean };
 										};
 									};
-									player.setPluginData(
-										"autoQuality",
-										settings?.streaming?.abr?.autoSwitchBitrate?.video ?? true,
-									);
-								}
-							},
-						);
+								};
+								player.setPluginData(
+									"autoQuality",
+									settings?.streaming?.abr?.autoSwitchBitrate?.video ?? true,
+								);
+							}
+						},
+					);
 
-						instance.initialize(videoElement, url, videoElement.autoplay);
-					})
-					.catch((err: unknown) => {
-						if (destroyed) return;
-						player.emit("error", {
-							code: ERR_DASH_IMPORT,
-							message:
-								err instanceof Error
-									? `Failed to load dashjs: ${err.message}`
-									: "Failed to load dashjs",
-							source: "dash",
-						});
+					instance.initialize(videoElement, url, videoElement.autoplay);
+				} catch (err: unknown) {
+					if (destroyed) return;
+					player.emit("error", {
+						code: ERR_DASH_IMPORT,
+						message:
+							err instanceof Error
+								? `Failed to load dashjs: ${err.message}`
+								: "Failed to load dashjs",
+						source: "dash",
 					});
+				}
 			}
 
 			player.registerSourceHandler(handler);
