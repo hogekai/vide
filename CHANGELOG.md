@@ -13,6 +13,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
   the IMA ad container now establish their own stacking context (`isolation:
   isolate`), so controls (z-index 3) and the IMA overlay (z-index 10 on touch)
   can't overlap host UI.
+- `destroy()` resets player state to `idle` (it previously kept reporting the
+  last state, e.g. `ready`).
 
 ## [0.10.5] - 2026-03-15
 

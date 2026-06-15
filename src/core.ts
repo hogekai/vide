@@ -430,6 +430,9 @@ export function createPlayer(el: MediaElement): Player {
 			removeMediaListeners();
 			bus.handlers.clear();
 			pluginData.clear();
+			// Source is unloaded and listeners are gone — reset to idle so a
+			// destroyed player doesn't keep reporting a stale "ready"/"playing".
+			state = "idle";
 		},
 	};
 
