@@ -60,8 +60,7 @@ test.describe("Core playback", () => {
 
 	test("src change triggers loading state", async ({ page }) => {
 		await page.evaluate(() => {
-			(window as any).player.src =
-				"/examples/media/sample.mp4";
+			(window as any).player.src = "/examples/media/sample.mp4";
 		});
 
 		const state = await page.evaluate(() => (window as any).player.state);
