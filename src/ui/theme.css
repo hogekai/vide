@@ -95,6 +95,9 @@
 	overflow: hidden;
 	box-sizing: border-box;
 	container-type: inline-size;
+	/* Confine the player's internal z-index (controls, overlays) to its own
+	   stacking context so it never competes with the host page's UI. */
+	isolation: isolate;
 }
 
 .vide-ui:fullscreen {

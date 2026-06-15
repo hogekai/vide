@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+## [0.10.6] - 2026-06-15
+
+### Fixed
+- Player no longer leaks its internal z-index to the host page: `.vide-ui` and
+  the IMA ad container now establish their own stacking context (`isolation:
+  isolate`), so controls (z-index 3) and the IMA overlay (z-index 10 on touch)
+  can't overlap host UI.
+
 ## [0.10.5] - 2026-03-15
 
 ### Fixed

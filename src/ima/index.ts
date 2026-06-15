@@ -80,6 +80,9 @@ export function ima(options: ImaPluginOptions): Plugin {
 				imaOverlay = document.createElement("div");
 				imaOverlay.setAttribute("data-vide-ima", "");
 				imaOverlay.style.cssText = `position:absolute;top:0;left:0;width:100%;height:100%;z-index:${overlayZ};`;
+				// Confine the overlay's z-index to the ad container's own stacking
+				// context so it never competes with the host page's UI.
+				options.adContainer.style.isolation = "isolate";
 				options.adContainer.appendChild(imaOverlay);
 				const adContainerEl = imaOverlay;
 				debug(
