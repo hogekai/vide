@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+### Fixed
+- IMA: the player no longer triggers "ResizeObserver loop completed with undelivered
+  notifications" on page load. `adsManager.resize()` now runs on the next animation
+  frame instead of inside the ResizeObserver callback.
+
 ## [0.10.6] - 2026-06-15
 
 ### Fixed

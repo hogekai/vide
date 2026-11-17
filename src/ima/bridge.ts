@@ -174,12 +174,14 @@ export function createImaBridge(options: BridgeOptions): () => void {
 	// ── Resize observer ────────────────────────────────
 
 	let resizeObserver: ResizeObserver | null = null;
+	let resizeFrame = 0;
 	if (typeof ResizeObserver !== "undefined") {
 		const resizeTarget = player.el.parentElement ?? player.el;
 		let lastW = 0;
 		let lastH = 0;
 		let lastFullscreen = false;
-		resizeObserver = new ResizeObserver(() => {
+		const applyResize = (): void => {
+			resizeFrame = 0;
 			const w = player.el.clientWidth;
 			const h = player.el.clientHeight;
 			const fs = !!document.fullscreenElement;
@@ -192,6 +194,14 @@ export function createImaBridge(options: BridgeOptions): () => void {
 				h,
 				fs ? ima.ViewMode.FULLSCREEN : ima.ViewMode.NORMAL,
 			);
+		};
+		// adsManager.resize() changes the layout of IMA's ad container, which
+		// sits inside the observed element. Calling it inside the observer
+		// callback makes the browser report "ResizeObserver loop completed
+		// with undelivered notifications", so defer it to the next frame.
+		resizeObserver = new ResizeObserver(() => {
+			if (resizeFrame) return;
+			resizeFrame = requestAnimationFrame(applyResize);
 		});
 		resizeObserver.observe(resizeTarget);
 	}
@@ -319,6 +329,7 @@ export function createImaBridge(options: BridgeOptions): () => void {
 	return () => {
 		document.removeEventListener("fullscreenchange", onFullscreenChange);
 		resizeObserver?.disconnect();
+		if (resizeFrame) cancelAnimationFrame(resizeFrame);
 		player.off("ad:skip", onVideAdSkip);
 		player.off("statechange", onAdStateChange);
 		player.play = originalPlay;
