@@ -342,3 +342,86 @@ describe("createImaBridge", () => {
 		expect(adsManager.skip).not.toHaveBeenCalled();
 	});
 });
+
+describe("createImaBridge resize", () => {
+	let observerCallback: (() => void) | null;
+	let frames: Map<number, FrameRequestCallback>;
+	let nextFrame: number;
+
+	beforeEach(() => {
+		// The default bridge was created before ResizeObserver was stubbed.
+		cleanup();
+		observerCallback = null;
+		frames = new Map();
+		nextFrame = 1;
+		vi.stubGlobal(
+			"ResizeObserver",
+			class {
+				constructor(cb: () => void) {
+					observerCallback = cb;
+				}
+				observe() {}
+				disconnect() {}
+			},
+		);
+		vi.stubGlobal("requestAnimationFrame", (cb: FrameRequestCallback) => {
+			const id = nextFrame++;
+			frames.set(id, cb);
+			return id;
+		});
+		vi.stubGlobal("cancelAnimationFrame", (id: number) => {
+			frames.delete(id);
+		});
+		Object.defineProperty(player.el, "clientWidth", { value: 640 });
+		Object.defineProperty(player.el, "clientHeight", { value: 360 });
+		cleanup = createImaBridge({
+			player: pluginPlayer,
+			adsManager,
+			ima: mockIma,
+		});
+	});
+
+	afterEach(() => {
+		vi.unstubAllGlobals();
+	});
+
+	function flushFrames(): void {
+		const pending = [...frames.values()];
+		frames.clear();
+		for (const cb of pending) cb(0);
+	}
+
+	it("defers adsManager.resize() out of the ResizeObserver callback", () => {
+		observerCallback?.();
+		expect(adsManager.resize).not.toHaveBeenCalled();
+
+		flushFrames();
+		expect(adsManager.resize).toHaveBeenCalledWith(640, 360, "normal");
+	});
+
+	it("coalesces notifications within a frame into one resize", () => {
+		observerCallback?.();
+		observerCallback?.();
+		observerCallback?.();
+		expect(frames.size).toBe(1);
+
+		flushFrames();
+		expect(adsManager.resize).toHaveBeenCalledTimes(1);
+	});
+
+	it("skips the resize when the size is unchanged", () => {
+		observerCallback?.();
+		flushFrames();
+		observerCallback?.();
+		flushFrames();
+		expect(adsManager.resize).toHaveBeenCalledTimes(1);
+	});
+
+	it("cancels a pending resize on cleanup", () => {
+		observerCallback?.();
+		cleanup();
+		cleanup = () => {};
+		flushFrames();
+		expect(adsManager.resize).not.toHaveBeenCalled();
+	});
+});
